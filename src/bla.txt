@@ -1,0 +1,8 @@
+if (!out.findByExternalId(row[0]))
+    skipRow()
+
+out.firstName = row.firstName
+out.lastName = row.lastName
+
+out.industry = db.keywords.industry.getOrCreateByName(row.industry, code = row.industry.toUpper())
+out.source = db.keywords.source.getOrCreateByName(row.source)
