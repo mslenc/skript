@@ -3,15 +3,15 @@ package skript.analysis
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import skript.ast.*
+import skript.lexer.Pos
 import skript.values.SkNumber
-import skript.values.SkValue
 
 class VarAllocatorTest {
     @Test
     fun testBasics() {
         val module = Module("testBasics", listOf(
             DeclareFunction("makeInc", emptyList(), Statements(listOf<Statement>(
-                LetStatement(listOf(VarDecl("c", Literal(SkNumber.valueOf(0))))),
+                LetStatement(listOf(VarDecl("c", Literal(SkNumber.valueOf(0)), Pos(1, 1, "testBasics.sk")))),
                 DeclareFunction("result", emptyList(), Statements(listOf(
                     ExpressionStatement(AssignExpression(Variable("c"), BinaryOp.PLUS, Literal(SkNumber.ONE))),
                     ReturnStatement(Variable("c"))

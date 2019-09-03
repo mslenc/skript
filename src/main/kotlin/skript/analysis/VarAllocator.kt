@@ -103,7 +103,39 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
 
     override fun visitWhile(stmt: WhileStatement) {
         stmt.condition.accept(this)
-        stmt.inner.accept(this)
+        stmt.body.accept(this)
+    }
+
+    override fun visitDoWhile(stmt: DoWhileStatement) {
+        stmt.body.accept(this)
+        stmt.condition.accept(this)
+    }
+
+    override fun visitForStatement(stmt: ForStatement) {
+        val parent = scopeStack.top()
+        val top = parent.topScope()
+        val varsHere = HashMap<String, VarInfo>()
+
+        for (decl in stmt.decls) {
+            val name = decl.varName
+
+            top.allocate(name).also {
+                varsHere[name] = it
+                decl.varInfo = it
+            }
+        }
+
+        scopeStack.withTop(BlockScope(parent, varsHere)) {
+            stmt.body.accept(this)
+        }
+    }
+
+    override fun visitBreakStatement(stmt: BreakStatement) {
+        // nothing to do..
+    }
+
+    override fun visitContinueStatement(stmt: ContinueStatement) {
+        // nothing to do..
     }
 
     override fun visitReturnStatement(stmt: ReturnStatement) {

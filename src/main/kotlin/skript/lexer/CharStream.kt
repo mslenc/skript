@@ -30,15 +30,6 @@ interface CharStream {
     }
 
     /**
-     * Matches with the provided matcher while it returns true and returns the matched string.
-     */
-    fun consume(match: (Char)->Boolean): String {
-        val sb = StringBuilder()
-        consumeInto(sb, match)
-        return sb.toString()
-    }
-
-    /**
      * Matches with the provided matcher while it returns true, copies the corresponding characters into sb, and returns the matched length.
      */
     fun consumeInto(sb: StringBuilder, match: (Char)->Boolean): Int {
@@ -139,25 +130,6 @@ class StringCharStream(private val str: String, private val fileName: String) : 
             pos >= str.length -> false
             str[pos] == opt -> { pos++; true }
             else -> false
-        }
-    }
-
-    override fun consume(match: (Char) -> Boolean): String {
-        val start = pos
-        val strLen = str.length
-
-        while (pos < strLen) {
-            if (match(str[pos])) {
-                pos++
-            } else {
-                break
-            }
-        }
-
-        return if (pos == start) {
-            ""
-        } else {
-            str.substring(start, pos)
         }
     }
 

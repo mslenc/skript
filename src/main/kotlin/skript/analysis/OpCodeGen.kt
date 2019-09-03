@@ -7,11 +7,11 @@ import skript.opcodes.*
 import skript.opcodes.compare.*
 import skript.opcodes.equals.*
 import skript.opcodes.numeric.*
+import skript.syntaxError
 import skript.util.Stack
 import skript.values.SkNumber
 import skript.values.SkUndefined
 import skript.withTop
-import java.lang.IllegalStateException
 
 class FunctionDefBuilder(val name: String, val paramDefs: Array<ParamDef>, val localsSize: Int, val framesCaptured: Int) {
     val ops = ArrayList<OpCode>()
@@ -27,8 +27,26 @@ class FunctionDefBuilder(val name: String, val paramDefs: Array<ParamDef>, val l
     fun build() = FunctionDef(name, paramDefs, ops.toTypedArray(), localsSize, framesCaptured)
 }
 
+data class LoopInfo(
+    val label: String?,
+    private val continueTarget: JumpTarget?,
+    private val breakTarget: JumpTarget?
+) {
+    var breakUsed = false
+
+    fun getBreakTarget(): JumpTarget? {
+        breakUsed = true
+        return breakTarget
+    }
+
+    fun getContinueTarget(): JumpTarget? {
+        return continueTarget
+    }
+}
+
 class OpCodeGen : StatementVisitor {
     val builders = Stack<FunctionDefBuilder>()
+    val loops = Stack<LoopInfo>()
 
     fun visitModule(module: Module) {
         val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), module.props[Scope]!!.topScope().varsAllocated, 0)
@@ -88,18 +106,23 @@ class OpCodeGen : StatementVisitor {
     }
 
     override fun visitWhile(stmt: WhileStatement) {
-        // jmp(check) <start> body <check> condition jmpIfTrue(start)
+        // jmp(check) <start> body <check> condition jmpIfTrue(start) <end>
         val builder = builders.top()
 
         val check = JumpTarget()
         val start = JumpTarget()
+        val end = JumpTarget()
 
-        builder += Jump(check)
-        builder += start
-        stmt.inner.accept(this)
-        builder += check
-        stmt.condition.accept(ExprOpCodeBuilder(builder))
-        builder += JumpIfTruthy(start)
+        // TODO: loop label
+        loops.withTop(LoopInfo(null, continueTarget = check, breakTarget = end)) {
+            builder += Jump(check)
+            builder += start
+            stmt.body.accept(this)
+            builder += check
+            stmt.condition.accept(ExprOpCodeBuilder(builder))
+            builder += JumpIfTruthy(start)
+            builder += end
+        }
     }
 
     override fun visitLet(stmt: LetStatement) {
@@ -155,6 +178,88 @@ class OpCodeGen : StatementVisitor {
 
     override fun visitReturnStatement(stmt: ReturnStatement) {
         builders.top() += Return
+    }
+
+    override fun visitDoWhile(stmt: DoWhileStatement) {
+        // <start> body <check> condition jumpIfTrue(start) <end>
+
+        val builder = builders.top()
+
+        val start = JumpTarget()
+        val check = JumpTarget()
+        val end = JumpTarget()
+
+        loops.withTop(LoopInfo(null, continueTarget = check, breakTarget = end)) {
+            builder += start
+            stmt.body.accept(this)
+            builder += check
+            stmt.condition.accept(ExprOpCodeBuilder(builder))
+            builder += JumpIfTruthy(start)
+            builder += end
+        }
+    }
+
+    override fun visitForStatement(stmt: ForStatement) {
+        // container makeIterator <loopStart> iteratorNext(end) store(value) [store(index)] body jump(loopStart) [ <breakTarget> pop ] <end>
+
+        val builder = builders.top()
+
+        val loopStart = JumpTarget()
+        val end = JumpTarget()
+        val breakTarget = JumpTarget()
+
+        val doKey = stmt.decls.size >= 2
+        val doValue = stmt.decls.size >= 1
+
+        val loopInfo = LoopInfo(null, continueTarget = loopStart, breakTarget = breakTarget)
+        loops.withTop(loopInfo) {
+            stmt.container.accept(ExprOpCodeBuilder(builder))
+            builder += MakeIterator
+            builder += loopStart
+            builder += IteratorNext(doKey, doValue, end)
+            if (doValue) builder += stmt.decls[1].varInfo.storeOpCode
+            if (doKey) builder += stmt.decls[0].varInfo.storeOpCode
+            stmt.body.accept(this)
+            builder += Jump(loopStart)
+
+            if (loopInfo.breakUsed) {
+                builder += breakTarget
+                builder += Pop
+            }
+
+            builder += end
+        }
+    }
+
+    private fun findLoopInfo(label: String?): LoopInfo? {
+        for (i in 0 until loops.size) {
+            val loopInfo = loops.top(i)
+            if (label == null || label == loopInfo.label)
+                return loopInfo
+        }
+        return null
+    }
+
+    override fun visitBreakStatement(stmt: BreakStatement) {
+        val loopInfo = findLoopInfo(stmt.label) ?: when {
+            stmt.label != null -> syntaxError("Couldn't find label ${stmt.label}", stmt.pos)
+            else -> syntaxError("Nothing to break from here", stmt.pos)
+        }
+
+        val target = loopInfo.getBreakTarget() ?: syntaxError("Can't break here", stmt.pos)
+
+        builders.top() += Jump(target)
+    }
+
+    override fun visitContinueStatement(stmt: ContinueStatement) {
+        val loopInfo = findLoopInfo(stmt.label) ?: when {
+            stmt.label != null -> syntaxError("Couldn't find label ${stmt.label}", stmt.pos)
+            else -> syntaxError("Nothing to continue in here", stmt.pos)
+        }
+
+        val target = loopInfo.getContinueTarget() ?: syntaxError("Can't continue here", stmt.pos)
+
+        builders.top() += Jump(target)
     }
 }
 
