@@ -8,7 +8,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 fun syntaxError(message: String, pos: Pos): Nothing {
-    throw IllegalArgumentException(message) // TODO - make an exception and/or support exceptions; also show pos
+    throw IllegalArgumentException("$message @ $pos") // TODO - make an exception and/or support exceptions; also show pos
 }
 
 fun typeError(message: String, pos: Pos? = null): Nothing {

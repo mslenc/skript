@@ -1,13 +1,13 @@
 package skript.exec
 
+import skript.io.SkriptEnv
 import skript.opcodes.OpCode
 import skript.util.Globals
 import skript.util.Stack
 import skript.values.SkValue
 
-class RuntimeState {
+class RuntimeState(val globals: Globals, val env: SkriptEnv) {
     val frames = Stack<Frame>()
-    val globals = Globals()
 
     val topFrame get() = frames.top()
 

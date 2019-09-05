@@ -56,7 +56,11 @@ fun Tokens.parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowV
             syntaxError("Unexpected end of file", peek().pos)
         }
 
-        else -> ExpressionStatement(parseExpression())
+        else -> {
+            val expr = parseExpression()
+            expect(SEMI)
+            ExpressionStatement(expr)
+        }
     }
 }
 

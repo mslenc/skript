@@ -2,6 +2,7 @@ package skript.opcodes
 
 import skript.exec.RuntimeState
 import skript.notSupported
+import skript.typeError
 import skript.util.ArgsBuilder
 import skript.values.*
 
@@ -94,9 +95,10 @@ object CallFunction : SuspendOpCode() {
             val argsBuilder = args.pop()
 
             if (func is SkFunction) {
-                func.call(argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
+                val result = func.call(argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
+                stack.push(result)
             } else {
-                notSupported("Only functions can be called")
+                typeError("Only functions can be called")
             }
         }
     }

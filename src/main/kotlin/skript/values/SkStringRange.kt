@@ -4,7 +4,10 @@ import skript.util.ArgsExtractor
 import skript.util.expectBoolean
 import skript.util.expectString
 
-class SkStringRange(val start: String, val end: String, val endInclusive: Boolean) : SkObject(SkStringRangeClass) {
+class SkStringRange(val start: String, val end: String, val endInclusive: Boolean) : SkObject() {
+    override val klass: SkClass
+        get() = SkStringRangeClass
+
     override suspend fun hasOwnMember(key: SkValue): Boolean {
         val str = key.asString()
 

@@ -3,7 +3,10 @@ package skript.values
 import skript.notSupported
 
 class SkMap : SkObject {
-    constructor() : super(MapClass)
+    override val klass: SkClass
+        get() = MapClass
+
+    constructor() : super()
 
     constructor(initialValues: Map<String, SkValue>) : this() {
         for ((key, value) in initialValues) {

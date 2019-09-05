@@ -36,7 +36,10 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
     }
 }
 
-class SkBooleanObject(override val value: SkBoolean) : SkScalarObject(BooleanClass) {
+class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
+    override val klass: SkClass
+        get() = BooleanClass
+
     override fun asString(): SkString {
         return value.asString()
     }

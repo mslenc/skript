@@ -3,7 +3,10 @@ package skript.values
 import skript.opcodes.SkIterator
 
 // this type should only ever appear on the stack, used for implementing for-in loops
-class SkStringIterator(value: SkString) : SkObject(SkStringIteratorClass), SkIterator {
+class SkStringIterator(value: SkString) : SkObject(), SkIterator {
+    override val klass: SkClass
+        get() = SkStringIteratorClass
+
     var index = -1
     val string = value.value
 

@@ -16,12 +16,14 @@ class SetGlobal(private val name: String) : FastOpCode() {
 
 class GetModuleVar(private val moduleName: String, private val indexInModule: Int) : FastOpCode() {
     override fun execute(state: RuntimeState) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val vars = state.env.modules[moduleName]?.vars ?: throw IllegalStateException("No module $moduleName in runtime")
+        state.topFrame.stack.push(vars[indexInModule])
     }
 }
 
 class SetModuleVar(private val moduleName: String, private val indexInModule: Int) : FastOpCode() {
     override fun execute(state: RuntimeState) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val vars = state.env.modules[moduleName]?.vars ?: throw IllegalStateException("No module $moduleName in runtime")
+        vars[indexInModule] = state.topFrame.stack.pop()
     }
 }

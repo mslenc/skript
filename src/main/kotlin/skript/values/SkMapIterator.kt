@@ -3,7 +3,10 @@ package skript.values
 import skript.opcodes.SkIterator
 
 // this type should only ever appear on the stack, used for implementing for-in loops
-class SkMapIterator(val map: SkMap) : SkObject(SkMapIteratorClass), SkIterator {
+class SkMapIterator(val map: SkMap) : SkObject(), SkIterator {
+    override val klass: SkClass
+        get() = SkMapIteratorClass
+
     var pos = -1
     val entries: List<Pair<String, SkValue>> = ArrayList<Pair<String, SkValue>>().apply {
         map.props.forEach { key, value ->

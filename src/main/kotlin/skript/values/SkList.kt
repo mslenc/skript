@@ -7,11 +7,14 @@ import skript.notSupported
 class SkList : SkObject {
     val elements = ArrayList<SkValue?>()
 
-    constructor() : super(ListClass)
+    constructor() : super()
 
-    constructor(elements: List<SkValue>) : super(ListClass) {
+    constructor(elements: List<SkValue>) : super() {
         this.elements.addAll(elements)
     }
+
+    override val klass: SkClass
+        get() = ListClass
 
     override suspend fun findMember(key: SkValue): SkValue {
         if (key.isString("length"))

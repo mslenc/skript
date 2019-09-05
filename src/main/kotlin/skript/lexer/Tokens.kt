@@ -2,17 +2,25 @@ package skript.lexer
 
 import skript.syntaxError
 
-class Tokens(tokens: List<Token>) {
+class Tokens(val tokens: List<Token>) {
+    var pos: Int = 0
+
     fun peek(): Token {
-        TODO()
+        return tokens[pos]
     }
 
     fun next(): Token {
-        TODO()
+        return tokens[pos++]
     }
 
     fun consume(type: TokenType): Token? {
-        TODO()
+        val token = tokens[pos]
+        return if (token.type == type) {
+            pos++
+            token
+        } else {
+            null
+        }
     }
 
     fun expect(type: TokenType): Token {

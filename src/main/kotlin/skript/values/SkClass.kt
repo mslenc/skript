@@ -2,7 +2,10 @@ package skript.values
 
 import skript.exec.RuntimeState
 
-abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject(ClassClass) {
+abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject() {
+    override val klass: SkClass
+        get() = ClassClass
+
     abstract suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue
 
     private val instanceMethods = HashMap<String, SkMethod>()

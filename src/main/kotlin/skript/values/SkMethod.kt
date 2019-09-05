@@ -3,7 +3,7 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.notSupported
 
-sealed class SkCallable(val name: String, klass: SkClass) : SkObject(klass) {
+sealed class SkCallable(val name: String) : SkObject() {
     final override fun asBoolean(): SkBoolean {
         return SkBoolean.TRUE
     }
@@ -13,7 +13,10 @@ sealed class SkCallable(val name: String, klass: SkClass) : SkObject(klass) {
     }
 }
 
-abstract class SkFunction(name: String) : SkCallable(name, FunctionClass) {
+abstract class SkFunction(name: String) : SkCallable(name) {
+    override val klass: SkClass
+        get() = FunctionClass
+
     abstract override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
 
     final override fun getKind(): SkValueKind {
@@ -25,7 +28,10 @@ abstract class SkFunction(name: String) : SkCallable(name, FunctionClass) {
     }
 }
 
-abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable(name, MethodClass) {
+abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable(name) {
+    override val klass: SkClass
+        get() = MethodClass
+
     abstract val expectedClass: SkClass
     protected val nameString by lazy { SkString("function ${expectedClass.name}.$name(${paramNames}) {[ native code ]}") }
 

@@ -8,7 +8,10 @@ import skript.util.expectBoolean
 import skript.util.expectNumber
 import java.math.BigDecimal
 
-class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Boolean) : SkObject(SkNumberRangeClass) {
+class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Boolean) : SkObject() {
+    override val klass: SkClass
+        get() = SkNumberRangeClass
+
     override suspend fun makeIterator(): SkValue {
         return SkNumberRangeIterator(start, end, endInclusive)
     }
@@ -25,7 +28,10 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
     }
 }
 
-class SkNumberRangeIterator(start: SkNumber, val end: SkNumber, val endInclusive: Boolean) : SkObject(SkNumberRangeIteratorClass), SkIterator {
+class SkNumberRangeIterator(start: SkNumber, val end: SkNumber, val endInclusive: Boolean) : SkObject(), SkIterator {
+    override val klass: SkClass
+        get() = SkNumberRangeIteratorClass
+
     var iteration = -1
     var currValue = start
 

@@ -54,9 +54,9 @@ class SkNumber private constructor (val value: BigDecimal) : SkScalar(), Compara
     }
 
     companion object {
-        val MINUS_ONE = valueOf(-1)
-        val ZERO = valueOf(0)
-        val ONE = valueOf(1)
+        val MINUS_ONE = SkNumber(BigDecimal.valueOf(-1))
+        val ZERO = SkNumber(BigDecimal.valueOf(0))
+        val ONE = SkNumber(BigDecimal.valueOf(1))
 
         private val MIN_INT = Int.MIN_VALUE.toBigDecimal()
         private val MAX_INT = Int.MAX_VALUE.toBigDecimal()
@@ -77,7 +77,10 @@ class SkNumber private constructor (val value: BigDecimal) : SkScalar(), Compara
     }
 }
 
-class SkNumberObject(override val value: SkNumber): SkScalarObject(NumberClass) {
+class SkNumberObject(override val value: SkNumber): SkScalarObject() {
+    override val klass: SkClass
+        get() = NumberClass
+
     override fun asBoolean(): SkBoolean {
         return value.asBoolean()
     }

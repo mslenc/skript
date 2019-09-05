@@ -223,11 +223,11 @@ fun Tokens.parsePostfixes(primary: Expression): Expression {
     var result = primary
 
     while (true) {
-        when (peek().type) {
+        result = when (peek().type) {
             PLUS_PLUS -> {
                 val tok = next()
                 if (result is LValue) {
-                    result = PrePostExpr(PrePostOp.POST_INCR, result)
+                    PrePostExpr(PrePostOp.POST_INCR, result)
                 } else {
                     syntaxError("Post-increment ++ can only be used on lvalues", tok.pos)
                 }
@@ -235,7 +235,7 @@ fun Tokens.parsePostfixes(primary: Expression): Expression {
             MINUS_MINUS -> {
                 val tok = next()
                 if (result is LValue) {
-                    result = PrePostExpr(PrePostOp.POST_DECR, result)
+                    PrePostExpr(PrePostOp.POST_DECR, result)
                 } else {
                     syntaxError("Post-decrement -- can only be used on lvalues", tok.pos)
                 }
@@ -244,7 +244,7 @@ fun Tokens.parsePostfixes(primary: Expression): Expression {
             DOT -> {
                 val callType = if (next().type == SAFE_DOT) MethodCallType.SAFE else MethodCallType.REGULAR
                 val ident = expect(IDENTIFIER)
-                result = if (peek().type == LPAREN) {
+                if (peek().type == LPAREN) {
                     MethodCall(result, ident.rawText, parseCallArgs(), callType)
                 } else {
                     FieldAccess(result, ident.rawText)
@@ -254,7 +254,7 @@ fun Tokens.parsePostfixes(primary: Expression): Expression {
                 next()
                 val index = parseExpression()
                 expect(RBRACK)
-                result = ArrayAccess(result, index)
+                ArrayAccess(result, index)
             }
             LPAREN -> {
                 FuncCall(result, parseCallArgs())
@@ -280,10 +280,6 @@ fun Tokens.parseCallArgs(): List<CallArg> {
                 next()
                 args += SpreadKwArg(parseExpression())
             }
-            RPAREN -> {
-                next()
-                return args
-            }
             else -> {
                 val arg = parseExpression()
                 if (arg is Variable && peek().type == ASSIGN) {
@@ -297,6 +293,11 @@ fun Tokens.parseCallArgs(): List<CallArg> {
                     args += PosArg(arg)
                 }
             }
+        }
+
+        if (peek().type == RPAREN) {
+            next()
+            return args
         }
     }
 }

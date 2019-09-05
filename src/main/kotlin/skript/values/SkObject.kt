@@ -5,8 +5,9 @@ import skript.illegalArg
 import skript.io.toSkript
 import skript.notSupported
 
-open class SkObject(val klass: SkClass) : SkValue() {
+abstract class SkObject() : SkValue() {
     internal var props: Props = EmptyProps
+    abstract val klass: SkClass
 
     override fun getKind(): SkValueKind {
         return SkValueKind.OBJECT

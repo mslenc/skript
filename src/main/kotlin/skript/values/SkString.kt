@@ -85,7 +85,10 @@ class SkString(val value: String) : SkScalar() {
     }
 }
 
-class SkStringObject(override val value: SkString) : SkScalarObject(StringClass) {
+class SkStringObject(override val value: SkString) : SkScalarObject() {
+    override val klass: SkClass
+        get() = StringClass
+
     override fun asBoolean(): SkBoolean {
         return value.asBoolean()
     }

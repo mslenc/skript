@@ -41,7 +41,7 @@ abstract class SkScalar : SkValue() {
     }
 }
 
-abstract class SkScalarObject(klass: SkClass) : SkObject(klass) {
+abstract class SkScalarObject() : SkObject() {
     abstract val value: SkScalar
 
     override suspend fun makeIterator(): SkValue {
