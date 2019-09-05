@@ -1,9 +1,9 @@
 package skript.values
 
-import skript.opcodes.InternalIterator
+import skript.opcodes.SkIterator
 
 // this type should only ever appear on the stack, used for implementing for-in loops
-class SkStringIterator(value: SkString) : SkObject(SkStringIteratorClass), InternalIterator {
+class SkStringIterator(value: SkString) : SkObject(SkStringIteratorClass), SkIterator {
     var index = -1
     val string = value.value
 

@@ -80,7 +80,7 @@ class ParamDecl(val paramName: String, val paramType: ParamType, val defaultValu
     lateinit var varInfo: LocalVarInfo
 }
 
-class DeclareFunction(val funcName: String, val params: List<ParamDecl>, val body: Statements) : Statement() {
+class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements) : Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitDeclareFunctionStmt(this)
 }
 

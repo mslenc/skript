@@ -2,6 +2,7 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.illegalArg
+import skript.io.toSkript
 import skript.notSupported
 
 open class SkObject(val klass: SkClass) : SkValue() {
@@ -116,6 +117,10 @@ open class SkObject(val klass: SkClass) : SkValue() {
 
     override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         notSupported("Can't call objects")
+    }
+
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+        return callMethod("rangeTo", listOf(end, endInclusive.toSkript()), emptyMap(), state)
     }
 
     override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {

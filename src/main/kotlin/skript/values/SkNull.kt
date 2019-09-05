@@ -1,15 +1,15 @@
 package skript.values
 
 import skript.exec.RuntimeState
-import skript.notSupported
+import skript.typeError
 
 object SkNull : SkValue() {
     override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        notSupported("Can't call null")
+        typeError("Can't call null")
     }
 
     override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        notSupported("Can't call methods on null")
+        typeError("Can't call methods on null")
     }
 
     override suspend fun findMember(key: SkValue): SkValue {
@@ -33,15 +33,19 @@ object SkNull : SkValue() {
     }
 
     override fun asObject(): SkObject {
-        notSupported("Can't convert null into an object")
+        typeError("Can't convert null into an object")
     }
 
     override suspend fun setMember(key: SkValue, value: SkValue) {
-        notSupported("Can't set members on null")
+        typeError("Can't set members on null")
     }
 
     override suspend fun setMember(key: String, value: SkValue) {
-        notSupported("Can't set members on null")
+        typeError("Can't set members on null")
+    }
+
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+        typeError("Can't make a range with null")
     }
 
     override fun getKind(): SkValueKind {

@@ -137,6 +137,10 @@ class SkList : SkObject {
             }
         }
     }
+
+    override suspend fun makeIterator(): SkValue {
+        return SkListIterator(this)
+    }
 }
 
 object ListClass : SkClass("List", ObjectClass) {

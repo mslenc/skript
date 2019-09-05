@@ -2,14 +2,17 @@ package skript
 
 import skript.lexer.Pos
 import skript.util.Stack
-import skript.values.SkValue
-import skript.values.SkValueKind
+import skript.values.*
 import java.math.BigDecimal
 import kotlin.math.max
 import kotlin.math.min
 
 fun syntaxError(message: String, pos: Pos): Nothing {
-    throw IllegalArgumentException(message) // TODO - make an exception
+    throw IllegalArgumentException(message) // TODO - make an exception and/or support exceptions; also show pos
+}
+
+fun typeError(message: String, pos: Pos? = null): Nothing {
+    throw IllegalStateException("Type error - $message") // TODO - make an exception and/or support exceptions; also show pos
 }
 
 fun notSupported(message: String = "Not supported"): Nothing {
@@ -53,6 +56,16 @@ fun Int.rangeParam(rangeLength: Int): Int {
     return when {
         this < 0 -> max(0, this + rangeLength)
         else -> min(rangeLength, this)
+    }
+}
+
+fun SkValue.toStrictNumberOrNull(): SkNumber? {
+    return when (this) {
+        is SkNumber -> return this
+        is SkNumberObject -> return this.value
+        is SkString -> this.asNumberOrNull()
+        is SkStringObject -> this.value.asNumberOrNull()
+        else -> return null
     }
 }
 

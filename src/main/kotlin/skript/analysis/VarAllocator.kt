@@ -30,7 +30,8 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
         for (stmt in stmts.parts) {
             when (stmt) {
                 is DeclareFunction -> {
-                    val name = stmt.funcName
+                    val name = stmt.funcName ?: throw IllegalStateException("A stand-alone function declaration must have a name") // this shouldn't have parsed...
+
                     if (varsHere.containsKey(name))
                         illegalArg("$name is already defined")
 

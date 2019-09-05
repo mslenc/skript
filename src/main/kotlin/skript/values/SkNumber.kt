@@ -1,10 +1,13 @@
 package skript.values
 
+import skript.exec.RuntimeState
 import skript.isInteger
+import skript.toStrictNumberOrNull
+import skript.typeError
 import java.math.BigDecimal
 import java.math.BigInteger
 
-class SkNumber private constructor (val value: BigDecimal) : SkScalar() {
+class SkNumber private constructor (val value: BigDecimal) : SkScalar(), Comparable<SkNumber> {
     override fun getKind(): SkValueKind {
         return SkValueKind.NUMBER
     }
@@ -38,6 +41,16 @@ class SkNumber private constructor (val value: BigDecimal) : SkScalar() {
 
     fun negate(): SkNumber {
         return SkNumber(value.negate())
+    }
+
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+        val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a NUMBER and a ${end.getKind()}")
+
+        return SkNumberRange(this, endNum, endInclusive)
+    }
+
+    override fun compareTo(other: SkNumber): Int {
+        return value.compareTo(other.value)
     }
 
     companion object {
@@ -79,7 +92,7 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject(NumberClass) 
 }
 
 
-// TODO: use the other implementations, like below
+// TODO: use the other implementations, like below?
 
 /*
 

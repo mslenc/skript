@@ -5,7 +5,10 @@ import skript.exec.FunctionDef
 import skript.exec.ParamDef
 import skript.opcodes.*
 import skript.opcodes.compare.*
-import skript.opcodes.equals.*
+import skript.opcodes.equals.BinaryEqualsOp
+import skript.opcodes.equals.BinaryNotEqualsOp
+import skript.opcodes.equals.BinaryStrictEqualsOp
+import skript.opcodes.equals.BinaryStrictNotEqualsOp
 import skript.opcodes.numeric.*
 import skript.syntaxError
 import skript.util.Stack
@@ -44,9 +47,11 @@ data class LoopInfo(
     }
 }
 
-class OpCodeGen : StatementVisitor {
+class OpCodeGen : StatementVisitor, ExprVisitor {
     val builders = Stack<FunctionDefBuilder>()
     val loops = Stack<LoopInfo>()
+    val builder: FunctionDefBuilder
+        get() = builders.top()
 
     fun visitModule(module: Module) {
         val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), module.props[Scope]!!.topScope().varsAllocated, 0)
@@ -78,10 +83,8 @@ class OpCodeGen : StatementVisitor {
         // if:
         // condition jmpIfFalse(end) trueBlock <end>
 
-        val builder = builders.top()
-
         val end = JumpTarget()
-        stmt.condition.accept(ExprOpCodeBuilder(builder))
+        stmt.condition.accept(this)
 
         if (stmt.ifFalse != null) {
             val falseBlock = JumpTarget()
@@ -99,16 +102,12 @@ class OpCodeGen : StatementVisitor {
     }
 
     override fun visitExprStmt(stmt: ExpressionStatement) {
-        val builder = builders.top()
-
-        stmt.expression.accept(ExprOpCodeBuilder(builder))
+        stmt.expression.accept(this)
         builder += Pop
     }
 
     override fun visitWhile(stmt: WhileStatement) {
         // jmp(check) <start> body <check> condition jmpIfTrue(start) <end>
-        val builder = builders.top()
-
         val check = JumpTarget()
         val start = JumpTarget()
         val end = JumpTarget()
@@ -119,18 +118,16 @@ class OpCodeGen : StatementVisitor {
             builder += start
             stmt.body.accept(this)
             builder += check
-            stmt.condition.accept(ExprOpCodeBuilder(builder))
+            stmt.condition.accept(this)
             builder += JumpIfTruthy(start)
             builder += end
         }
     }
 
     override fun visitLet(stmt: LetStatement) {
-        val builder = builders.top()
-
         for (decl in stmt.decls) {
             if (decl.initializer != null) {
-                decl.initializer.accept(ExprOpCodeBuilder(builder))
+                decl.initializer.accept(this)
             } else {
                 builder += PushLiteral(SkUndefined)
             }
@@ -148,19 +145,26 @@ class OpCodeGen : StatementVisitor {
     }
 
     override fun visitDeclareFunctionStmt(stmt: DeclareFunction) {
+        val funcDef = makeFuncDef(stmt)
+
+        builder += MakeFunction(funcDef)
+        builder += stmt.props[VarInfo]!!.storeOpCode
+    }
+
+    fun makeFuncDef(stmt: DeclareFunction): FunctionDef {
         val paramDefs = stmt.params.map {
             ParamDef(it.paramName, it.varInfo.indexInScope, it.paramType)
         }.toTypedArray()
 
         val funcScope = stmt.props[Scope] as FunctionScope
 
-        val funcBuilder = FunctionDefBuilder(stmt.funcName, paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
+        val funcBuilder = FunctionDefBuilder(stmt.funcName ?: "<anonFun>", paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
         builders.withTop(funcBuilder) {
             for (param in stmt.params) {
                 if (param.defaultValue != null) {
                     val skip = JumpTarget()
                     funcBuilder += JumpIfLocalDefined(param.varInfo.indexInScope, skip)
-                    param.defaultValue.accept(ExprOpCodeBuilder(funcBuilder))
+                    param.defaultValue.accept(this)
                     funcBuilder += SetLocal(param.varInfo.indexInScope)
                     funcBuilder += skip
                 }
@@ -169,21 +173,20 @@ class OpCodeGen : StatementVisitor {
             stmt.body.accept(this)
         }
 
-        val funcDef = funcBuilder.build()
-
-        val builder = builders.top()
-        builder += MakeFunction(funcDef)
-        builder += stmt.props[VarInfo]!!.storeOpCode
+        return funcBuilder.build()
     }
 
     override fun visitReturnStatement(stmt: ReturnStatement) {
-        builders.top() += Return
+        if (stmt.value != null) {
+            stmt.value.accept(this)
+        } else {
+            builder += PushLiteral(SkUndefined)
+        }
+        builder += Return
     }
 
     override fun visitDoWhile(stmt: DoWhileStatement) {
         // <start> body <check> condition jumpIfTrue(start) <end>
-
-        val builder = builders.top()
 
         val start = JumpTarget()
         val check = JumpTarget()
@@ -193,7 +196,7 @@ class OpCodeGen : StatementVisitor {
             builder += start
             stmt.body.accept(this)
             builder += check
-            stmt.condition.accept(ExprOpCodeBuilder(builder))
+            stmt.condition.accept(this)
             builder += JumpIfTruthy(start)
             builder += end
         }
@@ -201,8 +204,6 @@ class OpCodeGen : StatementVisitor {
 
     override fun visitForStatement(stmt: ForStatement) {
         // container makeIterator <loopStart> iteratorNext(end) store(value) [store(index)] body jump(loopStart) [ <breakTarget> pop ] <end>
-
-        val builder = builders.top()
 
         val loopStart = JumpTarget()
         val end = JumpTarget()
@@ -213,7 +214,7 @@ class OpCodeGen : StatementVisitor {
 
         val loopInfo = LoopInfo(null, continueTarget = loopStart, breakTarget = breakTarget)
         loops.withTop(loopInfo) {
-            stmt.container.accept(ExprOpCodeBuilder(builder))
+            stmt.container.accept(this)
             builder += MakeIterator
             builder += loopStart
             builder += IteratorNext(doKey, doValue, end)
@@ -248,7 +249,7 @@ class OpCodeGen : StatementVisitor {
 
         val target = loopInfo.getBreakTarget() ?: syntaxError("Can't break here", stmt.pos)
 
-        builders.top() += Jump(target)
+        builder += Jump(target)
     }
 
     override fun visitContinueStatement(stmt: ContinueStatement) {
@@ -259,11 +260,9 @@ class OpCodeGen : StatementVisitor {
 
         val target = loopInfo.getContinueTarget() ?: syntaxError("Can't continue here", stmt.pos)
 
-        builders.top() += Jump(target)
+        builder += Jump(target)
     }
-}
 
-class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
     override fun visitUnaryExpr(expr: UnaryExpression) {
         expr.inner.accept(this)
 
@@ -410,9 +409,9 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
 
     private fun generateRestOfBinaryOp(op: BinaryOp, right: Expression) {
         val simpleOp = when (op) {
-            BinaryOp.MINUS -> BinarySubtractOp
-            BinaryOp.PLUS -> BinaryAddOp
-            BinaryOp.TIMES -> BinaryMultiplyOp
+            BinaryOp.SUBTRACT -> BinarySubtractOp
+            BinaryOp.ADD -> BinaryAddOp
+            BinaryOp.MULTIPLY -> BinaryMultiplyOp
             BinaryOp.DIVIDE -> BinaryDivideOp
             BinaryOp.DIVIDE_INT -> BinaryDivideIntOp
             BinaryOp.REMAINDER -> BinaryRemainderOp
@@ -429,7 +428,10 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
             BinaryOp.GREATER_THAN -> BinaryGreaterThanOp
             BinaryOp.GREATER_OR_EQUAL -> BinaryGreaterOrEqualOp
 
-            BinaryOp.OR_OR -> {
+            BinaryOp.RANGE_TO -> MakeRangeEndInclusive
+            BinaryOp.RANGE_TO_EXCL -> MakeRangeEndExclusive
+
+            BinaryOp.OR -> {
                 val end = JumpTarget()
                 builder += JumpIfTopTruthyElseDrop(end)
                 right.accept(this)
@@ -437,10 +439,28 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
                 return
             }
 
-            BinaryOp.AND_AND -> {
+            BinaryOp.OR_OR -> {
+                val end = JumpTarget()
+                builder += JumpIfTopTruthyElseDropAlsoMakeBool(end)
+                right.accept(this)
+                builder += ConvertToBool
+                builder += end
+                return
+            }
+
+            BinaryOp.AND -> {
                 val end = JumpTarget()
                 builder += JumpIfTopFalsyElseDrop(end)
                 right.accept(this)
+                builder += end
+                return
+            }
+
+            BinaryOp.AND_AND -> {
+                val end = JumpTarget()
+                builder += JumpIfTopFalsyElseDropAlsoMakeBool(end)
+                right.accept(this)
+                builder += ConvertToBool
                 builder += end
                 return
             }
@@ -458,7 +478,19 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
         builder += simpleOp
     }
 
+    override fun visitCompareSequence(expr: CompareSequence) {
+        for (operand in expr.operands) {
+            operand.accept(this)
+        }
+        builder += CompareSeqOp(expr.ops.toTypedArray())
+    }
 
+    override fun visitCompareAllPairs(expr: CompareAllPairs) {
+        for (operand in expr.operands) {
+            operand.accept(this)
+        }
+        builder += CompareSeqOp(expr.ops.toTypedArray())
+    }
 
     override fun visitTernaryExpression(expr: TernaryExpression) {
         // cond jumpIfFalse(f) ifTrue jump(end) <f> ifFalse <end>
@@ -490,9 +522,19 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
     }
 
     override fun visitMethodCall(expr: MethodCall) {
-        expr.obj.accept(this)
-        doArgs(expr.args)
-        builder += CallMethod(expr.methodName)
+        if (expr.type == MethodCallType.SAFE) {
+            val skipTarget = JumpTarget()
+
+            expr.obj.accept(this)
+            builder += JumpForSafeMethodCall(skipTarget)
+            doArgs(expr.args)
+            builder += CallMethod(expr.methodName)
+            builder += skipTarget
+        } else {
+            expr.obj.accept(this)
+            doArgs(expr.args)
+            builder += CallMethod(expr.methodName)
+        }
     }
 
     override fun visitFunctionCall(expr: FuncCall) {
@@ -501,17 +543,17 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
         builder += CallFunction
     }
 
-    private fun doArgs(args: List<FuncParam>) {
+    private fun doArgs(args: List<CallArg>) {
         builder += BeginArgs
 
         for (arg in args) {
             arg.value.accept(this)
 
             builder += when (arg) {
-                is PosParam -> AddPosArg
-                is SpreadPosParam -> SpreadPosArgs
-                is KwParam -> AddKwArg(arg.name)
-                is SpreadKwParam -> SpreadKwArgs
+                is PosArg -> AddPosArg
+                is SpreadPosArg -> SpreadPosArgs
+                is KwArg -> AddKwArg(arg.name)
+                is SpreadKwArg -> SpreadKwArgs
             }
         }
     }
@@ -558,5 +600,28 @@ class ExprOpCodeBuilder(val builder: FunctionDefBuilder) : ExprVisitor {
                 }
             }
         }
+    }
+
+    override fun visitObjectIs(expr: ObjectIs) {
+        expr.obj.accept(this)
+        expr.klass.accept(this)
+        builder += if (expr.positive) ObjectIsOp else ObjectIsntOp
+    }
+
+    override fun visitValueIn(expr: ValueIn) {
+        expr.value.accept(this)
+        expr.container.accept(this)
+        builder += if (expr.positive) ValueInOp else ValueNotInOp
+    }
+
+    override fun visitRange(expr: Range) {
+        expr.start.accept(this)
+        expr.end.accept(this)
+        builder += if (expr.endInclusive) MakeRangeEndInclusive else MakeRangeEndExclusive
+    }
+
+    override fun visitFunctionLiteral(expr: FunctionLiteral) {
+        val funcDef = makeFuncDef(expr.funDecl)
+        builder += MakeFunction(funcDef)
     }
 }

@@ -1,15 +1,15 @@
 package skript.values
 
 import skript.exec.RuntimeState
-import skript.notSupported
+import skript.typeError
 
 object SkUndefined : SkValue() {
     override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        notSupported("Can't call undefined")
+        typeError("Can't call undefined")
     }
 
     override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        notSupported("Can't call $methodName on undefined")
+        typeError("Can't call $methodName on undefined")
     }
 
     override suspend fun hasOwnMember(key: SkValue): Boolean {
@@ -33,15 +33,15 @@ object SkUndefined : SkValue() {
     }
 
     override fun asObject(): SkObject {
-        notSupported("Can't convert undefined into an object")
+        typeError("Can't convert undefined into an object")
     }
 
     override suspend fun setMember(key: SkValue, value: SkValue) {
-        notSupported("Can't set members on undefined")
+        typeError("Can't set members on undefined")
     }
 
     override suspend fun setMember(key: String, value: SkValue) {
-        notSupported("Can't set members on undefined")
+        typeError("Can't set members on undefined")
     }
 
     override fun getKind(): SkValueKind {
@@ -53,10 +53,14 @@ object SkUndefined : SkValue() {
     }
 
     override fun asNumber(): SkNumber {
-        notSupported("Can't convert undefined into a number")
+        typeError("Can't convert undefined into a number")
     }
 
     override fun asString(): SkString {
         return SkString.UNDEFINED
+    }
+
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+        typeError("Can't make a range with undefined")
     }
 }

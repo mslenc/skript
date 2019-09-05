@@ -47,4 +47,8 @@ class SkMap : SkObject {
             defaultSetMember(key, value)
         }
     }
+
+    override suspend fun makeIterator(): SkValue {
+        return SkMapIterator(this)
+    }
 }

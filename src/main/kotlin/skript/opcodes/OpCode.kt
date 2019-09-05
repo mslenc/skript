@@ -26,3 +26,23 @@ abstract class SuspendOpCode : OpCode()  {
         throw IllegalStateException("execute() should never be called on SuspendOpCodes")
     }
 }
+
+sealed class OpCodeResult {
+    abstract fun applyTo(state: RuntimeState)
+}
+
+class JumpTarget : OpCodeResult() {
+    var value: Int = -1
+
+    override fun applyTo(state: RuntimeState) {
+        state.topFrame.ip = value
+    }
+}
+
+class ThrowException(val ex: Throwable) : OpCodeResult() {
+    override fun applyTo(state: RuntimeState) {
+        // TODO
+        throw ex
+    }
+}
+

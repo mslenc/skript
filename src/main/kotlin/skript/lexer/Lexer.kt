@@ -9,7 +9,7 @@ val notNewLine: (Char)->Boolean = { it != '\r' && it != '\n' }
 
 private fun ArrayList<Token>.add(type: TokenType, rawText: String, pos: Pos) {
     // merging !in and !is into one token
-    if (this.lastOrNull()?.type == NOT) {
+    if (this.lastOrNull()?.type == EXCL) {
         if (type == IN || type == IS) {
             val prevIndex = this.size - 1
             val prev = this.last()
@@ -57,10 +57,19 @@ fun CharStream.lex(withEof: Boolean = true): List<Token> {
             ']' -> { tokens.add(RBRACK, "]", pos) }
 
             '@' -> { tokens.add(AT, "@", pos) }
-            '.' -> { tokens.add(DOT, ".", pos) }
             ',' -> { tokens.add(COMMA, ",", pos) }
             ':' -> { tokens.add(COLON, ":", pos) }
             ';' -> { tokens.add(SEMI, ";", pos) }
+
+            '.' -> {
+                when {
+                    consume('.') -> when {
+                        consume('<') -> tokens.add(DOT_DOT_LESS, "..<", pos)
+                        else -> tokens.add(DOT_DOT, "..", pos)
+                    }
+                    else -> tokens.add(DOT, ".", pos)
+                }
+            }
 
             '!' -> {
                 when {
@@ -68,16 +77,18 @@ fun CharStream.lex(withEof: Boolean = true): List<Token> {
                         consume('=') -> tokens.add(NOT_STRICT_EQUAL, "!==", pos)
                         else -> tokens.add(NOT_EQUAL, "!=", pos)
                     }
-                    else -> tokens.add(NOT, "!", pos)
+                    else -> tokens.add(EXCL, "!", pos)
                 }
             }
 
             '+' -> when {
+                consume('+') -> tokens.add(PLUS_PLUS, "++", pos)
                 consume('=') -> tokens.add(PLUS_ASSIGN, "+=", pos)
                 else -> tokens.add(PLUS, "+", pos)
             }
 
             '-' -> when {
+                consume('-') -> tokens.add(MINUS_MINUS, "--", pos)
                 consume('=') -> tokens.add(MINUS_ASSIGN, "-=", pos)
                 consume('>') -> tokens.add(ARROW, "->", pos)
                 else -> tokens.add(MINUS, "-", pos)
@@ -147,6 +158,7 @@ fun CharStream.lex(withEof: Boolean = true): List<Token> {
 
             '?' -> when {
                 consume(':') -> tokens.add(ELVIS, "?:", pos)
+                consume('.') -> tokens.add(SAFE_DOT, "?.", pos)
                 else -> tokens.add(QUESTION, "?", pos)
             }
 
@@ -230,13 +242,11 @@ private fun CharStream.parseNumber(sb: StringBuilder, firstChar: Char, tokens: A
     consumeInto(sb.clear().append(firstChar), isDigit)
 
     if (peek() == '.') {
-        val dotPos = getPos()
-
         sb.append(nextChar())
         if (consumeInto(sb, isDigit) < 1) {
             sb.setLength(sb.length - 1)
             tokens.add(NUMBER, sb.toString(), pos)
-            tokens.add(DOT, ".", dotPos)
+            putBack('.')
             return
         }
     }

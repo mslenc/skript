@@ -1,9 +1,7 @@
 package skript.values
 
-import skript.atMostChars
+import skript.*
 import skript.exec.RuntimeState
-import skript.isString
-import skript.rangeParam
 import skript.util.ArgsExtractor
 import skript.util.expectBoolean
 import skript.util.expectInt
@@ -54,6 +52,12 @@ class SkString(val value: String) : SkScalar() {
         return asNumberOrNull() ?: throw IllegalStateException("Couldn't parse string (${value.atMostChars(20)}) as a number")
     }
 
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+        val endStr = end.asString()
+
+        return SkStringRange(this.value, endStr.value, endInclusive)
+    }
+
     fun asNumberOrNull(): SkNumber? {
         value.toIntOrNull()?.let { return SkNumber.valueOf(it) }
         value.toLongOrNull()?.let { return SkNumber.valueOf(it) }
@@ -65,6 +69,10 @@ class SkString(val value: String) : SkScalar() {
 
     override fun asString(): SkString {
         return this
+    }
+
+    override suspend fun makeIterator(): SkValue {
+        return SkStringIterator(this)
     }
 
     companion object {

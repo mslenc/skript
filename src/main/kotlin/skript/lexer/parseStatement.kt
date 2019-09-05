@@ -32,7 +32,7 @@ fun Tokens.parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowV
         FUNCTION -> {
             if (!allowFunctions)
                 syntaxError("Function declarations not allowed here", peek().pos)
-            parseFunctionDecl()
+            parseFunctionDecl(requireName = false)
         }
 
         IF -> parseIfStatement()
@@ -130,16 +130,21 @@ internal fun Tokens.parseParamDecls(): List<ParamDecl> {
     return params
 }
 
-internal fun Tokens.parseFunctionDecl(): DeclareFunction {
+internal fun Tokens.parseFunctionDecl(requireName: Boolean): DeclareFunction {
     next().also { assert(it.type == FUNCTION) }
 
-    val name = expect(IDENTIFIER)
+    val name = when {
+        requireName -> expect(IDENTIFIER)
+        peek().type == IDENTIFIER -> next()
+        else -> null
+    }
+
     val params = parseParamDecls()
 
     expect(LCURLY)
     val body = parseStatements(RCURLY, allowFunctions = true, allowClasses = false, allowVars = true)
 
-    return DeclareFunction(name.rawText, params, Statements(body))
+    return DeclareFunction(name?.rawText, params, Statements(body))
 }
 
 internal fun Tokens.parseBreakStmt(): BreakStatement {

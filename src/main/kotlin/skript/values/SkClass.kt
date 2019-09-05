@@ -1,5 +1,7 @@
 package skript.values
 
+import skript.exec.RuntimeState
+
 abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject(ClassClass) {
     abstract suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue
 
@@ -12,6 +14,10 @@ abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject(Cl
 
     final override fun asBoolean(): SkBoolean {
         return SkBoolean.TRUE
+    }
+
+    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+        return construct(posArgs, kwArgs)
     }
 
     fun defineInstanceMethod(method: SkMethod, name: String = method.name) {
@@ -29,6 +35,17 @@ abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject(Cl
 
     fun findInstanceMethod(key: String): SkMethod? {
         return instanceMethods[key] ?: superClass?.findInstanceMethod(key)
+    }
+
+    fun isInstance(value: SkValue): Boolean {
+        if (value !is SkObject)
+            return false
+
+        var klass = value.klass
+        while (klass != this)
+            klass = klass.superClass ?: return false
+
+        return true
     }
 }
 

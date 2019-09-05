@@ -35,6 +35,36 @@ interface ExprVisitor {
 
         it.value.accept(this)
     }}
+
+    fun visitCompareAllPairs(expr: CompareAllPairs) {
+        for (operand in expr.operands) {
+            operand.accept(this)
+        }
+    }
+
+    fun visitCompareSequence(expr: CompareSequence) {
+        for (operand in expr.operands) {
+            operand.accept(this)
+        }
+    }
+
+    fun visitObjectIs(expr: ObjectIs) {
+        expr.obj.accept(this)
+        expr.klass.accept(this)
+    }
+
+    fun visitValueIn(expr: ValueIn) {
+        expr.value.accept(this)
+        expr.container.accept(this)
+    }
+
+    fun visitRange(expr: Range) {
+        expr.start.accept(this)
+        expr.end.accept(this)
+    }
+
+    fun visitFunctionLiteral(expr: FunctionLiteral) {
+    }
 }
 
 sealed class Expression {
@@ -70,9 +100,9 @@ class PrePostExpr(val op: PrePostOp, val inner: LValue): Expression() {
 }
 
 enum class BinaryOp {
-    MINUS,
-    PLUS,
-    TIMES,
+    SUBTRACT,
+    ADD,
+    MULTIPLY,
     DIVIDE,
     DIVIDE_INT,
     REMAINDER,
@@ -88,16 +118,33 @@ enum class BinaryOp {
     GREATER_THAN,
     GREATER_OR_EQUAL,
 
+    OR,
+    AND,
     OR_OR,
     AND_AND,
 
     ELVIS,
-    STARSHIP
+    STARSHIP,
+
+    RANGE_TO,
+    RANGE_TO_EXCL
 }
 
 class BinaryExpression(val left: Expression, val op: BinaryOp, val right: Expression): Expression() {
     override fun accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(this)
+    }
+}
+
+class CompareSequence(val operands: List<Expression>, val ops: List<BinaryOp>): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitCompareSequence(this)
+    }
+}
+
+class CompareAllPairs(val operands: List<Expression>, val ops: List<BinaryOp>): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitCompareAllPairs(this)
     }
 }
 
@@ -158,20 +205,51 @@ class ArrayAccess(val arr: Expression, val index: Expression): LValue() {
     }
 }
 
-sealed class FuncParam(val value: Expression)
-class PosParam(value: Expression): FuncParam(value)
-class KwParam(val name: String, value: Expression): FuncParam(value)
-class SpreadPosParam(value: Expression): FuncParam(value)
-class SpreadKwParam(value: Expression): FuncParam(value)
+sealed class CallArg(val value: Expression)
+class PosArg(value: Expression): CallArg(value)
+class KwArg(val name: String, value: Expression): CallArg(value)
+class SpreadPosArg(value: Expression): CallArg(value)
+class SpreadKwArg(value: Expression): CallArg(value)
 
-class MethodCall(val obj: Expression, val methodName: String, val args: List<FuncParam>): Expression() {
+enum class MethodCallType {
+    REGULAR, // obj.ident(...)
+    SAFE,    // obj?.ident(...)
+    INFIX,   // obj ident arg
+    OPERATOR // obj += arg
+}
+
+class MethodCall(val obj: Expression, val methodName: String, val args: List<CallArg>, val type: MethodCallType): Expression() {
     override fun accept(visitor: ExprVisitor) {
         visitor.visitMethodCall(this)
     }
 }
 
-class FuncCall(val func: Expression, val args: List<FuncParam>): Expression() {
+class FuncCall(val func: Expression, val args: List<CallArg>): Expression() {
     override fun accept(visitor: ExprVisitor) {
         visitor.visitFunctionCall(this)
+    }
+}
+
+class ObjectIs(val obj: Expression, val klass: Expression, val positive: Boolean): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitObjectIs(this)
+    }
+}
+
+class ValueIn(val value: Expression, val container: Expression, val positive: Boolean): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitValueIn(this)
+    }
+}
+
+class Range(val start: Expression, val end: Expression, val endInclusive: Boolean): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitRange(this);
+    }
+}
+
+class FunctionLiteral(val funDecl: DeclareFunction): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitFunctionLiteral(this)
     }
 }

@@ -43,4 +43,12 @@ abstract class SkScalar : SkValue() {
 
 abstract class SkScalarObject(klass: SkClass) : SkObject(klass) {
     abstract val value: SkScalar
+
+    override suspend fun makeIterator(): SkValue {
+        return value.makeIterator()
+    }
+
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+        return value.makeRange(end, endInclusive, state)
+    }
 }

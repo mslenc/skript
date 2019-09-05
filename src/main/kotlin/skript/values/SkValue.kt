@@ -40,4 +40,10 @@ abstract class SkValue {
     abstract fun asNumber(): SkNumber
     abstract fun asString(): SkString
     abstract fun asObject(): SkObject
+
+    open suspend fun makeIterator(): SkValue {
+        return SkUndefined
+    }
+
+    abstract suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue
 }

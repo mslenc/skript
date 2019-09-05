@@ -35,9 +35,12 @@ class LexerTest {
             a != b !== C
             a < b <= c <=> d >= e > f
             @here { a -> a - 1 } ?: nooo???
+            1..5 true..<false
+            ++a--
+            a?b?.c:e
         """.trimIndent()
 
-        val tokens = StringCharStream(source, filename).lex()
+        val tokens = CharStream(source, filename).lex()
 
         val expect = listOf(
             Token(IDENTIFIER,         "import",         Pos( 1,  1, filename)),
@@ -165,7 +168,7 @@ class LexerTest {
             Token(AND,                "&",              Pos(19, 46, filename)),
             Token(IDENTIFIER,         "foo",            Pos(19, 48, filename)),
 
-            Token(NOT,                "!",              Pos(20,  1, filename)),
+            Token(EXCL,               "!",              Pos(20,  1, filename)),
             Token(IDENTIFIER,         "a",              Pos(20,  2, filename)),
             Token(OR_ASSIGN,          "|=",             Pos(20,  4, filename)),
             Token(AND_ASSIGN,         "&=",             Pos(20,  7, filename)),
@@ -210,7 +213,28 @@ class LexerTest {
             Token(QUESTION,           "?",              Pos(24, 29, filename)),
             Token(QUESTION,           "?",              Pos(24, 30, filename)),
             Token(QUESTION,           "?",              Pos(24, 31, filename)),
-            Token(EOF,                "",               Pos(24, 32, filename))
+
+            Token(NUMBER,             "1",              Pos(25, 1, filename)),
+            Token(DOT_DOT,            "..",             Pos(25, 2, filename)),
+            Token(NUMBER,             "5",              Pos(25, 4, filename)),
+            Token(TRUE,               "true",           Pos(25, 6, filename)),
+            Token(DOT_DOT_LESS,       "..<",            Pos(25, 10, filename)),
+            Token(FALSE,              "false",          Pos(25, 13, filename)),
+
+            Token(PLUS_PLUS,          "++",             Pos(26, 1, filename)),
+            Token(IDENTIFIER,         "a",              Pos(26, 3, filename)),
+            Token(MINUS_MINUS,        "--",             Pos(26, 4, filename)),
+
+            // a?b?.c:e
+            Token(IDENTIFIER,         "a",              Pos(27, 1, filename)),
+            Token(QUESTION,           "?",              Pos(27, 2, filename)),
+            Token(IDENTIFIER,         "b",              Pos(27, 3, filename)),
+            Token(SAFE_DOT,           "?.",             Pos(27, 4, filename)),
+            Token(IDENTIFIER,         "c",              Pos(27, 6, filename)),
+            Token(COLON,              ":",              Pos(27, 7, filename)),
+            Token(IDENTIFIER,         "e",              Pos(27, 8, filename)),
+
+            Token(EOF,                "",               Pos(27, 9, filename))
         )
 
         for (i in 0 until min(tokens.size, expect.size))

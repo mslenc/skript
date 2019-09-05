@@ -1,9 +1,9 @@
 package skript.values
 
-import skript.opcodes.InternalIterator
+import skript.opcodes.SkIterator
 
 // this type should only ever appear on the stack, used for implementing for-in loops
-class SkListIterator(val list: SkList) : SkObject(SkListIteratorClass), InternalIterator {
+class SkListIterator(val list: SkList) : SkObject(SkListIteratorClass), SkIterator {
     var pos = -1
     val len = list.getLength() // we store the length, so that if the array grows or whatever, we don't loop forever; also,
                                     // to be consistent with map iteration (which would explode, if the map were modified while

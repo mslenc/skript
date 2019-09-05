@@ -13,7 +13,7 @@ class VarAllocatorTest {
             DeclareFunction("makeInc", emptyList(), Statements(listOf<Statement>(
                 LetStatement(listOf(VarDecl("c", Literal(SkNumber.valueOf(0)), Pos(1, 1, "testBasics.sk")))),
                 DeclareFunction("result", emptyList(), Statements(listOf(
-                    ExpressionStatement(AssignExpression(Variable("c"), BinaryOp.PLUS, Literal(SkNumber.ONE))),
+                    ExpressionStatement(AssignExpression(Variable("c"), BinaryOp.ADD, Literal(SkNumber.ONE))),
                     ReturnStatement(Variable("c"))
                 ))),
                 ReturnStatement(Variable("result"))

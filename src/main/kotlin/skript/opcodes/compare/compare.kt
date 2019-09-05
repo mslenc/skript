@@ -2,6 +2,7 @@ package skript.opcodes.compare
 
 import skript.opcodes.equals.RefPair
 import skript.opcodes.equals.aboutEqual
+import skript.toStrictNumberOrNull
 import skript.values.*
 import kotlin.math.min
 
@@ -36,18 +37,10 @@ fun compare(aObj: SkValue, bObj: SkValue): Int? {
     val bKind = b.getKind()
 
     if (aKind == SkValueKind.NUMBER || bKind == SkValueKind.NUMBER) {
-        val aNum = when(aKind) {
-            SkValueKind.NUMBER -> a.asNumber()
-            SkValueKind.STRING -> a.asString().asNumberOrNull() ?: return null
-            else -> return null
-        }
-        val bNum = when(bKind) {
-            SkValueKind.NUMBER -> b.asNumber()
-            SkValueKind.STRING -> b.asString().asNumberOrNull() ?: return null
-            else -> return null
-        }
+        val aNum = a.toStrictNumberOrNull() ?: return null
+        val bNum = b.toStrictNumberOrNull() ?: return null
 
-        return aNum.value.compareTo(bNum.value)
+        return aNum.compareTo(bNum)
     }
 
     if (aKind != bKind)

@@ -21,8 +21,16 @@ object UnaryMinus : FastOpCode() {
 
 object UnaryNegate : FastOpCode() {
     override fun execute(state: RuntimeState) {
-        state.topFrame.apply {
-            stack.push(SkBoolean.valueOf(!stack.pop().asBoolean().value))
+        state.topFrame.stack.apply {
+            push(SkBoolean.valueOf(!pop().asBoolean().value))
+        }
+    }
+}
+
+object ConvertToBool : FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.stack.apply {
+            push(pop().asBoolean())
         }
     }
 }

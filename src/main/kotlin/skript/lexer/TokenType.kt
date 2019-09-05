@@ -13,16 +13,18 @@ enum class TokenType {
     LBRACK, RBRACK,                      // [ ]
     LCURLY, RCURLY,                      // { }
     DOT, COMMA, COLON, SEMI,             // . , : ;
-    NOT, IN, NOT_IN, IS, NOT_IS,         // ! in !in is !is
+    EXCL, IN, NOT_IN, IS, NOT_IS,         // ! in !in is !is
     PLUS, MINUS, STAR, SLASH, PERCENT,   // + - * / %
+    PLUS_PLUS, MINUS_MINUS,              // ++ --
     STAR_STAR, SLASH_SLASH,              // ** //
     ASSIGN, EQUALS, STRICT_EQUALS,       // = == ===
     NOT_EQUAL, NOT_STRICT_EQUAL,         // != !==
     LESS_THAN, LESS_OR_EQUAL,            // < <=
     GREATER_THAN, GREATER_OR_EQUAL,      // > >=
-    QUESTION, ELVIS,                     // ? ?:
+    QUESTION, ELVIS, SAFE_DOT,           // ? ?: ?.
     STARSHIP, AT, ARROW,                 // <=> @ ->
     OR, AND, OR_OR, AND_AND,             // | & || &&
+    DOT_DOT, DOT_DOT_LESS,               // .. ..<
 
     PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, SLASH_ASSIGN, PERCENT_ASSIGN, // += -= *= /= %=
     STAR_STAR_ASSIGN, SLASH_SLASH_ASSIGN,                                 // **= //=

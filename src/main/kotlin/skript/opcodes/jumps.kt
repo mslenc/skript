@@ -1,12 +1,9 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
+import skript.values.SkBoolean
 import skript.values.SkNull
 import skript.values.SkUndefined
-
-class JumpTarget {
-    var value: Int = -1
-}
 
 class Jump(val target: JumpTarget) : FastOpCode() {
     override fun execute(state: RuntimeState) {
@@ -60,10 +57,22 @@ class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
     }
 }
 
+class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.apply {
+            val obj = stack.top()
+
+            when (obj) {
+                SkUndefined -> ip = target.value
+                SkNull -> { stack.pop(); stack.push(SkUndefined); ip = target.value }
+            }
+        }
+    }
+}
+
 class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-
             if (stack.top().asBoolean().value) {
                 ip = target.value
             } else {
@@ -73,13 +82,36 @@ class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
     }
 }
 
+class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.apply {
+            val value = stack.pop()
+            if (value.asBoolean().value) {
+                stack.push(SkBoolean.TRUE)
+                ip = target.value
+            }
+        }
+    }
+}
+
 class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-
             if (stack.top().asBoolean().value) {
                 stack.pop()
             } else {
+                ip = target.value
+            }
+        }
+    }
+}
+
+class JumpIfTopFalsyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.apply {
+            val value = stack.pop()
+            if (!value.asBoolean().value) {
+                stack.push(SkBoolean.FALSE)
                 ip = target.value
             }
         }

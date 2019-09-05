@@ -1,14 +1,9 @@
 package skript.opcodes
 
-import skript.exec.Frame
-import skript.exec.FunctionDef
 import skript.exec.RuntimeState
 import skript.notSupported
 import skript.util.ArgsBuilder
-import skript.values.SkFunction
-import skript.values.SkList
-import skript.values.SkMap
-import skript.values.SkScriptFunction
+import skript.values.*
 
 /*
 To call a method:
@@ -112,25 +107,6 @@ object Return : FastOpCode() {
         state.topFrame.apply {
             result = stack.pop()
             ip = ops.size
-        }
-    }
-}
-
-class MakeFunction(val def: FunctionDef) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
-        state.topFrame.apply {
-            val closure: Array<Frame> = when (def.framesCaptured) {
-                0 -> Frame.EMPTY_ARRAY
-                1 -> arrayOf(this)
-                else -> Array(def.framesCaptured) {
-                    when (it) {
-                        0 -> this
-                        else -> this.closure[it - 1]
-                    }
-                }
-            }
-
-            stack.push(SkScriptFunction(def, closure))
         }
     }
 }

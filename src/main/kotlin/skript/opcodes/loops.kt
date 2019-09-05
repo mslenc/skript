@@ -1,25 +1,27 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
+import skript.lexer.Pos
+import skript.typeError
 import skript.values.*
 
-interface InternalIterator {
+interface SkIterator {
     fun moveToNext(): Boolean
     fun getCurrentKey(): SkValue
     fun getCurrentValue(): SkValue
 }
 
-object MakeIterator: FastOpCode() {
-    override fun execute(state: RuntimeState) {
+object MakeIterator: SuspendOpCode() {
+    override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.stack.apply {
             val container = pop()
+            val iterator = container.makeIterator()
 
-            push(when (container) {
-                is SkList -> SkListIterator(container)
-                is SkMap -> SkMapIterator(container)
-                is SkString -> SkStringIterator(container)
-                else -> SkStringIterator(SkString.EMPTY)
-            })
+            if (iterator is SkIterator) {
+                push(iterator)
+            } else {
+                typeError("Can't iterate over " + container.asString().value, Pos(0, 0, "TODO"))
+            }
         }
     }
 }
@@ -27,7 +29,7 @@ object MakeIterator: FastOpCode() {
 class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTarget) : FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            val iterator = stack.top() as InternalIterator
+            val iterator = stack.top() as SkIterator
 
             if (iterator.moveToNext()) {
                 if (pushKey)
@@ -38,6 +40,26 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
                 stack.pop()
                 ip = end.value
             }
+        }
+    }
+}
+
+object MakeRangeEndInclusive : SuspendOpCode() {
+    override suspend fun executeSuspend(state: RuntimeState) {
+        state.topFrame.stack.apply {
+            val to = pop()
+            val from = pop()
+            push(from.makeRange(to, true, state))
+        }
+    }
+}
+
+object MakeRangeEndExclusive : SuspendOpCode() {
+    override suspend fun executeSuspend(state: RuntimeState) {
+        state.topFrame.stack.apply {
+            val to = pop()
+            val from = pop()
+            push(from.makeRange(to, false, state))
         }
     }
 }
