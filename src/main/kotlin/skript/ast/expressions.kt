@@ -63,8 +63,7 @@ interface ExprVisitor {
         expr.end.accept(this)
     }
 
-    fun visitFunctionLiteral(expr: FunctionLiteral) {
-    }
+    fun visitFunctionLiteral(expr: FunctionLiteral)
 }
 
 sealed class Expression {
@@ -244,7 +243,7 @@ class ValueIn(val value: Expression, val container: Expression, val positive: Bo
 
 class Range(val start: Expression, val end: Expression, val endInclusive: Boolean): Expression() {
     override fun accept(visitor: ExprVisitor) {
-        visitor.visitRange(this);
+        visitor.visitRange(this)
     }
 }
 

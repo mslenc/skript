@@ -2,7 +2,6 @@ package skript.analysis
 
 import skript.ast.Module
 import skript.opcodes.*
-import skript.util.AstProps
 import java.lang.UnsupportedOperationException
 
 enum class VarLocation {
@@ -15,8 +14,6 @@ enum class VarLocation {
 sealed class VarInfo(val name: String, val location: VarLocation) {
     abstract val loadOpCode: OpCode
     abstract val storeOpCode: OpCode
-
-    companion object : AstProps.Key<VarInfo>
 }
 
 class GlobalVarInfo(name: String) : VarInfo(name, VarLocation.GLOBAL) {
@@ -44,8 +41,6 @@ abstract class Scope {
     abstract val parent: Scope
 
     open fun getOwnVar(name: String): VarInfo? = null
-
-    companion object : AstProps.Key<Scope>
 }
 
 abstract class TopLevelScope() : Scope() {

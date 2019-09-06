@@ -22,8 +22,9 @@ fun Tokens.parseAssignment(): Expression {
 
     val binaryOp = when {
         nextTok.type == ASSIGN -> null
-        else -> nextTok.type.toAssignOp()?.also { next() } ?: return left
+        else -> nextTok.type.toAssignOp() ?: return left
     }
+    next()
 
     val value = parseAssignment()
 
@@ -268,10 +269,13 @@ fun Tokens.parseCallArgs(): List<CallArg> {
     val args = ArrayList<CallArg>()
     val namesSeen = HashSet<String>()
 
+    expect(LPAREN)
     while (true) {
-        expect(if (args.isEmpty()) LPAREN else COMMA)
-
         when (peek().type) {
+            RPAREN -> {
+                next()
+                return args
+            }
             STAR -> {
                 next()
                 args += SpreadPosArg(parseExpression())
@@ -295,9 +299,8 @@ fun Tokens.parseCallArgs(): List<CallArg> {
             }
         }
 
-        if (peek().type == RPAREN) {
-            next()
-            return args
+        if (peek().type != RPAREN) {
+            expect(COMMA)
         }
     }
 }
@@ -339,7 +342,7 @@ fun Tokens.parsePrimary(): Expression {
         }
 
         else -> {
-            syntaxError("Unexpected token", tok.pos)
+            syntaxError("Unexpected token ${tok.type}", tok.pos)
         }
     }
 }

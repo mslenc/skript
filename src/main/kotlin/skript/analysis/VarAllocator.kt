@@ -12,7 +12,7 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
 
     fun visitModule(module: Module) {
         val moduleScope = ModuleScope(module, globalScope)
-        module.props[Scope] = moduleScope
+        module.moduleScope = moduleScope
 
         scopeStack.push(moduleScope)
         try {
@@ -37,7 +37,7 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
 
                     top.allocate(name).also {
                         varsHere[name] = it
-                        stmt.props[VarInfo] = it
+                        stmt.hoistedVarInfo = it
                     }
                 }
 
@@ -63,10 +63,14 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
     }
 
     override fun visitDeclareFunctionStmt(stmt: DeclareFunction) {
+        visitDeclareFunction(stmt, true)
+    }
+
+    fun visitDeclareFunction(stmt: DeclareFunction, isStatement: Boolean) {
         val parent = scopeStack.top()
 
         val funcScope = FunctionScope(parent)
-        stmt.props[Scope] = funcScope
+        stmt.innerFunScope = funcScope
 
         scopeStack.withTop(funcScope) {
             val varsHere = HashMap<String, VarInfo>()
@@ -83,12 +87,18 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
             }
         }
 
-        check(stmt.props[VarInfo] != null)
+        if (isStatement)
+            check(stmt.isHoistedVarInfoDefined())
+    }
+
+    override fun visitFunctionLiteral(expr: FunctionLiteral) {
+        visitDeclareFunction(expr.funDecl, false)
     }
 
     override fun visitLet(stmt: LetStatement) {
         for (decl in stmt.decls) {
-            check(decl.isVarInfoThere())
+            check(decl.isVarInfoDefined())
+            decl.initializer?.accept(this)
         }
     }
 
@@ -183,4 +193,6 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
             funcScope.closureDepthNeeded = max(funcScope.closureDepthNeeded, ++minDepth)
         }
     }
+
+
 }

@@ -1,7 +1,6 @@
 package skript.exec
 
 import skript.opcodes.OpCode
-import skript.util.AstProps
 
 enum class ParamType {
     NORMAL,
@@ -15,8 +14,6 @@ class FunctionDef(val name: String, val paramDefs: Array<ParamDef>, val ops: Arr
     init {
         assert(paramsWellBehaved(paramDefs, localsSize) == null) { paramsWellBehaved(paramDefs, localsSize)!! }
     }
-
-    companion object : AstProps.Key<FunctionDef>
 }
 
 fun paramsWellBehaved(paramDefs: Array<ParamDef>, localsSize: Int): String? {

@@ -1,10 +1,10 @@
 package skript.ast
 
+import skript.analysis.FunctionScope
 import skript.analysis.LocalVarInfo
 import skript.analysis.VarInfo
 import skript.exec.ParamType
 import skript.lexer.Pos
-import skript.util.AstProps
 
 interface StatementVisitor {
     fun visitBlock(stmts: Statements)
@@ -21,8 +21,6 @@ interface StatementVisitor {
 }
 
 abstract class Statement {
-    val props = AstProps()
-
     abstract fun accept(visitor: StatementVisitor)
 }
 
@@ -67,7 +65,7 @@ class ForStatement(val decls: List<VarDecl>, val container: Expression, val body
 class VarDecl(val varName: String, val initializer: Expression?, val pos: Pos) {
     lateinit var varInfo: VarInfo
 
-    internal fun isVarInfoThere(): Boolean {
+    internal fun isVarInfoDefined(): Boolean {
         return ::varInfo.isInitialized
     }
 }
@@ -81,7 +79,13 @@ class ParamDecl(val paramName: String, val paramType: ParamType, val defaultValu
 }
 
 class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements) : Statement() {
+    lateinit var hoistedVarInfo: VarInfo
+    lateinit var innerFunScope: FunctionScope
     override fun accept(visitor: StatementVisitor) = visitor.visitDeclareFunctionStmt(this)
+
+    fun isHoistedVarInfoDefined(): Boolean {
+        return ::hoistedVarInfo.isInitialized
+    }
 }
 
 class ReturnStatement(val value: Expression?) : Statement() {

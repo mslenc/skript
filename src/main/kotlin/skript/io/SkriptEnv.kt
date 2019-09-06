@@ -36,7 +36,7 @@ class SkriptEnv(val engine: SkriptEngine) {
 
         analyze(parsedModule)
 
-        val runtimeModule = RuntimeModule(moduleName, (parsedModule.props[Scope] as ModuleScope).varsAllocated)
+        val runtimeModule = RuntimeModule(moduleName, parsedModule.moduleScope.varsAllocated)
         modules[moduleName] = runtimeModule
         try {
             return RuntimeState(globals, this).executeFunction(parsedModule.moduleInit, emptyArray(), emptyList(), emptyMap())

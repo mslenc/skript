@@ -25,16 +25,14 @@ class VarAllocatorTest {
         VarAllocator(GlobalScope()).visitModule(module)
 
         val makeInc = module.content[0] as DeclareFunction
-        assertTrue(makeInc.props[Scope] is FunctionScope)
 
-        val makeIncScope = makeInc.props[Scope] as FunctionScope
+        val makeIncScope = makeInc.innerFunScope
         assertEquals(2, makeIncScope.varsAllocated)
         assertEquals(0, makeIncScope.closureDepthNeeded)
 
         val result = makeInc.body.parts[1] as DeclareFunction
-        assertTrue(result.props[Scope] is FunctionScope)
 
-        val resultScope = result.props[Scope] as FunctionScope
+        val resultScope = result.innerFunScope
         assertEquals(0, resultScope.varsAllocated)
         assertEquals(1, resultScope.closureDepthNeeded)
     }

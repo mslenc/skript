@@ -55,7 +55,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         get() = builders.top()
 
     fun visitModule(module: Module) {
-        val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), module.props[Scope]!!.topScope().varsAllocated, 0)
+        val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), module.moduleScope.varsAllocated, 0)
         builders.withTop(moduleInit) {
             Statements(module.content).accept(this)
         }
@@ -149,7 +149,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         val funcDef = makeFuncDef(stmt)
 
         builder += MakeFunction(funcDef)
-        builder += stmt.props[VarInfo]!!.storeOpCode
+        builder += stmt.hoistedVarInfo.storeOpCode
     }
 
     fun makeFuncDef(stmt: DeclareFunction): FunctionDef {
@@ -157,7 +157,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             ParamDef(it.paramName, it.varInfo.indexInScope, it.paramType)
         }.toTypedArray()
 
-        val funcScope = stmt.props[Scope] as FunctionScope
+        val funcScope = stmt.innerFunScope
 
         val funcName = stmt.funcName ?: "<anonFun>" // TODO: improve this name
         val funcBuilder = FunctionDefBuilder(funcName, paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
