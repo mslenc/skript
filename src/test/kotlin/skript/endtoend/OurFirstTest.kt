@@ -3,46 +3,56 @@ package skript.endtoend
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import skript.io.ModuleSourceProvider
-import skript.io.ParsedModuleProvider
-import skript.io.SkriptEngine
-import skript.values.SkNumber
-import skript.values.SkValue
+import skript.io.toSkript
+import skript.opcodes.equals.strictlyEqual
 import java.math.BigDecimal
-
-
 
 class OurFirstTest {
     @Test
     fun testAddition() = runBlocking {
-        val sourceProvider = ModuleSourceProvider.static(emptyMap<String, String>())
-        val moduleProvider = ParsedModuleProvider.from(sourceProvider)
-        val skriptEngine = SkriptEngine(moduleProvider)
+        val outputs = runScriptWithEmit("""
 
-        val script = """
             emit(3.5 + 4.6);
             emit(2.1 + 3.9);
             
             var a = 2.2, b = 3.3;
             emit(a + b);
-        """.trimIndent()
 
-        val outputs = ArrayList<SkValue>()
+        """.trimIndent())
 
-        val env = skriptEngine.createEnv()
-        env.setGlobal("emit", emitInto(outputs))
+        val expect = listOf(
+            BigDecimal("8.1").toSkript(),
+            BigDecimal("6").toSkript(),
+            BigDecimal("5.5").toSkript()
+        )
 
-        env.runAnonymousScript(script)
+        assertEquals(expect.size, outputs.size)
 
-        assertEquals(3, outputs.size)
+        for (i in expect.indices)
+            assertTrue(strictlyEqual(expect[i], outputs[i]))
+    }
 
-        assertTrue(outputs[0] is SkNumber)
-        assertEquals(0, outputs[0].asNumber().value.compareTo(BigDecimal("8.1")))
+    @Test
+    fun testRanges1() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            
+            for (i in 1..10) {
+                if (i !in 3..8)
+                    emit(i);
+            }
+            
+        """.trimIndent())
 
-        assertTrue(outputs[1] is SkNumber)
-        assertEquals(0, outputs[1].asNumber().value.compareTo(BigDecimal("6")))
+        val expect = listOf(
+            1.toSkript(),
+            2.toSkript(),
+            9.toSkript(),
+            10.toSkript()
+        )
 
-        assertTrue(outputs[2] is SkNumber)
-        assertEquals(0, outputs[2].asNumber().value.compareTo(BigDecimal("5.5")))
+        assertEquals(expect.size, outputs.size)
+
+        for (i in expect.indices)
+            assertTrue(strictlyEqual(expect[i], outputs[i]))
     }
 }

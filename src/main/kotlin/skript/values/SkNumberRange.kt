@@ -36,7 +36,7 @@ class SkNumberRangeIterator(start: SkNumber, val end: SkNumber, val endInclusive
     var currValue = start
 
     override fun moveToNext(): Boolean {
-        if (++iteration >= 0)
+        if (++iteration > 0)
             currValue = (currValue.value + BigDecimal.ONE).toSkript()
 
         return when {

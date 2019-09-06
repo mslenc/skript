@@ -226,14 +226,17 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         val doKey = stmt.decls.size >= 2
         val doValue = stmt.decls.size >= 1
 
+        val keyDeclIndex = if (doKey) 0 else -1
+        val valDeclIndex = if (doKey) 1 else 0
+
         val loopInfo = LoopInfo(null, continueTarget = loopStart, breakTarget = breakTarget)
         loops.withTop(loopInfo) {
             stmt.container.accept(this)
             builder += MakeIterator
             builder += loopStart
             builder += IteratorNext(doKey, doValue, end)
-            if (doValue) builder += stmt.decls[1].varInfo.storeOpCode
-            if (doKey) builder += stmt.decls[0].varInfo.storeOpCode
+            if (doValue) builder += stmt.decls[valDeclIndex].varInfo.storeOpCode
+            if (doKey) builder += stmt.decls[keyDeclIndex].varInfo.storeOpCode
             stmt.body.accept(this)
             builder += Jump(loopStart)
 
