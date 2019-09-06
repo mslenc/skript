@@ -22,7 +22,7 @@ fun Tokens.parseAssignment(): Expression {
 
     val binaryOp = when {
         nextTok.type == ASSIGN -> null
-        else -> nextTok.type.toAssignOp() ?: return left
+        else -> nextTok.type.toAssignOp()?.also { next() } ?: return left
     }
 
     val value = parseAssignment()

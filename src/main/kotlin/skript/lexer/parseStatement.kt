@@ -89,8 +89,12 @@ internal fun Tokens.parseParamDecls(): List<ParamDecl> {
 
     val params = ArrayList<ParamDecl>()
     val namesSeen = HashSet<String>()
+
+    expect(LPAREN)
+
     while (true) {
-        expect(if (params.isEmpty()) LPAREN else COMMA)
+        if (consume(RPAREN) != null)
+            break
 
         val paramType = when (peek().type) {
             STAR_STAR -> {
@@ -127,8 +131,8 @@ internal fun Tokens.parseParamDecls(): List<ParamDecl> {
 
         params.add(ParamDecl(name.rawText, paramType, defaultValue))
 
-        if (consume(RPAREN) != null)
-            break;
+        if (peek().type != RPAREN)
+            expect(COMMA)
     }
 
     return params
