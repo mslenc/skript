@@ -1,36 +1,39 @@
 package skript.exec
 
+import skript.exec.Frame.Companion.EMPTY_ARRAY
 import skript.io.SkriptEnv
-import skript.opcodes.OpCode
 import skript.util.Globals
 import skript.util.Stack
 import skript.values.SkValue
 
+val dummyFrame = Frame(0, emptyArray(), EMPTY_ARRAY, emptyList(), emptyMap())
+
 class RuntimeState(val globals: Globals, val env: SkriptEnv) {
-    val frames = Stack<Frame>()
+    var topFrame: Frame = dummyFrame
+    val otherFrames = Stack<Frame>()
 
-    val topFrame get() = frames.top()
-
-    fun startScriptFrame(ops: Array<OpCode>, localsSize: Int, closure: Array<Frame>): Frame {
-        val frame = Frame(localsSize, ops, closure)
-        frames.push(frame)
-        return frame
-    }
-
-    suspend fun execute(): SkValue {
-        val frame = topFrame
-        val ops = frame.ops
+    suspend fun executeFunction(func: FunctionDef, closure: Array<Frame>, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+        val ops = func.ops
         val opsSize = ops.size
 
-        while (frame.ip < opsSize) {
-            val op = ops[frame.ip++]
-            if (op.isSuspend) {
-                op.executeSuspend(this)
-            } else {
-                op.execute(this)
-            }
-        }
+        val frame = Frame(func.localsSize, ops, closure, posArgs, kwArgs)
 
-        return frames.pop().result
+        otherFrames.push(topFrame)
+        try {
+            topFrame = frame
+
+            while (frame.ip < opsSize) {
+                val op = ops[frame.ip++]
+                if (op.isSuspend) {
+                    op.executeSuspend(this)
+                } else {
+                    op.execute(this)
+                }
+            }
+
+            return frame.result
+        } finally {
+            topFrame = otherFrames.pop()
+        }
     }
 }

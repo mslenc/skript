@@ -39,12 +39,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val runtimeModule = RuntimeModule(moduleName, (parsedModule.props[Scope] as ModuleScope).varsAllocated)
         modules[moduleName] = runtimeModule
         try {
-            val runtimeState = RuntimeState(globals, this)
-
-            parsedModule.moduleInit.apply {
-                runtimeState.startScriptFrame(ops, localsSize, emptyArray())
-                return runtimeState.execute()
-            }
+            return RuntimeState(globals, this).executeFunction(parsedModule.moduleInit, emptyArray(), emptyList(), emptyMap())
         } finally {
             modules.remove(moduleName)
         }

@@ -4,13 +4,13 @@ import skript.exec.RuntimeState
 
 class GetGlobal(private val name: String) : FastOpCode() {
     override fun execute(state: RuntimeState) {
-        state.frames.top().stack.push(state.globals.get(name))
+        state.topFrame.stack.push(state.globals.get(name))
     }
 }
 
 class SetGlobal(private val name: String) : FastOpCode() {
     override fun execute(state: RuntimeState) {
-        state.globals.set(name, state.frames.top().stack.pop())
+        state.globals.set(name, state.topFrame.stack.pop())
     }
 }
 

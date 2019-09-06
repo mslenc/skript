@@ -5,7 +5,10 @@ import skript.values.*
 
 private val emptyKwMap = LinkedHashMap<String, SkValue>(0)
 
-class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, val funcName: String) {
+class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, val funcName: String) : SkObject() {
+    override val klass: SkClass
+        get() = ArgsExtractorClass
+
     private var state = 0
     private var posIndex = 0
     private val kwRemain = if (kwArgs.isNotEmpty()) LinkedHashMap(kwArgs) else emptyKwMap
@@ -48,6 +51,12 @@ class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, va
         if (state < 2 && kwRemain.isNotEmpty()) illegalArg("Unrecognized keyword parameter(s) when calling $funcName() - ${kwRemain.keys}")
         if (state < 1 && posIndex < posArgs.size) illegalArg("Too many parameters when calling $funcName()")
         state = 2
+    }
+}
+
+object ArgsExtractorClass : SkClass("ArgsExtractor", ObjectClass) {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+        throw IllegalStateException("Shouldn't be called")
     }
 }
 

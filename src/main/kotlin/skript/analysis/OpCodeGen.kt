@@ -3,6 +3,7 @@ package skript.analysis
 import skript.ast.*
 import skript.exec.FunctionDef
 import skript.exec.ParamDef
+import skript.exec.ParamType
 import skript.opcodes.*
 import skript.opcodes.compare.*
 import skript.opcodes.equals.BinaryEqualsOp
@@ -158,8 +159,21 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
 
         val funcScope = stmt.props[Scope] as FunctionScope
 
-        val funcBuilder = FunctionDefBuilder(stmt.funcName ?: "<anonFun>", paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
+        val funcName = stmt.funcName ?: "<anonFun>" // TODO: improve this name
+        val funcBuilder = FunctionDefBuilder(funcName, paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
         builders.withTop(funcBuilder) {
+            if (paramDefs.isNotEmpty()) {
+                builder += MakeArgsConstructor(funcName)
+                for (param in paramDefs) {
+                    builder += when (param.type) {
+                        ParamType.NORMAL -> ArgsExtractNamed(param.name, param.localIndex)
+                        ParamType.POS_ARGS -> ArgsExtractRemainingPos(param.localIndex)
+                        ParamType.KW_ARGS -> ArgsExtractRemainingKw(param.localIndex)
+                    }
+                }
+                builder += Pop
+            }
+
             for (param in stmt.params) {
                 if (param.defaultValue != null) {
                     val skip = JumpTarget()

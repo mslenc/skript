@@ -6,7 +6,7 @@ import skript.util.Stack
 import skript.values.SkUndefined
 import skript.values.SkValue
 
-class Frame(localsSize: Int, val ops: Array<OpCode>, val closure: Array<Frame> = EMPTY_ARRAY) {
+class Frame(localsSize: Int, val ops: Array<OpCode>, val closure: Array<Frame> = EMPTY_ARRAY, val posArgs: List<SkValue>, val kwArgs: Map<String, SkValue>) {
     val locals = Array<SkValue>(localsSize) { SkUndefined }
     val stack = Stack<SkValue>()
     val args = Stack<ArgsBuilder>()
