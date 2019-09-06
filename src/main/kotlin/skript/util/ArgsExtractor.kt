@@ -128,3 +128,13 @@ fun ArgsExtractor.expectInt(name: String, coerce: Boolean = true, ifUndefined: I
         else -> illegalArg("Expected an integer value for $name when calling $funcName()")
     }
 }
+
+fun ArgsExtractor.expectFunction(name: String): SkFunction {
+    val value = extractParam(name)
+
+    if (value is SkFunction) {
+        return value
+    } else {
+        illegalArg("Expected a function for $name when calling $funcName()")
+    }
+}

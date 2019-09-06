@@ -5,7 +5,9 @@ import skript.notSupported
 
 abstract class SkScalar : SkValue() {
     final override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        notSupported("Can't call scalars")
+        val sb = StringBuilder("Can't call ")
+        toString(sb)
+        notSupported(sb.toString())
     }
 
     final override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
@@ -39,6 +41,14 @@ abstract class SkScalar : SkValue() {
     override suspend fun deleteMember(key: String) {
         // nothing
     }
+
+    final override fun toString(): String {
+        val sb = StringBuilder()
+        toString(sb)
+        return sb.toString()
+    }
+
+    abstract fun toString(sb: StringBuilder)
 }
 
 abstract class SkScalarObject() : SkObject() {

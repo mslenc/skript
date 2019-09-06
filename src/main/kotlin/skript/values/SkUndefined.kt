@@ -3,15 +3,7 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.typeError
 
-object SkUndefined : SkValue() {
-    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        typeError("Can't call undefined")
-    }
-
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        typeError("Can't call $methodName on undefined")
-    }
-
+object SkUndefined : SkScalar() {
     override suspend fun hasOwnMember(key: SkValue): Boolean {
         return false
     }
@@ -62,5 +54,9 @@ object SkUndefined : SkValue() {
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
         typeError("Can't make a range with undefined")
+    }
+
+    override fun toString(sb: StringBuilder) {
+        sb.append("undefined")
     }
 }

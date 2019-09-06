@@ -32,7 +32,7 @@ fun Tokens.parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowV
         FUNCTION -> {
             if (!allowFunctions)
                 syntaxError("Function declarations not allowed here", peek().pos)
-            parseFunctionDecl(requireName = false)
+            parseFunctionDecl(funLiteral = false)
         }
 
         IF -> parseIfStatement()
@@ -138,11 +138,12 @@ internal fun Tokens.parseParamDecls(): List<ParamDecl> {
     return params
 }
 
-internal fun Tokens.parseFunctionDecl(requireName: Boolean): DeclareFunction {
-    next().also { assert(it.type == FUNCTION) }
+internal fun Tokens.parseFunctionDecl(funLiteral: Boolean): DeclareFunction {
+    if (!funLiteral)
+        next().also { assert(it.type == FUNCTION) }
 
     val name = when {
-        requireName -> expect(IDENTIFIER)
+        !funLiteral -> expect(IDENTIFIER)
         peek().type == IDENTIFIER -> next()
         else -> null
     }

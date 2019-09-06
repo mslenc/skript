@@ -53,6 +53,10 @@ class SkNumber private constructor (val value: BigDecimal) : SkScalar(), Compara
         return value.compareTo(other.value)
     }
 
+    override fun toString(sb: StringBuilder) {
+        sb.append(value.toString())
+    }
+
     companion object {
         val MINUS_ONE = SkNumber(BigDecimal.valueOf(-1))
         val ZERO = SkNumber(BigDecimal.valueOf(0))

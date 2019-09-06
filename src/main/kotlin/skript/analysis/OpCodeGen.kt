@@ -557,7 +557,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
     override fun visitFunctionCall(expr: FuncCall) {
         expr.func.accept(this)
         doArgs(expr.args)
-        builder += CallFunction
+        builder += CallFunction(expr.func.toString())
     }
 
     private fun doArgs(args: List<CallArg>) {

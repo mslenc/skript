@@ -75,6 +75,10 @@ class SkString(val value: String) : SkScalar() {
         return SkStringIterator(this)
     }
 
+    override fun toString(sb: StringBuilder) {
+        sb.append('"').append(value).append('"')
+    }
+
     companion object {
         val EMPTY = SkString("")
         val NULL = SkString("null")

@@ -2,6 +2,7 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.typeError
+import java.lang.StringBuilder
 
 class SkBoolean private constructor(val value: Boolean) : SkScalar() {
     override fun getKind(): SkValueKind {
@@ -26,6 +27,10 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
         typeError("Can't make ranges from booleans")
+    }
+
+    override fun toString(sb: StringBuilder) {
+        sb.append(if (value) "true" else "false")
     }
 
     companion object {

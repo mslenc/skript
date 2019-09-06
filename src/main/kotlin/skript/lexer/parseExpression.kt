@@ -322,7 +322,7 @@ fun Tokens.parsePrimary(): Expression {
         LPAREN -> {
             val result = parseExpression()
             expect(RPAREN)
-            return result
+            return Parentheses(result)
         }
 
         IDENTIFIER -> {
@@ -330,7 +330,7 @@ fun Tokens.parsePrimary(): Expression {
         }
 
         FUNCTION -> {
-            return FunctionLiteral(parseFunctionDecl(requireName = false))
+            return FunctionLiteral(parseFunctionDecl(funLiteral = true))
         }
 
         LBRACK -> {

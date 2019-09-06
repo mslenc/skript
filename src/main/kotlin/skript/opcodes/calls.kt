@@ -83,12 +83,13 @@ class CallMethod(val name: String) : SuspendOpCode() {
         state.topFrame.apply {
             val thiz = stack.pop()
             val argsBuilder = args.pop()
-            thiz.callMethod(name, argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
+            val result = thiz.callMethod(name, argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
+            stack.push(result)
         }
     }
 }
 
-object CallFunction : SuspendOpCode() {
+class CallFunction(val exprDebug: String) : SuspendOpCode() {
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.apply {
             val func = stack.pop()
@@ -98,7 +99,7 @@ object CallFunction : SuspendOpCode() {
                 val result = func.call(argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
                 stack.push(result)
             } else {
-                typeError("Only functions can be called")
+                typeError("$exprDebug is not a function")
             }
         }
     }

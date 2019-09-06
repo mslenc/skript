@@ -3,15 +3,7 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.typeError
 
-object SkNull : SkValue() {
-    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        typeError("Can't call null")
-    }
-
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        typeError("Can't call methods on null")
-    }
-
+object SkNull : SkScalar() {
     override suspend fun findMember(key: SkValue): SkValue {
         return SkUndefined
     }
@@ -62,5 +54,9 @@ object SkNull : SkValue() {
 
     override fun asString(): SkString {
         return SkString.NULL
+    }
+
+    override fun toString(sb: StringBuilder) {
+        sb.append("null")
     }
 }

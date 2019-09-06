@@ -3,6 +3,8 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.isString
 import skript.notSupported
+import skript.util.ArgsExtractor
+import skript.util.expectFunction
 
 class SkList : SkObject {
     val elements = ArrayList<SkValue?>()
@@ -152,6 +154,7 @@ object ListClass : SkClass("List", ObjectClass) {
         defineInstanceMethod(List_concat)
         defineInstanceMethod(List_every)
         defineInstanceMethod(List_filter)
+        defineInstanceMethod(List_forEach)
     }
 
     override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
@@ -238,6 +241,27 @@ object List_filter : SkMethod("filter", listOf("callback")) {
         }
 
         return result
+    }
+}
+
+object List_forEach : SkMethod("forEach", listOf("callback")) {
+    override val expectedClass: SkClass
+        get() = ListClass
+
+    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+        (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.forEach()")
+
+        val args = ArgsExtractor(posArgs, kwArgs, "forEach")
+        val callback = args.expectFunction("callback")
+        args.expectNothingElse()
+
+        for (i in thiz.elements.indices) {
+            val value = thiz.elements[i] ?: continue
+
+            val test = callback.call(listOf(value, SkNumber.valueOf(i), thiz), emptyMap(), state)
+        }
+
+        return SkUndefined
     }
 }
 
