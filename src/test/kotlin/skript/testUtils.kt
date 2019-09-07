@@ -40,11 +40,11 @@ suspend fun runScriptWithEmit(script: String): List<SkValue> {
     return outputs
 }
 
-fun assertEmittedEquals(expected: List<SkValue>, emitted: List<SkValue>) {
-    for (i in 0 until min(expected.size, emitted.size))
-        assertStrictlyEqual(expected[i], emitted[i])
+fun assertEmittedEquals(expected: List<SkValue>, actual: List<SkValue>) {
+    for (i in 0 until min(expected.size, actual.size))
+        assertStrictlyEqual(expected[i], actual[i]) { "Element $i:\nExpected: ${expected[i]} (${expected[i].getKind()})\n  Actual: ${actual[i]} (${actual[i].getKind()})" }
 
-    assertEquals(expected.size, emitted.size, "Number of elements should be the same")
+    assertEquals(expected.size, actual.size, "Number of elements should be the same")
 }
 
 inline fun assertStrictlyEqual(expected: SkValue, actual: SkValue, crossinline message: ()->String = { "Expected: $expected (${expected.getKind()})\n  Actual: $actual (${actual.getKind()})" }) {

@@ -1,6 +1,7 @@
 package skript.ast
 
 import skript.analysis.VarInfo
+import skript.lexer.Pos
 import skript.values.SkScalar
 import skript.values.SkValue
 
@@ -134,8 +135,8 @@ class PrePostExpr(val op: PrePostOp, val inner: LValue): Expression() {
 }
 
 enum class BinaryOp(val strRep: String) {
-    SUBTRACT("-"),
     ADD("+"),
+    SUBTRACT("-"),
     MULTIPLY("*"),
     DIVIDE("/"),
     DIVIDE_INT("//"),
@@ -164,7 +165,7 @@ enum class BinaryOp(val strRep: String) {
     RANGE_TO_EXCL("..<")
 }
 
-class BinaryExpression(val left: Expression, val op: BinaryOp, val right: Expression): Expression() {
+class BinaryExpression(val pos: Pos, val left: Expression, val op: BinaryOp, val right: Expression): Expression() {
     override fun accept(visitor: ExprVisitor) {
         visitor.visitBinaryExpr(this)
     }

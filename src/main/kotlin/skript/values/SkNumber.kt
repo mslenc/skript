@@ -1,5 +1,6 @@
 package skript.values
 
+import skript.doubleCompare
 import skript.exec.RuntimeState
 import skript.isInteger
 import skript.toStrictNumberOrNull
@@ -47,6 +48,8 @@ sealed class SkNumber : SkScalar(), Comparable<SkNumber> {
 
     abstract fun toDouble(): Double
 
+    abstract fun toBigDecimal(): BigDecimal
+
     companion object {
         val MINUS_ONE get() = SkDouble.MINUS_ONE
         val ZERO get() = SkDouble.ZERO
@@ -93,14 +96,10 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
     }
 
     override fun compareTo(other: SkNumber): Int {
-        return when (other) {
-            is SkDecimal -> {
-                value.compareTo(other.value)
-            }
-            is SkDouble -> {
-                value.toDouble().compareTo(other.dvalue)
-            }
-        }
+        if (other is SkDecimal)
+            return value.compareTo(other.value)
+
+        return doubleCompare(value.toDouble(), other.toDouble())
     }
 
     override fun signum(): Int {
@@ -109,6 +108,10 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
 
     override fun toDouble(): Double {
         return value.toDouble()
+    }
+
+    override fun toBigDecimal(): BigDecimal {
+        return value
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
@@ -187,15 +190,12 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         return dvalue
     }
 
+    override fun toBigDecimal(): BigDecimal {
+        return dvalue.toBigDecimal()
+    }
+
     override fun compareTo(other: SkNumber): Int {
-        return when (other) {
-            is SkDouble -> {
-                dvalue.compareTo(other.dvalue)
-            }
-            is SkDecimal -> {
-                dvalue.compareTo(other.value.toDouble())
-            }
-        }
+        return doubleCompare(dvalue, other.toDouble())
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {

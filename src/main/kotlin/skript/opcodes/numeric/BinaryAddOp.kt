@@ -2,14 +2,14 @@ package skript.opcodes.numeric
 
 import skript.values.SkDecimal
 import skript.values.SkDouble
-import skript.values.SkNumber
+import java.math.BigDecimal
 
 object BinaryAddOp : BinaryNumericOp() {
-    override fun computeResult(left: SkNumber, right: SkNumber): SkNumber {
-        return if (left is SkDecimal && right is SkDecimal) {
-            SkDecimal.valueOf(left.value + right.value)
-        } else {
-            SkDouble.valueOf(left.toDouble() + right.toDouble())
-        }
+    override fun computeResult(left: Double, right: Double): SkDouble {
+        return SkDouble.valueOf(left + right)
+    }
+
+    override fun computeResult(left: BigDecimal, right: BigDecimal): SkDecimal {
+        return SkDecimal.valueOf(left + right)
     }
 }

@@ -56,24 +56,26 @@ fun Tokens.parseTernary(): Expression {
     }
 }
 
-private inline fun Tokens.parseLeftAssoc(parseSub: Tokens.()->Expression, tokenMatch: (TokenType)->Boolean, combine: (Expression, Token, Expression)->Expression): Expression {
-    var result = parseSub()
-    while (tokenMatch(peek().type)) {
-        val opToken = next()
-        val right = parseSub()
-        result = combine(result, opToken, right)
+fun Tokens.parseDisjunction(): Expression {
+    var result = parseConjunction()
+    while (true) {
+        result = when (peek().type) {
+            OR ->    BinaryExpression(next().pos, result, BinaryOp.OR,    parseConjunction())
+            OR_OR -> BinaryExpression(next().pos, result, BinaryOp.OR_OR, parseConjunction())
+            else -> return result
+        }
     }
-    return result
 }
 
-fun Tokens.parseDisjunction() = parseLeftAssoc({ parseConjunction() }, { it == OR_OR || it == OR }) { l, opTok, r ->
-    val binaryOp = if (opTok.type == OR_OR) BinaryOp.OR_OR else BinaryOp.OR
-    BinaryExpression(l, binaryOp, r)
-}
-
-fun Tokens.parseConjunction() = parseLeftAssoc({ parseComparison() }, { it == AND_AND || it == AND }) { l, opTok, r ->
-    val binaryOp = if (opTok.type == AND_AND) BinaryOp.AND_AND else BinaryOp.AND
-    BinaryExpression(l, binaryOp, r)
+fun Tokens.parseConjunction(): Expression {
+    var result = parseComparison()
+    while (true) {
+        result = when (peek().type) {
+            AND ->     BinaryExpression(next().pos, result, BinaryOp.AND,     parseComparison())
+            AND_AND -> BinaryExpression(next().pos, result, BinaryOp.AND_AND, parseComparison())
+            else -> return result
+        }
+    }
 }
 
 fun TokenType.toComparisonOp(): BinaryOp? = when (this) {
@@ -115,7 +117,7 @@ fun Tokens.parseComparison(): Expression {
     val pos = peek().pos
     val firstOp = peek().type.toComparisonOp()?.also { next() } ?: return first
     val second = parseInIs()
-    val secondOp = peek().type.toComparisonOp()?.also { next() } ?: return BinaryExpression(first, firstOp, second)
+    val secondOp = peek().type.toComparisonOp()?.also { next() } ?: return BinaryExpression(pos, first, firstOp, second)
 
     val parts = mutableListOf(first, second, parseInIs())
     val ops = mutableListOf(firstOp, secondOp)
@@ -160,30 +162,59 @@ fun Tokens.parseInIs(): Expression {
     }
 }
 
-fun Tokens.parseElvis() = parseLeftAssoc({ parseInfixCall() }, { it == ELVIS }) { l, _, r -> BinaryExpression(l, BinaryOp.ELVIS, r) }
-
-fun Tokens.parseInfixCall() = parseLeftAssoc({ parseRangeExpression() }, { it == IDENTIFIER }) { l, ident, r ->
-    MethodCall(l, ident.rawText, listOf(PosArg(r)), MethodCallType.INFIX)
-}
-
-fun Tokens.parseRangeExpression() = parseLeftAssoc({ parseAdd() }, { it == DOT_DOT || it == DOT_DOT_LESS }) { l, op, r ->
-    val binaryOp = if (op.type == DOT_DOT_LESS) BinaryOp.RANGE_TO_EXCL else BinaryOp.RANGE_TO
-    return BinaryExpression(l, binaryOp, r)
-}
-
-fun Tokens.parseAdd() = parseLeftAssoc({ parseMul() }, { it == PLUS || it == MINUS }) { l, op, r ->
-    val binaryOp = if (op.type == PLUS) BinaryOp.ADD else BinaryOp.SUBTRACT
-    return BinaryExpression(l, binaryOp, r)
-}
-
-fun Tokens.parseMul() = parseLeftAssoc({ parsePrefixUnary() }, { it == STAR || it == SLASH || it == SLASH_SLASH || it == PERCENT }) { l, op, r ->
-    val binaryOp = when (op.type) {
-        STAR -> BinaryOp.MULTIPLY
-        SLASH -> BinaryOp.DIVIDE
-        SLASH_SLASH -> BinaryOp.DIVIDE_INT
-        else -> BinaryOp.REMAINDER
+fun Tokens.parseElvis(): Expression {
+    var result = parseInfixCall()
+    while (true) {
+        result = when (peek().type) {
+            ELVIS -> BinaryExpression(next().pos, result, BinaryOp.ELVIS, parseInfixCall())
+            else -> return result
+        }
     }
-    return BinaryExpression(l, binaryOp, r)
+}
+
+fun Tokens.parseInfixCall(): Expression {
+    var result = parseRange()
+    while (true) {
+        result = when (peek().type) {
+            IDENTIFIER -> MethodCall(result, next().rawText, listOf(PosArg(parseRange())), MethodCallType.INFIX)
+            else -> return result
+        }
+    }
+}
+
+fun Tokens.parseRange(): Expression {
+    var result = parseAdd()
+    while (true) {
+        result = when (peek().type) {
+            DOT_DOT ->      BinaryExpression(next().pos, result, BinaryOp.RANGE_TO,      parseAdd())
+            DOT_DOT_LESS -> BinaryExpression(next().pos, result, BinaryOp.RANGE_TO_EXCL, parseAdd())
+            else -> return result
+        }
+    }
+}
+
+fun Tokens.parseAdd(): Expression {
+    var result = parseMul()
+    while (true) {
+        result = when (peek().type) {
+            PLUS ->  BinaryExpression(next().pos, result, BinaryOp.ADD,      parseMul())
+            MINUS -> BinaryExpression(next().pos, result, BinaryOp.SUBTRACT, parseMul())
+            else -> return result
+        }
+    }
+}
+
+fun Tokens.parseMul(): Expression {
+    var result = parsePrefixUnary()
+    while (true) {
+        result = when (peek().type) {
+            STAR ->        BinaryExpression(next().pos, result, BinaryOp.MULTIPLY,   parsePrefixUnary())
+            SLASH ->       BinaryExpression(next().pos, result, BinaryOp.DIVIDE,     parsePrefixUnary())
+            SLASH_SLASH -> BinaryExpression(next().pos, result, BinaryOp.DIVIDE_INT, parsePrefixUnary())
+            PERCENT ->     BinaryExpression(next().pos, result, BinaryOp.REMAINDER,  parsePrefixUnary())
+            else -> return result
+        }
+    }
 }
 
 fun Tokens.parsePrefixUnary(): Expression {

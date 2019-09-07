@@ -77,3 +77,11 @@ inline fun <T> Stack<T>.withTop(value: T, block: ()->Unit) {
         pop()
     }
 }
+
+fun doubleCompare(a: Double, b: Double): Int {
+    // the original makes a distinction between -0.0 and +0.0, which is nice and all, but we don't want it
+    if (a == 0.0 && b == 0.0)
+        return 0
+
+    return a.compareTo(b)
+}
