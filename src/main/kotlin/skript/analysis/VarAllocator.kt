@@ -123,6 +123,8 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
     }
 
     override fun visitForStatement(stmt: ForStatement) {
+        stmt.container.accept(this)
+
         val parent = scopeStack.top()
         val top = parent.topScope()
         val varsHere = HashMap<String, VarInfo>()

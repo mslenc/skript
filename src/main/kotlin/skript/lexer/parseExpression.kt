@@ -332,11 +332,11 @@ fun Tokens.parsePrimary(): Expression {
         }
 
         LBRACK -> {
-            return parseRestOfMapOrListLiteral()
+            return parseRestOfListLiteral()
         }
 
         LCURLY -> {
-            syntaxError("Lambdas not supported (yet)", tok.pos)
+            return parseRestOfMapLiteral()
         }
 
         else -> {
@@ -345,70 +345,12 @@ fun Tokens.parsePrimary(): Expression {
     }
 }
 
-fun Tokens.parseRestOfMapOrListLiteral(): Expression {
-    val first = peek().type
-
-    return when (first) {
-        COLON -> {
-            next()
-            expect(RBRACK)
-            MapLiteral(emptyList())
-        }
-
-        RBRACK -> {
-            next()
-            ListLiteral(emptyList())
-        }
-
-        STAR -> {
-            parseRestOfListLiteral(null)
-        }
-
-        STAR_STAR -> {
-            parseRestOfMapLiteral(null)
-        }
-
-        IDENTIFIER -> {
-            val ident = next()
-            if (consume(COLON) != null) {
-                val value = parseExpression()
-                consume(COMMA)
-                parseRestOfMapLiteral(MapLiteralPartFixedKey(ident.rawText, value))
-            } else {
-                val element = parsePostfixes(Variable(ident.rawText))
-                consume(COMMA)
-                parseRestOfListLiteral(ListLiteralPart(element, false))
-            }
-        }
-
-        LPAREN -> {
-            val key = parseExpression()
-            expect(RPAREN)
-
-            if (consume(COLON) != null) {
-                val value = parseExpression()
-                consume(COMMA)
-                parseRestOfMapLiteral(MapLiteralPartExprKey(key, value))
-            } else {
-                val element = parsePostfixes(key)
-                consume(COMMA)
-                parseRestOfListLiteral(ListLiteralPart(element, isSpread = false))
-            }
-        }
-
-        else -> {
-            parseRestOfListLiteral(null)
-        }
-    }
-}
-
-fun Tokens.parseRestOfMapLiteral(first: MapLiteralPart?): MapLiteral {
+fun Tokens.parseRestOfMapLiteral(): MapLiteral {
     val parts = ArrayList<MapLiteralPart>()
-    first?.let { parts += it }
 
     while (true) {
         parts += when {
-            consume(RBRACK) != null -> {
+            consume(RCURLY) != null -> {
                 return MapLiteral(parts)
             }
 
@@ -417,9 +359,9 @@ fun Tokens.parseRestOfMapLiteral(first: MapLiteralPart?): MapLiteral {
                 MapLiteralPartSpread(spread)
             }
 
-            consume(LPAREN) != null -> {
+            consume(LBRACK) != null -> {
                 val key = parseExpression()
-                expect(RPAREN)
+                expect(RBRACK)
                 expect(COLON)
                 val value = parseExpression()
                 MapLiteralPartExprKey(key, value)
@@ -433,13 +375,13 @@ fun Tokens.parseRestOfMapLiteral(first: MapLiteralPart?): MapLiteral {
             }
         }
 
-        consume(COMMA)
+        if (peek().type != RCURLY)
+            expect(COMMA)
     }
 }
 
-fun Tokens.parseRestOfListLiteral(first: ListLiteralPart?): ListLiteral {
+fun Tokens.parseRestOfListLiteral(): ListLiteral {
     val parts = ArrayList<ListLiteralPart>()
-    first?.let { parts += it }
 
     while (true) {
         parts += when {
@@ -453,7 +395,8 @@ fun Tokens.parseRestOfListLiteral(first: ListLiteralPart?): ListLiteral {
                 ListLiteralPart(parseExpression(), isSpread = false)
         }
 
-        consume(COMMA)
+        if (peek().type != RBRACK)
+            expect(COMMA)
     }
 }
 
