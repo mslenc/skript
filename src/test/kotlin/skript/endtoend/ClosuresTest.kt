@@ -1,11 +1,10 @@
 package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import skript.assertEmittedEquals
 import skript.io.toSkript
-import skript.opcodes.equals.strictlyEqual
-import java.math.BigDecimal
+import skript.runScriptWithEmit
 
 class ClosuresTest {
     @Test
@@ -56,10 +55,7 @@ class ClosuresTest {
             32.toSkript()
         )
 
-        assertEquals(expect.size, outputs.size)
-
-        for (i in expect.indices)
-            assertTrue(strictlyEqual(expect[i], outputs[i])) { "${expect[i]} vs ${outputs[i]}" }
+        assertEmittedEquals(expect, outputs)
     }
 
     @Test
@@ -104,9 +100,6 @@ class ClosuresTest {
             6.toSkript()
         )
 
-        assertEquals(expect.size, outputs.size)
-
-        for (i in expect.indices)
-            assertTrue(strictlyEqual(expect[i], outputs[i])) { "${expect[i]} vs ${outputs[i]}" }
+        assertEmittedEquals(expect, outputs)
     }
 }

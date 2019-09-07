@@ -1,10 +1,10 @@
 package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import skript.assertStrictlyEqual
+import skript.assertEmittedEquals
 import skript.io.toSkript
+import skript.runScriptWithEmit
 
 class OurFirstTest {
     @Test
@@ -25,10 +25,7 @@ class OurFirstTest {
             5.5.toSkript()
         )
 
-        assertEquals(expect.size, outputs.size)
-
-        for (i in expect.indices)
-            assertStrictlyEqual(expect[i], outputs[i])
+        assertEmittedEquals(expect, outputs)
     }
 
     @Test
@@ -49,9 +46,6 @@ class OurFirstTest {
             10.toSkript()
         )
 
-        assertEquals(expect.size, outputs.size)
-
-        for (i in expect.indices)
-            assertStrictlyEqual(expect[i], outputs[i])
+        assertEmittedEquals(expect, outputs)
     }
 }
