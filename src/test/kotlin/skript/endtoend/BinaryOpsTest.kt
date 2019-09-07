@@ -1,14 +1,14 @@
 package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 import skript.assertEmittedEquals
 import skript.io.toSkript
 import skript.opcodes.equals.aboutEqual
+import skript.opcodes.equals.strictlyEqual
 import skript.runScriptWithEmit
 import skript.values.*
 
@@ -193,6 +193,127 @@ class BinaryOpsTest {
         }
 
         return result
+    }
+
+    val strictEqualLists = listOf(
+        listOf(SkNull),
+        listOf(SkUndefined),
+        listOf(SkDecimal.MINUS_ONE),
+        listOf(SkDouble.MINUS_ONE),
+        listOf(SkString("-1")),
+        listOf(SkNumberObject(SkDecimal.MINUS_ONE)),
+        listOf(SkNumberObject(SkDouble.MINUS_ONE)),
+        listOf(SkStringObject(SkString("-1"))),
+        listOf(SkDecimal.ZERO),
+        listOf(SkDouble.ZERO),
+        listOf(SkString("0")),
+        listOf(SkNumberObject(SkDecimal.ZERO)),
+        listOf(SkNumberObject(SkDouble.ZERO)),
+        listOf(SkStringObject(SkString("0"))),
+        listOf(SkDecimal.ONE),
+        listOf(SkDouble.ONE),
+        listOf(SkString("1")),
+        listOf(SkNumberObject(SkDecimal.ONE)),
+        listOf(SkNumberObject(SkDouble.ONE)),
+        listOf(SkStringObject(SkString("1"))),
+        listOf(SkDecimal.valueOf(432)),
+        listOf(SkDouble.valueOf(432)),
+        listOf(SkString("432")),
+        listOf(SkNumberObject(SkDecimal.valueOf(432))),
+        listOf(SkNumberObject(SkDouble.valueOf(432))),
+        listOf(SkStringObject(SkString("432"))),
+        listOf(SkString("qweqwe")),
+        listOf(SkStringObject(SkString("qweqwe"))),
+        listOf(SkBoolean.TRUE),
+        listOf(SkBooleanObject.TRUE),
+        listOf(SkBoolean.FALSE),
+        listOf(SkBooleanObject.FALSE),
+        listOf(SkList(listOf(SkString("abc"), SkDouble.valueOf(15.0)))),
+        listOf(SkList(listOf(SkStringObject(SkString("abc")), SkNumberObject(SkDecimal.valueOf("15.0".toBigDecimal()))))),
+        listOf(SkMap(mapOf("str" to SkString("abc"), "num" to SkDouble.valueOf(15.0)))),
+        listOf(SkMap(mapOf("str" to SkStringObject(SkString("abc")), "num" to SkNumberObject(SkDecimal.valueOf("15.0".toBigDecimal()))))),
+        listOf(SkList()),
+        listOf(SkMap())
+    )
+
+    @TestFactory
+    fun testStrictEquals(): List<DynamicTest> {
+        val result = ArrayList<DynamicTest>()
+
+        for (list1 in strictEqualLists) {
+            for (list2 in strictEqualLists) {
+                for (el1 in list1) {
+                    for (el2 in list2) {
+                        assertEquals(list1 === list2, strictlyEqual(el1, el2))
+
+                        if (el1 is SkScalar && el2 is SkScalar) {
+                            val sb = StringBuilder()
+                            el1.toString(sb)
+                            sb.append(" === ")
+                            el2.toString(sb)
+
+                            result += test(sb.toString(), SkBoolean.valueOf(list1 === list2))
+                        }
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    @TestFactory
+    fun testNotStrictlyEqual(): List<DynamicTest> {
+        val result = ArrayList<DynamicTest>()
+
+        for (list1 in strictEqualLists) {
+            for (list2 in strictEqualLists) {
+                for (el1 in list1) {
+                    for (el2 in list2) {
+                        if (el1 is SkScalar && el2 is SkScalar) {
+                            val sb = StringBuilder()
+                            el1.toString(sb)
+                            sb.append(" !== ")
+                            el2.toString(sb)
+
+                            result += test(sb.toString(), SkBoolean.valueOf(list1 !== list2))
+                        }
+                    }
+                }
+            }
+        }
+
+        return result
+    }
+
+    @Test
+    fun testStrictImpliesAboutEqual() {
+        for (list1 in equalLists + strictEqualLists) {
+            for (list2 in equalLists + strictEqualLists) {
+                for (el1 in list1) {
+                    for (el2 in list2) {
+                        if (strictlyEqual(el1, el2)) {
+                            assertTrue(aboutEqual(el1, el2))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testNotEqualImpliesNotStrictlyEqual() {
+        for (list1 in equalLists + strictEqualLists) {
+            for (list2 in equalLists + strictEqualLists) {
+                for (el1 in list1) {
+                    for (el2 in list2) {
+                        if (!aboutEqual(el1, el2)) {
+                            assertFalse(strictlyEqual(el1, el2))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     @Test
