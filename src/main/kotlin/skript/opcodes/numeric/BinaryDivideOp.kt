@@ -1,14 +1,16 @@
 package skript.opcodes.numeric
 
-import skript.values.SkNumber
-import skript.values.SkUndefined
-import skript.values.SkValue
+import skript.values.*
 
 object BinaryDivideOp : BinaryNumericOp() {
-    override fun computeResult(left: SkNumber, right: SkNumber): SkValue {
-        if (right.value.signum() == 0)
+    override fun computeResult(left: SkNumber, right: SkNumber): SkScalar {
+        if (right.signum() == 0)
             return SkUndefined
 
-        return SkNumber.valueOf(left.value / right.value)
+        return if (left is SkDecimal && right is SkDecimal) {
+            SkDecimal.valueOf(left.value / right.value)
+        } else {
+            SkDouble.valueOf(left.toDouble() / right.toDouble())
+        }
     }
 }

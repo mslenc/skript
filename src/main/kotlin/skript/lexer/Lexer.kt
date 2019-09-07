@@ -244,9 +244,9 @@ private fun CharStream.parseNumber(sb: StringBuilder, firstChar: Char, tokens: A
     if (peek() == '.') {
         sb.append(nextChar())
         if (consumeInto(sb, isDigit) < 1) {
-            sb.setLength(sb.length - 1)
-            tokens.add(NUMBER, sb.toString(), pos)
             putBack('.')
+            sb.setLength(sb.length - 1)
+            tokens.add(DOUBLE, sb.toString(), pos)
             return
         }
     }
@@ -261,7 +261,12 @@ private fun CharStream.parseNumber(sb: StringBuilder, firstChar: Char, tokens: A
         }
     }
 
-    tokens.add(NUMBER, sb.toString(), pos)
+    if (peek() == 'd' || peek() == 'D') {
+        sb.append(nextChar())
+        tokens.add(DECIMAL, sb.toString(), pos)
+    } else {
+        tokens.add(DOUBLE, sb.toString(), pos)
+    }
 }
 
 val isIdentChar: (Char)->Boolean = Character::isJavaIdentifierPart

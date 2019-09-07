@@ -47,19 +47,19 @@ class ClosuresTest {
         """.trimIndent())
 
         val expect = listOf(
-            BigDecimal("12").toSkript(),
-            BigDecimal("17").toSkript(),
-            BigDecimal("20").toSkript(),
-            BigDecimal("25").toSkript(),
-            BigDecimal("27").toSkript(),
-            BigDecimal("31").toSkript(),
-            BigDecimal("32").toSkript()
+            12.toSkript(),
+            17.toSkript(),
+            20.toSkript(),
+            25.toSkript(),
+            27.toSkript(),
+            31.toSkript(),
+            32.toSkript()
         )
 
         assertEquals(expect.size, outputs.size)
 
         for (i in expect.indices)
-            assertTrue(strictlyEqual(expect[i], outputs[i]))
+            assertTrue(strictlyEqual(expect[i], outputs[i])) { "${expect[i]} vs ${outputs[i]}" }
     }
 
     @Test
@@ -96,12 +96,12 @@ class ClosuresTest {
         """.trimIndent())
 
         val expect = listOf(
-            BigDecimal("1").toSkript(),
-            BigDecimal("2").toSkript(),
-            BigDecimal("2").toSkript(),
-            BigDecimal("4").toSkript(),
-            BigDecimal("3").toSkript(),
-            BigDecimal("6").toSkript()
+            1.toSkript(),
+            2.toSkript(),
+            2.toSkript(),
+            4.toSkript(),
+            3.toSkript(),
+            6.toSkript()
         )
 
         assertEquals(expect.size, outputs.size)

@@ -3,10 +3,7 @@ package skript.lexer
 import skript.ast.*
 import skript.lexer.TokenType.*
 import skript.syntaxError
-import skript.values.SkBoolean
-import skript.values.SkNull
-import skript.values.SkString
-import skript.values.SkUndefined
+import skript.values.*
 
 fun Tokens.parseExpression(): Expression {
     return parseAssignment()
@@ -316,7 +313,8 @@ fun Tokens.parsePrimary(): Expression {
         FALSE -> { Literal(SkBoolean.FALSE) }
         NULL -> { Literal(SkNull) }
         UNDEFINED -> { Literal(SkUndefined) }
-        NUMBER -> { Literal(SkString(tok.rawText).asNumber()) }
+        DOUBLE -> { Literal(SkDouble.valueOf(tok.rawText.toDoubleOrNull() ?: syntaxError("Couldn't parse double ${tok.rawText}", tok.pos))) }
+        DECIMAL -> { Literal(SkDecimal.valueOf(tok.rawText.substring(0, tok.rawText.length - 1).toBigDecimalOrNull() ?: syntaxError("Couldn't parse decimal ${tok.rawText}", tok.pos))) }
         STRING -> { Literal(SkString(tok.unescapeString())) }
 
         LPAREN -> {

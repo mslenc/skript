@@ -5,6 +5,7 @@ import skript.exec.RuntimeState
 import skript.util.ArgsExtractor
 import skript.util.expectBoolean
 import skript.util.expectInt
+import skript.util.expectString
 import java.lang.UnsupportedOperationException
 
 class SkString(val value: String) : SkScalar() {
@@ -48,7 +49,7 @@ class SkString(val value: String) : SkScalar() {
         return SkBoolean.valueOf(value.isNotEmpty())
     }
 
-    override fun asNumber(): SkNumber {
+    override fun asNumber(): SkDecimal {
         return asNumberOrNull() ?: throw IllegalStateException("Couldn't parse string (${value.atMostChars(20)}) as a number")
     }
 
@@ -58,11 +59,8 @@ class SkString(val value: String) : SkScalar() {
         return SkStringRange(this.value, endStr.value, endInclusive)
     }
 
-    fun asNumberOrNull(): SkNumber? {
-        value.toIntOrNull()?.let { return SkNumber.valueOf(it) }
-        value.toLongOrNull()?.let { return SkNumber.valueOf(it) }
-        value.toBigIntegerOrNull()?.let { return SkNumber.valueOf(it) }
-        value.toBigDecimalOrNull()?.let { return SkNumber.valueOf(it) }
+    fun asNumberOrNull(): SkDecimal? {
+        value.toBigDecimalOrNull()?.let { return SkDecimal.valueOf(it) }
 
         return null
     }
@@ -134,23 +132,45 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
     }
 }
 
-object String_trim : SkMethod("trim", listOf("trimStart", "trimEnd")) {
+object StringClass : SkClass("String", ObjectClass) {
+    init {
+        defineInstanceMethod(String_trim)
+        defineInstanceMethod(String_substring)
+    }
+
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkString.EMPTY
+        return SkStringObject(valArg.asString())
+    }
+}
+
+object String_trim : SkMethod("trim", listOf("chars", "start", "end")) {
     override val expectedClass: SkClass
         get() = StringClass
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkString {
         val args = ArgsExtractor(posArgs, kwArgs, "trim")
 
-        val trimStart = args.expectBoolean("trimStart", ifUndefined = true)
-        val trimEnd = args.expectBoolean("trimEnd", ifUndefined = true)
+        val chars = args.expectString("chars", ifUndefined = "")
+        val trimStart = args.expectBoolean("start", ifUndefined = true)
+        val trimEnd = args.expectBoolean("end", ifUndefined = true)
 
         val str = thiz.asString()
 
-        val trimmed = when {
-            trimStart && trimEnd -> str.value.trim()
-            trimStart -> str.value.trimStart()
-            trimEnd -> str.value.trimEnd()
-            else -> str.value
+        val trimmed = if (chars == "") {
+            when {
+                trimStart && trimEnd -> str.value.trim()
+                trimStart -> str.value.trimStart()
+                trimEnd -> str.value.trimEnd()
+                else -> str.value
+            }
+        } else {
+            when {
+                trimStart && trimEnd -> str.value.trim(*chars.toCharArray())
+                trimStart -> str.value.trimStart(*chars.toCharArray())
+                trimEnd -> str.value.trimEnd(*chars.toCharArray())
+                else -> str.value
+            }
         }
 
         return when (trimmed) {

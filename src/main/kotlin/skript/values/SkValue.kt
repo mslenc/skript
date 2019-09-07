@@ -1,13 +1,13 @@
 package skript.values
 
 import skript.exec.RuntimeState
-import java.lang.StringBuilder
 
 enum class SkValueKind {
     NULL,
     UNDEFINED,
 
     NUMBER,
+    DECIMAL,
     BOOLEAN,
     STRING,
 

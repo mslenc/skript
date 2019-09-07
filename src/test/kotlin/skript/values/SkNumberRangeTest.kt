@@ -21,28 +21,28 @@ class SkNumberRangeTest {
         val iter = range.makeIterator() as SkIterator
 
         assertTrue(iter.moveToNext())
-        assertEquals(0.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(1.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(0.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(1.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(1.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(2.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(1.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(2.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(2.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(3.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(2.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(3.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(3.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(4.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(3.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(4.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(4.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(5.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(4.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(5.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(5.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(6.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(5.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(6.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertFalse(iter.moveToNext())
     }
@@ -61,24 +61,24 @@ class SkNumberRangeTest {
         val iter = range.makeIterator() as SkIterator
 
         assertTrue(iter.moveToNext())
-        assertEquals(0.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(1.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(0.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(1.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(1.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(2.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(1.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(2.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(2.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(3.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(2.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(3.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(3.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(4.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(3.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(4.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertTrue(iter.moveToNext())
-        assertEquals(4.toBigDecimal(), (iter.getCurrentKey() as SkNumber).value)
-        assertEquals(5.toBigDecimal(), (iter.getCurrentValue() as SkNumber).value)
+        assertEquals(4.0, (iter.getCurrentKey() as SkNumber).value)
+        assertEquals(5.0, (iter.getCurrentValue() as SkNumber).value)
 
         assertFalse(iter.moveToNext())
     }

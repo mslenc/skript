@@ -14,7 +14,13 @@ fun strictlyEqual(a: SkValue, b: SkValue): Boolean {
         SkValueKind.UNDEFINED -> b == SkUndefined
 
         SkValueKind.NUMBER -> if (b.getKind() == SkValueKind.NUMBER) {
-            a.asNumber().value.compareTo(b.asNumber().value) == 0
+            a.asNumber().compareTo(b.asNumber()) == 0
+        } else {
+            false
+        }
+
+        SkValueKind.DECIMAL -> if (b.getKind() == SkValueKind.DECIMAL) {
+            a.asNumber().compareTo(b.asNumber()) == 0
         } else {
             false
         }

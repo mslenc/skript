@@ -13,7 +13,11 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
         get() = SkNumberRangeClass
 
     override suspend fun makeIterator(): SkValue {
-        return SkNumberRangeIterator(start, end, endInclusive)
+        return if (start is SkDecimal && end is SkDecimal) {
+            SkDecimalRangeIterator(start, end, endInclusive)
+        } else {
+            SkDoubleRangeIterator(start.toDouble(), end.toDouble(), endInclusive)
+        }
     }
 
     override suspend fun hasOwnMember(key: SkValue): Boolean {
@@ -28,9 +32,55 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
     }
 }
 
-class SkNumberRangeIterator(start: SkNumber, val end: SkNumber, val endInclusive: Boolean) : SkObject(), SkIterator {
+object SkNumberRangeClass : SkClass("NumberRange", ObjectClass) {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+        val args = ArgsExtractor(posArgs, kwArgs, "NumberRange")
+
+        val start = args.expectNumber("start", coerce = true, ifUndefined = SkNumber.ZERO)
+        val end = args.expectNumber("end", coerce = true, ifUndefined = SkNumber.ZERO)
+        val endInclusive = args.expectBoolean("endInclusive", coerce = true, ifUndefined = true)
+        args.expectNothingElse()
+
+        return SkNumberRange(start, end, endInclusive)
+    }
+}
+
+class SkDoubleRangeIterator(start: Double, val end: Double, val endInclusive: Boolean) : SkObject(), SkIterator {
     override val klass: SkClass
         get() = SkNumberRangeIteratorClass
+
+    var iteration = -1
+    var currValue = start
+
+    override fun moveToNext(): Boolean {
+        if (++iteration > 0)
+            currValue += 1.0
+
+        return when {
+            endInclusive && currValue > end -> false
+            !endInclusive && currValue >= end -> false
+            else -> true
+        }
+    }
+
+    override fun getCurrentKey(): SkDouble {
+        return iteration.toSkript()
+    }
+
+    override fun getCurrentValue(): SkDouble {
+        return currValue.toSkript()
+    }
+}
+
+object SkNumberRangeIteratorClass : SkClass("NumberRangeIterator", ObjectClass) {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+        throw IllegalStateException("This should never be called")
+    }
+}
+
+class SkDecimalRangeIterator(start: SkDecimal, val end: SkDecimal, val endInclusive: Boolean) : SkObject(), SkIterator {
+    override val klass: SkClass
+        get() = SkDecimalRangeIteratorClass
 
     var iteration = -1
     var currValue = start
@@ -55,20 +105,7 @@ class SkNumberRangeIterator(start: SkNumber, val end: SkNumber, val endInclusive
     }
 }
 
-object SkNumberRangeClass : SkClass("NumberRange", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
-        val args = ArgsExtractor(posArgs, kwArgs, "NumberRange")
-
-        val start = args.expectNumber("start", coerce = true, ifUndefined = SkNumber.ZERO)
-        val end = args.expectNumber("end", coerce = true, ifUndefined = SkNumber.ZERO)
-        val endInclusive = args.expectBoolean("endInclusive", coerce = true, ifUndefined = true)
-        args.expectNothingElse()
-
-        return SkNumberRange(start, end, endInclusive)
-    }
-}
-
-object SkNumberRangeIteratorClass : SkClass("NumberRangeIterator", ObjectClass) {
+object SkDecimalRangeIteratorClass : SkClass("DecimalRangeIteratorClass", ObjectClass) {
     override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
         throw IllegalStateException("This should never be called")
     }

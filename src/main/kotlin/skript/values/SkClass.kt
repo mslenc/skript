@@ -99,12 +99,7 @@ object BooleanClass : SkClass("Boolean", ObjectClass) {
     }
 }
 
-object StringClass : SkClass("String", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
-        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkString.EMPTY
-        return SkStringObject(valArg.asString())
-    }
-}
+
 
 object MapClass : SkClass("Map", ObjectClass) {
     override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {

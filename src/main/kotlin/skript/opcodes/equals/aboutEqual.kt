@@ -44,14 +44,23 @@ fun aboutEqual(aObj: SkValue, bObj: SkValue): Boolean {
         }
 
         SkValueKind.NUMBER -> when (bKind) {
-            SkValueKind.NUMBER -> a.asNumber().value.compareTo(b.asNumber().value) == 0
-            SkValueKind.STRING -> (b.asString().asNumberOrNull() ?: return false).value.compareTo(a.asNumber().value) == 0
+            SkValueKind.NUMBER -> a.asNumber().compareTo(b.asNumber()) == 0
+            SkValueKind.DECIMAL -> a.asNumber().compareTo(b.asNumber()) == 0
+            SkValueKind.STRING -> a.asNumber().compareTo(b.asString().asNumberOrNull() ?: return false) == 0
+            else -> false
+        }
+
+        SkValueKind.DECIMAL -> when (bKind) {
+            SkValueKind.NUMBER -> a.asNumber().compareTo(b.asNumber()) == 0
+            SkValueKind.DECIMAL -> a.asNumber().compareTo(b.asNumber()) == 0
+            SkValueKind.STRING -> a.asNumber().compareTo(b.asString().asNumberOrNull() ?: return false) == 0
             else -> false
         }
 
         SkValueKind.STRING -> when (bKind) {
+            SkValueKind.NUMBER -> (a.asString().asNumberOrNull() ?: return false).compareTo(b.asNumber()) == 0
+            SkValueKind.DECIMAL -> (a.asString().asNumberOrNull() ?: return false).compareTo(b.asNumber()) == 0
             SkValueKind.STRING -> a.asString().value == b.asString().value
-            SkValueKind.NUMBER -> (a.asString().asNumberOrNull() ?: return false).value.compareTo(b.asNumber().value) == 0
             else -> false
         }
 

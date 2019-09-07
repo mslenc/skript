@@ -3,9 +3,8 @@ package skript.endtoend
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import skript.assertStrictlyEqual
 import skript.io.toSkript
-import skript.opcodes.equals.strictlyEqual
-import java.math.BigDecimal
 
 class OurFirstTest {
     @Test
@@ -21,15 +20,15 @@ class OurFirstTest {
         """.trimIndent())
 
         val expect = listOf(
-            BigDecimal("8.1").toSkript(),
-            BigDecimal("6").toSkript(),
-            BigDecimal("5.5").toSkript()
+            8.1.toSkript(),
+            6.0.toSkript(),
+            5.5.toSkript()
         )
 
         assertEquals(expect.size, outputs.size)
 
         for (i in expect.indices)
-            assertTrue(strictlyEqual(expect[i], outputs[i]))
+            assertStrictlyEqual(expect[i], outputs[i])
     }
 
     @Test
@@ -53,6 +52,6 @@ class OurFirstTest {
         assertEquals(expect.size, outputs.size)
 
         for (i in expect.indices)
-            assertTrue(strictlyEqual(expect[i], outputs[i]))
+            assertStrictlyEqual(expect[i], outputs[i])
     }
 }

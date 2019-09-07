@@ -38,6 +38,7 @@ class LexerTest {
             1..5 true..<false
             ++a--
             a?b?.c:e
+            12d 12.34d 12E5D 12E-4D 14E+2d 12.34E+5D 12.34E-5d
         """.trimIndent()
 
         val tokens = CharStream(source, filename).lex()
@@ -58,38 +59,38 @@ class LexerTest {
             Token(IDENTIFIER,         "let",            Pos( 3,  1, filename)),
             Token(IDENTIFIER,         "a",              Pos( 3,  5, filename)),
             Token(ASSIGN,             "=",              Pos( 3,  7, filename)),
-            Token(NUMBER,             "2",              Pos( 3,  9, filename)),
+            Token(DOUBLE,             "2",              Pos( 3,  9, filename)),
             Token(PLUS,               "+",              Pos( 3, 11, filename)),
-            Token(NUMBER,             "3",              Pos( 3, 13, filename)),
+            Token(DOUBLE,             "3",              Pos( 3, 13, filename)),
             Token(STAR,               "*",              Pos( 3, 15, filename)),
-            Token(NUMBER,             "4",              Pos( 3, 17, filename)),
+            Token(DOUBLE,             "4",              Pos( 3, 17, filename)),
             Token(SLASH,              "/",              Pos( 3, 19, filename)),
-            Token(NUMBER,             "5",              Pos( 3, 21, filename)),
+            Token(DOUBLE,             "5",              Pos( 3, 21, filename)),
             Token(PERCENT,            "%",              Pos( 3, 23, filename)),
-            Token(NUMBER,             "6",              Pos( 3, 25, filename)),
+            Token(DOUBLE,             "6",              Pos( 3, 25, filename)),
             Token(SLASH_SLASH,        "//",             Pos( 3, 27, filename)),
-            Token(NUMBER,             "7",              Pos( 3, 30, filename)),
+            Token(DOUBLE,             "7",              Pos( 3, 30, filename)),
             Token(STAR_STAR,          "**",             Pos( 3, 32, filename)),
-            Token(NUMBER,             "8",              Pos( 3, 35, filename)),
+            Token(DOUBLE,             "8",              Pos( 3, 35, filename)),
             Token(SEMI,               ";",              Pos( 3, 36, filename)),
 
             Token(STRING,             "\"abc\\\"def\"", Pos( 5,  1, filename)),
-            Token(NUMBER,             "12",             Pos( 5, 12, filename)),
-            Token(NUMBER,             "12.34",          Pos( 5, 15, filename)),
-            Token(NUMBER,             "12E5",           Pos( 5, 21, filename)),
-            Token(NUMBER,             "12E-4",          Pos( 5, 26, filename)),
-            Token(NUMBER,             "14E+2",          Pos( 5, 32, filename)),
-            Token(NUMBER,             "12.34E+5",       Pos( 5, 38, filename)),
-            Token(NUMBER,             "12.34E-5",       Pos( 5, 47, filename)),
+            Token(DOUBLE,             "12",             Pos( 5, 12, filename)),
+            Token(DOUBLE,             "12.34",          Pos( 5, 15, filename)),
+            Token(DOUBLE,             "12E5",           Pos( 5, 21, filename)),
+            Token(DOUBLE,             "12E-4",          Pos( 5, 26, filename)),
+            Token(DOUBLE,             "14E+2",          Pos( 5, 32, filename)),
+            Token(DOUBLE,             "12.34E+5",       Pos( 5, 38, filename)),
+            Token(DOUBLE,             "12.34E-5",       Pos( 5, 47, filename)),
 
-            Token(NUMBER,             "12",             Pos( 6,  1, filename)),
+            Token(DOUBLE,             "12",             Pos( 6,  1, filename)),
             Token(DOT,                ".",              Pos( 6,  3, filename)),
             Token(IDENTIFIER,         "toFixed",        Pos( 6,  4, filename)),
             Token(LPAREN,             "(",              Pos( 6, 11, filename)),
-            Token(NUMBER,             "5",              Pos( 6, 12, filename)),
+            Token(DOUBLE,             "5",              Pos( 6, 12, filename)),
             Token(RPAREN,             ")",              Pos( 6, 13, filename)),
 
-            Token(NUMBER,             "12",             Pos( 7,  1, filename)),
+            Token(DOUBLE,             "12",             Pos( 7,  1, filename)),
             Token(DOT,                ".",              Pos( 7,  3, filename)),
             Token(IDENTIFIER,         "emit",           Pos( 7,  4, filename)),
             Token(LPAREN,             "(",              Pos( 7,  8, filename)),
@@ -206,7 +207,7 @@ class LexerTest {
             Token(ARROW,              "->",             Pos(24, 11, filename)),
             Token(IDENTIFIER,         "a",              Pos(24, 14, filename)),
             Token(MINUS,              "-",              Pos(24, 16, filename)),
-            Token(NUMBER,             "1",              Pos(24, 18, filename)),
+            Token(DOUBLE,             "1",              Pos(24, 18, filename)),
             Token(RCURLY,             "}",              Pos(24, 20, filename)),
             Token(ELVIS,              "?:",             Pos(24, 22, filename)),
             Token(IDENTIFIER,         "nooo",           Pos(24, 25, filename)),
@@ -214,27 +215,35 @@ class LexerTest {
             Token(QUESTION,           "?",              Pos(24, 30, filename)),
             Token(QUESTION,           "?",              Pos(24, 31, filename)),
 
-            Token(NUMBER,             "1",              Pos(25, 1, filename)),
-            Token(DOT_DOT,            "..",             Pos(25, 2, filename)),
-            Token(NUMBER,             "5",              Pos(25, 4, filename)),
-            Token(TRUE,               "true",           Pos(25, 6, filename)),
+            Token(DOUBLE,             "1",              Pos(25,  1, filename)),
+            Token(DOT_DOT,            "..",             Pos(25,  2, filename)),
+            Token(DOUBLE,             "5",              Pos(25,  4, filename)),
+            Token(TRUE,               "true",           Pos(25,  6, filename)),
             Token(DOT_DOT_LESS,       "..<",            Pos(25, 10, filename)),
             Token(FALSE,              "false",          Pos(25, 13, filename)),
 
-            Token(PLUS_PLUS,          "++",             Pos(26, 1, filename)),
-            Token(IDENTIFIER,         "a",              Pos(26, 3, filename)),
-            Token(MINUS_MINUS,        "--",             Pos(26, 4, filename)),
+            Token(PLUS_PLUS,          "++",             Pos(26,  1, filename)),
+            Token(IDENTIFIER,         "a",              Pos(26,  3, filename)),
+            Token(MINUS_MINUS,        "--",             Pos(26,  4, filename)),
 
             // a?b?.c:e
-            Token(IDENTIFIER,         "a",              Pos(27, 1, filename)),
-            Token(QUESTION,           "?",              Pos(27, 2, filename)),
-            Token(IDENTIFIER,         "b",              Pos(27, 3, filename)),
-            Token(SAFE_DOT,           "?.",             Pos(27, 4, filename)),
-            Token(IDENTIFIER,         "c",              Pos(27, 6, filename)),
-            Token(COLON,              ":",              Pos(27, 7, filename)),
-            Token(IDENTIFIER,         "e",              Pos(27, 8, filename)),
+            Token(IDENTIFIER,         "a",              Pos(27,  1, filename)),
+            Token(QUESTION,           "?",              Pos(27,  2, filename)),
+            Token(IDENTIFIER,         "b",              Pos(27,  3, filename)),
+            Token(SAFE_DOT,           "?.",             Pos(27,  4, filename)),
+            Token(IDENTIFIER,         "c",              Pos(27,  6, filename)),
+            Token(COLON,              ":",              Pos(27,  7, filename)),
+            Token(IDENTIFIER,         "e",              Pos(27,  8, filename)),
 
-            Token(EOF,                "",               Pos(27, 9, filename))
+            Token(DECIMAL,            "12d",            Pos(28,  1, filename)),
+            Token(DECIMAL,            "12.34d",         Pos(28,  5, filename)),
+            Token(DECIMAL,            "12E5D",          Pos(28, 12, filename)),
+            Token(DECIMAL,            "12E-4D",         Pos(28, 18, filename)),
+            Token(DECIMAL,            "14E+2d",         Pos(28, 25, filename)),
+            Token(DECIMAL,            "12.34E+5D",      Pos(28, 32, filename)),
+            Token(DECIMAL,            "12.34E-5d",      Pos(28, 42, filename)),
+
+            Token(EOF,                "",               Pos(28, 51, filename))
         )
 
         for (i in 0 until min(tokens.size, expect.size))

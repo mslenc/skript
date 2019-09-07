@@ -1,14 +1,17 @@
 package skript.opcodes.numeric
 
-import skript.values.SkNumber
-import skript.values.SkUndefined
-import skript.values.SkValue
+import skript.values.*
+import kotlin.math.floor
 
 object BinaryDivideIntOp : BinaryNumericOp() {
-    override fun computeResult(left: SkNumber, right: SkNumber): SkValue {
-        if (right.value.signum() == 0)
+    override fun computeResult(left: SkNumber, right: SkNumber): SkScalar {
+        if (right.signum() == 0)
             return SkUndefined
 
-        return SkNumber.valueOf(left.value.divideToIntegralValue(right.value))
+        return if (left is SkDecimal && right is SkDecimal) {
+            SkNumber.valueOf(left.value.divideToIntegralValue(right.value))
+        } else {
+            SkDouble.valueOf(floor(left.toDouble() / right.toDouble()))
+        }
     }
 }

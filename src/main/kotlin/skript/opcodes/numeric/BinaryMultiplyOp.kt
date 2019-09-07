@@ -1,10 +1,13 @@
 package skript.opcodes.numeric
 
-import skript.values.SkNumber
-import skript.values.SkValue
+import skript.values.*
 
 object BinaryMultiplyOp : BinaryNumericOp() {
-    override fun computeResult(left: SkNumber, right: SkNumber): SkValue {
-        return SkNumber.valueOf(left.value * right.value)
+    override fun computeResult(left: SkNumber, right: SkNumber): SkNumber {
+        return if (left is SkDecimal && right is SkDecimal) {
+            SkDecimal.valueOf(left.value * right.value)
+        } else {
+            SkDouble.valueOf(left.toDouble() * right.toDouble())
+        }
     }
 }
