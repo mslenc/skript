@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 import skript.assertEmittedEquals
 import skript.io.toSkript
+import skript.opcodes.compare.compare
 import skript.opcodes.equals.aboutEqual
 import skript.opcodes.equals.strictlyEqual
 import skript.runScriptWithEmit
@@ -395,19 +396,117 @@ class BinaryOpsTest {
 
         assertEmittedEquals(expect, outputs)
     }
+
+    val compareSets = listOf(
+        // numbers
+        listOf(
+            listOf(SkDouble.valueOf(-5), SkDecimal.valueOf("-5".toBigDecimal())),
+            listOf(SkDouble.valueOf(-3.5), SkDecimal.valueOf("-3.5".toBigDecimal()), SkString("-3.5")),
+            listOf(SkDouble.valueOf(-1), SkDecimal.valueOf("-1".toBigDecimal())),
+            listOf(SkDouble.ZERO, SkDecimal.valueOf("0".toBigDecimal())),
+            listOf(SkDouble.valueOf(0.25), SkDecimal.valueOf("0.25".toBigDecimal()), SkString("0.25")),
+            listOf(SkDouble.valueOf(1), SkDecimal.valueOf("1".toBigDecimal())),
+            listOf(SkDouble.valueOf(12.125), SkDecimal.valueOf("12.125".toBigDecimal()))
+        ),
+
+        // booleans
+        listOf(
+            listOf(SkBoolean.FALSE, SkBooleanObject.FALSE),
+            listOf(SkBoolean.TRUE, SkBooleanObject.TRUE)
+        ),
+
+        // strings
+        listOf(
+            listOf(SkString("abc"), SkStringObject(SkString("abc"))),
+            listOf(SkString("abcd"), SkStringObject(SkString("abcd"))),
+            listOf(SkString("cde"), SkStringObject(SkString("cde")))
+        )
+    )
+
+    @TestFactory
+    fun testCompare(): List<DynamicTest> {
+        val result = ArrayList<DynamicTest>()
+
+        for (type in compareSets) {
+            for (i1 in type.indices) {
+                for (i2 in type.indices) {
+                    for (value1 in type[i1]) {
+                        for (value2 in type[i2]) {
+                            if (value1 === value2) {
+                                assertTrue(compare(value1, value2) == 0)
+                            } else {
+                                val expect = i1.compareTo(i2)
+                                assertEquals(expect, compare(value1, value2)) { "$value1 <=> $value2" }
+                            }
+
+                            if (value1 is SkScalar && value2 is SkScalar) {
+                                val sb = StringBuilder()
+                                value1.toString(sb)
+                                sb.append(" <=> ")
+                                value2.toString(sb)
+                                val testSource = sb.toString()
+
+                                val expected = when (compare(value1, value2)) {
+                                    null -> SkUndefined
+                                    -1 -> SkDouble.MINUS_ONE
+                                    0 -> SkDouble.ZERO
+                                    1 -> SkDouble.ONE
+                                    else -> throw IllegalStateException("compare should only return null, -1, 0 or 1")
+                                }
+
+                                result += test(testSource, expected)
+
+                                val expectedLessThan = when (compare(value1, value2)) {
+                                    null -> SkUndefined
+                                    -1 -> SkBoolean.TRUE
+                                    0 -> SkBoolean.FALSE
+                                    1 -> SkBoolean.FALSE
+                                    else -> throw IllegalStateException("compare should only return null, -1, 0 or 1")
+                                }
+
+                                result += test(testSource.replace(" <=> ", " < "), expectedLessThan)
+
+                                val expectedLessOrEqual = when (compare(value1, value2)) {
+                                    null -> SkUndefined
+                                    -1 -> SkBoolean.TRUE
+                                    0 -> SkBoolean.TRUE
+                                    1 -> SkBoolean.FALSE
+                                    else -> throw IllegalStateException("compare should only return null, -1, 0 or 1")
+                                }
+
+                                result += test(testSource.replace(" <=> ", " <= "), expectedLessOrEqual)
+
+                                val expectedGreaterOrEqual = when (compare(value1, value2)) {
+                                    null -> SkUndefined
+                                    -1 -> SkBoolean.FALSE
+                                    0 -> SkBoolean.TRUE
+                                    1 -> SkBoolean.TRUE
+                                    else -> throw IllegalStateException("compare should only return null, -1, 0 or 1")
+                                }
+
+                                result += test(testSource.replace(" <=> ", " >= "), expectedGreaterOrEqual)
+
+                                val expectedGreaterThan = when (compare(value1, value2)) {
+                                    null -> SkUndefined
+                                    -1 -> SkBoolean.FALSE
+                                    0 -> SkBoolean.FALSE
+                                    1 -> SkBoolean.TRUE
+                                    else -> throw IllegalStateException("compare should only return null, -1, 0 or 1")
+                                }
+
+                                result += test(testSource.replace(" <=> ", " > "), expectedGreaterThan)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result
+    }
 }
 
 /*
-
-
-
-    STRICT_EQUALS("==="),
-    NOT_STRICT_EQUALS("!=="),
-
-    LESS_THAN("<"),
-    LESS_OR_EQUAL("<="),
-    GREATER_THAN(">"),
-    GREATER_OR_EQUAL(">="),
 
     OR("|"),
     AND("&"),
@@ -415,7 +514,6 @@ class BinaryOpsTest {
     AND_AND("&&"),
 
     ELVIS("?:"),
-    STARSHIP("<=>"),
 
     RANGE_TO(".."),
     RANGE_TO_EXCL("..<")*/

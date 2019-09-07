@@ -5,6 +5,7 @@ import skript.opcodes.equals.aboutEqual
 import skript.toStrictNumberOrNull
 import skript.values.*
 import kotlin.math.min
+import kotlin.math.sign
 
 /**
  * Compares two values. We will take a hint from aboutEqual and not do too many implicit conversions, so the result
@@ -36,7 +37,7 @@ fun compare(aObj: SkValue, bObj: SkValue): Int? {
     val aKind = a.getKind()
     val bKind = b.getKind()
 
-    if (aKind == SkValueKind.NUMBER || bKind == SkValueKind.NUMBER) {
+    if (aKind == SkValueKind.NUMBER || bKind == SkValueKind.NUMBER || aKind == SkValueKind.DECIMAL || bKind == SkValueKind.DECIMAL) {
         val aNum = a.toStrictNumberOrNull() ?: return null
         val bNum = b.toStrictNumberOrNull() ?: return null
 
@@ -47,7 +48,7 @@ fun compare(aObj: SkValue, bObj: SkValue): Int? {
         return null
 
     return when (aKind) {
-        SkValueKind.STRING -> a.asString().value.compareTo(b.asString().value)
+        SkValueKind.STRING -> a.asString().value.compareTo(b.asString().value).sign
 
         SkValueKind.BOOLEAN -> {
             val aVal = if (a.asBoolean().value) 1 else 0
