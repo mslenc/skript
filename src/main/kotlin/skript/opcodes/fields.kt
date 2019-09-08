@@ -1,6 +1,7 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
+import skript.values.SkString
 
 object SetMember : SuspendOpCode() {
     override suspend fun executeSuspend(state: RuntimeState) {
@@ -9,7 +10,7 @@ object SetMember : SuspendOpCode() {
             val key = stack.pop()
             val obj = stack.pop()
 
-            obj.setMember(key, value)
+            obj.setMember(key, value, state)
         }
     }
 }
@@ -21,31 +22,35 @@ object SetMemberKeepValue : SuspendOpCode() {
             val key = stack.pop()
             val obj = stack.pop()
 
-            obj.setMember(key, value)
+            obj.setMember(key, value, state)
 
             stack.push(value)
         }
     }
 }
 
-class SetKnownMember(val key: String) : SuspendOpCode() {
+class SetKnownMember(key: String) : SuspendOpCode() {
+    private val key = SkString(key)
+
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.apply {
             val value = stack.pop()
             val obj = stack.pop()
 
-            obj.setMember(key, value)
+            obj.setMember(key, value, state)
         }
     }
 }
 
-class SetKnownMemberKeepValue(val key: String) : SuspendOpCode() {
+class SetKnownMemberKeepValue(key: String) : SuspendOpCode() {
+    private val key = SkString(key)
+
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.apply {
             val value = stack.pop()
             val obj = stack.pop()
 
-            obj.setMember(key, value)
+            obj.setMember(key, value, state)
 
             stack.push(value)
         }
@@ -58,17 +63,19 @@ object GetMember : SuspendOpCode() {
             val key = stack.pop()
             val obj = stack.pop()
 
-            stack.push(obj.findMember(key))
+            stack.push(obj.findMember(key, state))
         }
     }
 }
 
-class GetKnownMember(val key: String) : SuspendOpCode() {
+class GetKnownMember(key: String) : SuspendOpCode() {
+    val key = SkString(key)
+
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.apply {
             val obj = stack.pop()
 
-            stack.push(obj.findMember(key))
+            stack.push(obj.findMember(key, state))
         }
     }
 }

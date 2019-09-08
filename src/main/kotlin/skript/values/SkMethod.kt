@@ -14,8 +14,8 @@ sealed class SkCallable(val name: String) : SkObject() {
 }
 
 abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable(name) {
-    override val klass: SkClass
-        get() = FunctionClass
+    override val klass: SkClassDef
+        get() = SkFunctionClassDef
 
     abstract override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
 
@@ -29,10 +29,10 @@ abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallab
 }
 
 abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable(name) {
-    override val klass: SkClass
-        get() = MethodClass
+    override val klass: SkClassDef
+        get() = SkMethodClassDef
 
-    abstract val expectedClass: SkClass
+    abstract val expectedClass: SkClassDef
     protected val nameString by lazy { SkString("function ${expectedClass.name}.$name(${paramNames}) {[ native code ]}") }
 
     final override fun getKind(): SkValueKind {
@@ -63,3 +63,7 @@ class BoundMethod(val method: SkMethod, val thiz: SkValue, val boundPosArgs: Lis
         return method.call(thiz, allPosArgs, allKwArgs, state)
     }
 }
+
+object SkFunctionClassDef : SkClassDef("Function", SkObjectClassDef)
+
+object SkMethodClassDef : SkClassDef("Method", SkObjectClassDef)

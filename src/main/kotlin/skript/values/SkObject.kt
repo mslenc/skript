@@ -5,9 +5,9 @@ import skript.illegalArg
 import skript.io.toSkript
 import skript.notSupported
 
-abstract class SkObject() : SkValue() {
+abstract class SkObject : SkValue() {
     internal var props: Props = EmptyProps
-    abstract val klass: SkClass
+    abstract val klass: SkClassDef
 
     override fun getKind(): SkValueKind {
         return SkValueKind.OBJECT
@@ -29,12 +29,8 @@ abstract class SkObject() : SkValue() {
         return SkString("[object ${klass.name}]")
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue) {
-        setMember(key.asString().value, value)
-    }
-
-    override suspend fun setMember(key: String, value: SkValue) {
-        defaultSetMember(key, value)
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
+        defaultSetMember(key.asString().value, value)
     }
 
     protected fun defaultSetMember(key: String, value: SkValue) {
@@ -58,7 +54,7 @@ abstract class SkObject() : SkValue() {
         props = props.withAdded(key, value)
     }
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         return defaultHasOwnMember(key)
     }
 
@@ -68,12 +64,8 @@ abstract class SkObject() : SkValue() {
         return props.get(keyStr) != null
     }
 
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         return defaultFindMember(key.asString().value)
-    }
-
-    override suspend fun findMember(key: String): SkValue {
-        return defaultFindMember(key)
     }
 
     protected fun defaultFindMember(key: String): SkValue {
@@ -88,15 +80,7 @@ abstract class SkObject() : SkValue() {
         return SkUndefined
     }
 
-    override suspend fun deleteMember(key: SkValue) {
-        defaultDeleteMember(key)
-    }
-
-    override suspend fun deleteMember(key: String) {
-        defaultDeleteMember(key)
-    }
-
-    protected fun defaultDeleteMember(key: SkValue) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         defaultDeleteMember(key.asString().value)
     }
 
@@ -132,3 +116,5 @@ abstract class SkObject() : SkValue() {
         throw UnsupportedOperationException("$exprDebug has no method $methodName")
     }
 }
+
+object SkObjectClassDef : SkClassDef("Object", null)

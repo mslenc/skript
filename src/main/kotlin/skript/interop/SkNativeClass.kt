@@ -2,15 +2,14 @@ package skript.interop
 
 import skript.exec.RuntimeState
 import skript.typeError
-import skript.values.ObjectClass
-import skript.values.SkClass
-import skript.values.SkValue
+import skript.values.*
+import kotlin.reflect.KClass
 
-class SkNativeClass<T>(name: String, superClass: SkNativeClass<*>?) : SkClass(name, superClass ?: ObjectClass) {
+class SkNativeClassDef<T : Any>(name: String, val nativeClass: KClass<T>, superClass: SkNativeClassDef<*>?) : SkClassDef(name, superClass ?: SkObjectClassDef) {
     var constructor : SkNativeConstructor<T>? = null
     var properties = HashMap<String, SkNativeProperty<T, *>>()
 
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
         constructor?.let { constructor ->
             return constructor.call(posArgs, kwArgs, state)
         }

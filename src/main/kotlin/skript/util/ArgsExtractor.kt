@@ -7,8 +7,8 @@ import skript.values.*
 private val emptyKwMap = LinkedHashMap<String, SkValue>(0)
 
 class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, val funcName: String) : SkObject() {
-    override val klass: SkClass
-        get() = ArgsExtractorClass
+    override val klass: SkClassDef
+        get() = ArgsExtractorClassDef
 
     private var state = 0
     private var posIndex = 0
@@ -55,8 +55,8 @@ class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, va
     }
 }
 
-object ArgsExtractorClass : SkClass("ArgsExtractor", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+object ArgsExtractorClassDef : SkClassDef("ArgsExtractor", SkObjectClassDef) {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
         throw IllegalStateException("Shouldn't be called")
     }
 }

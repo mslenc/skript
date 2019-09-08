@@ -13,32 +13,32 @@ class SkString(val value: String) : SkScalar() {
         return SkStringObject(this)
     }
 
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         if (key.isString("length"))
             return SkNumber.valueOf(value.length)
 
-        return super.findMember(key)
+        return super.findMember(key, state)
     }
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         if (key.isString("length"))
             return true
 
-        return super.hasOwnMember(key)
+        return super.hasOwnMember(key, state)
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue) {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         if (key.isString("length"))
             throw UnsupportedOperationException("Can't set string length - strings are immutable")
 
-        return super.setMember(key, value)
+        return super.setMember(key, value, state)
     }
 
-    override suspend fun deleteMember(key: SkValue) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         if (key.isString("length"))
             throw UnsupportedOperationException("Can't delete string length - strings are immutable")
 
-        return super.deleteMember(key)
+        return super.deleteMember(key, state)
     }
 
     override fun getKind(): SkValueKind {
@@ -88,8 +88,8 @@ class SkString(val value: String) : SkScalar() {
 }
 
 class SkStringObject(override val value: SkString) : SkScalarObject() {
-    override val klass: SkClass
-        get() = StringClass
+    override val klass: SkClassDef
+        get() = SkStringClassDef
 
     override fun asBoolean(): SkBoolean {
         return value.asBoolean()
@@ -103,50 +103,50 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
         return value
     }
 
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         if (key.isString("length"))
             return SkNumber.valueOf(value.value.length)
 
-        return super.findMember(key)
+        return super.findMember(key, state)
     }
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         if (key.isString("length"))
             return true
 
-        return super.hasOwnMember(key)
+        return super.hasOwnMember(key, state)
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue) {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         if (key.isString("length"))
             throw UnsupportedOperationException("Can't set string length - strings are immutable")
 
-        return super.setMember(key, value)
+        return super.setMember(key, value, state)
     }
 
-    override suspend fun deleteMember(key: SkValue) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         if (key.isString("length"))
             throw UnsupportedOperationException("Can't delete string length - strings are immutable")
 
-        return super.deleteMember(key)
+        return super.deleteMember(key, state)
     }
 }
 
-object StringClass : SkClass("String", ObjectClass) {
+object SkStringClassDef : SkClassDef("String", SkObjectClassDef) {
     init {
         defineInstanceMethod(String_trim)
         defineInstanceMethod(String_substring)
     }
 
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
         val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkString.EMPTY
         return SkStringObject(valArg.asString())
     }
 }
 
 object String_trim : SkMethod("trim", listOf("chars", "start", "end")) {
-    override val expectedClass: SkClass
-        get() = StringClass
+    override val expectedClass: SkClassDef
+        get() = SkStringClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkString {
         val args = ArgsExtractor(posArgs, kwArgs, "trim")
@@ -181,8 +181,8 @@ object String_trim : SkMethod("trim", listOf("chars", "start", "end")) {
 }
 
 object String_substring : SkMethod("substring", listOf("start", "end")) {
-    override val expectedClass: SkClass
-        get() = StringClass
+    override val expectedClass: SkClassDef
+        get() = SkStringClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkString {
         val strVal = thiz.asString()

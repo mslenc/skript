@@ -1,5 +1,6 @@
 package skript.interop
 
+import skript.exec.RuntimeState
 import skript.typeError
 import skript.values.SkNull
 import skript.values.SkValue
@@ -13,14 +14,14 @@ sealed class SkNativeProperty<RCVR, T> {
     abstract val nullable: Boolean
     abstract val readOnly: Boolean
 
-    fun getValue(nativeObject: RCVR): SkValue {
+    suspend fun getValue(nativeObject: RCVR, state: RuntimeState): SkValue {
         return when (val nativeVal = property.get(nativeObject)) {
             null -> SkNull
-            else -> codec.toSkript(nativeVal)
+            else -> codec.toSkript(nativeVal, state)
         }
     }
 
-    abstract fun setValue(nativeObject: RCVR, value: SkValue)
+    abstract suspend fun setValue(nativeObject: RCVR, value: SkValue, state: RuntimeState)
 }
 
 class SkNativeMutableProperty<RCVR, T>(
@@ -36,8 +37,8 @@ class SkNativeMutableProperty<RCVR, T>(
     override val nullable: Boolean
         get() = property.returnType.isMarkedNullable
 
-    override fun setValue(nativeObject: RCVR, value: SkValue) {
-        val nativeValue = codec.toKotlin(value)
+    override suspend fun setValue(nativeObject: RCVR, value: SkValue, state: RuntimeState) {
+        val nativeValue = codec.toKotlin(value, state)
         property.set(nativeObject, nativeValue)
     }
 }
@@ -55,7 +56,7 @@ class SkNativeReadOnlyProperty<RCVR, T>(
     override val nullable: Boolean
         get() = property.returnType.isMarkedNullable
 
-    override fun setValue(nativeObject: RCVR, value: SkValue) {
+    override suspend fun setValue(nativeObject: RCVR, value: SkValue, state: RuntimeState) {
         typeError("Can't set read-only property $name")
     }
 }

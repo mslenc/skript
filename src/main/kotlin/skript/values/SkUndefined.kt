@@ -4,23 +4,15 @@ import skript.exec.RuntimeState
 import skript.typeError
 
 object SkUndefined : SkScalar() {
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         return false
     }
 
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         return SkUndefined
     }
 
-    override suspend fun findMember(key: String): SkValue {
-        return SkUndefined
-    }
-
-    override suspend fun deleteMember(key: SkValue) {
-        // ignore
-    }
-
-    override suspend fun deleteMember(key: String) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         // ignore
     }
 
@@ -28,11 +20,7 @@ object SkUndefined : SkScalar() {
         typeError("Can't convert undefined into an object")
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue) {
-        typeError("Can't set members on undefined")
-    }
-
-    override suspend fun setMember(key: String, value: SkValue) {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         typeError("Can't set members on undefined")
     }
 

@@ -246,8 +246,8 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
 }
 
 class SkNumberObject(override val value: SkNumber): SkScalarObject() {
-    override val klass: SkClass
-        get() = NumberClass
+    override val klass: SkClassDef
+        get() = SkNumberClassDef
 
     override fun asBoolean(): SkBoolean {
         return value.asBoolean()
@@ -259,5 +259,12 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject() {
 
     override fun asString(): SkString {
         return value.asString()
+    }
+}
+
+object SkNumberClassDef : SkClassDef("Number", SkObjectClassDef) {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkNumber.ZERO
+        return SkNumberObject(valArg.asNumber())
     }
 }

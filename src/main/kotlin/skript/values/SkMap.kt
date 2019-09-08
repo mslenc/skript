@@ -1,10 +1,12 @@
 package skript.values
 
+import skript.exec.RuntimeState
 import skript.notSupported
+import skript.typeError
 
 class SkMap : SkObject {
-    override val klass: SkClass
-        get() = MapClass
+    override val klass: SkClassDef
+        get() = SkMapClassDef
 
     constructor() : super()
 
@@ -53,5 +55,26 @@ class SkMap : SkObject {
 
     override suspend fun makeIterator(): SkValue {
         return SkMapIterator(this)
+    }
+}
+
+object SkMapClassDef : SkClassDef("Map", SkObjectClassDef) {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+        val result = SkMap()
+        for (el in posArgs) {
+            if (el is SkMap) {
+                el.props.forEach { key, value ->
+                    result.setMapMember(key, value)
+                }
+            } else {
+                typeError("Map constructor only accepts other Maps as positional arguments")
+            }
+        }
+
+        for ((key, value) in kwArgs) {
+            result.setMapMember(key, value)
+        }
+
+        return result
     }
 }

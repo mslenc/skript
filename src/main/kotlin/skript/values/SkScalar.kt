@@ -14,31 +14,19 @@ abstract class SkScalar : SkValue() {
         return asObject().callMethod(methodName, posArgs, kwArgs, state, exprDebug)
     }
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         return false
     }
 
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         return SkUndefined
     }
 
-    override suspend fun findMember(key: String): SkValue {
-        return SkUndefined
-    }
-
-    override suspend fun setMember(key: SkValue, value: SkValue) {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         notSupported("Can't set members on scalars")
     }
 
-    override suspend fun setMember(key: String, value: SkValue) {
-        notSupported("Can't set members on scalars")
-    }
-
-    override suspend fun deleteMember(key: SkValue) {
-        // nothing
-    }
-
-    override suspend fun deleteMember(key: String) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         // nothing
     }
 
@@ -51,7 +39,7 @@ abstract class SkScalar : SkValue() {
     abstract fun toString(sb: StringBuilder)
 }
 
-abstract class SkScalarObject() : SkObject() {
+abstract class SkScalarObject : SkObject() {
     abstract val value: SkScalar
 
     override suspend fun makeIterator(): SkValue {

@@ -8,12 +8,12 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider) {
 
         if (initStandardGlobals) {
             env.apply {
-                setGlobal("String", StringClass, true)
-                setGlobal("Number", NumberClass, true)
-                setGlobal("Boolean", BooleanClass, true)
-                setGlobal("Object", ObjectClass, true)
-                setGlobal("List", ListClass, true)
-                setGlobal("Map", ListClass, true)
+                setGlobal("String", env.getClassObject(SkStringClassDef), true)
+                setGlobal("Number", env.getClassObject(SkNumberClassDef), true)
+                setGlobal("Boolean", env.getClassObject(SkBooleanClassDef), true)
+                setGlobal("Object", env.getClassObject(SkObjectClassDef), true)
+                setGlobal("List", env.getClassObject(SkListClassDef), true)
+                setGlobal("Map", env.getClassObject(SkMapClassDef), true)
             }
         }
 

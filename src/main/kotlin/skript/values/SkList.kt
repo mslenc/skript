@@ -15,10 +15,10 @@ class SkList : SkObject {
         this.elements.addAll(elements)
     }
 
-    override val klass: SkClass
-        get() = ListClass
+    override val klass: SkClassDef
+        get() = SkListClassDef
 
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         if (key.isString("length"))
             return SkNumber.valueOf(elements.size)
 
@@ -30,7 +30,7 @@ class SkList : SkObject {
         return defaultFindMember(key.asString().value)
     }
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         if (key.isString("length"))
             return true
 
@@ -41,7 +41,7 @@ class SkList : SkObject {
         return defaultHasOwnMember(key)
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue) {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         if (key.isString("length")) {
             value.toNonNegativeIntOrNull()?.let { newLength ->
                 when {
@@ -70,7 +70,7 @@ class SkList : SkObject {
         defaultSetMember(key.asString().value, value)
     }
 
-    override suspend fun deleteMember(key: SkValue) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         require(!key.isString("length")) { "Can't delete list length" }
 
         key.toNonNegativeIntOrNull()?.let { index ->
@@ -79,7 +79,7 @@ class SkList : SkObject {
             return
         }
 
-        defaultDeleteMember(key)
+        super.deleteMember(key, state)
     }
 
     fun getSlot(index: Int): SkValue {
@@ -148,7 +148,7 @@ class SkList : SkObject {
     }
 }
 
-object ListClass : SkClass("List", ObjectClass) {
+object SkListClassDef : SkClassDef("List", SkObjectClassDef) {
     init {
         defineInstanceMethod(List_push)
         defineInstanceMethod(List_concat)
@@ -157,15 +157,15 @@ object ListClass : SkClass("List", ObjectClass) {
         defineInstanceMethod(List_forEach)
     }
 
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
         check(kwArgs.isEmpty()) { "List constructor doesn't support named arguments" }
         return SkList(posArgs)
     }
 }
 
 object List_push : SkMethod("push", emptyList()) {
-    override val expectedClass: SkClass
-        get() = ListClass
+    override val expectedClass: SkClassDef
+        get() = SkListClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.push()")
@@ -176,8 +176,8 @@ object List_push : SkMethod("push", emptyList()) {
 }
 
 object List_concat : SkMethod("concat", emptyList()) {
-    override val expectedClass: SkClass
-        get() = ListClass
+    override val expectedClass: SkClassDef
+        get() = SkListClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.push()")
@@ -197,8 +197,8 @@ object List_concat : SkMethod("concat", emptyList()) {
 }
 
 object List_every : SkMethod("every", listOf("callback")) {
-    override val expectedClass: SkClass
-        get() = ListClass
+    override val expectedClass: SkClassDef
+        get() = SkListClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.push()")
@@ -220,8 +220,8 @@ object List_every : SkMethod("every", listOf("callback")) {
 }
 
 object List_filter : SkMethod("filter", listOf("callback")) {
-    override val expectedClass: SkClass
-        get() = ListClass
+    override val expectedClass: SkClassDef
+        get() = SkListClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.filter()")
@@ -245,8 +245,8 @@ object List_filter : SkMethod("filter", listOf("callback")) {
 }
 
 object List_forEach : SkMethod("forEach", listOf("callback")) {
-    override val expectedClass: SkClass
-        get() = ListClass
+    override val expectedClass: SkClassDef
+        get() = SkListClassDef
 
     override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.forEach()")
@@ -257,8 +257,7 @@ object List_forEach : SkMethod("forEach", listOf("callback")) {
 
         for (i in thiz.elements.indices) {
             val value = thiz.elements[i] ?: continue
-
-            val test = callback.call(listOf(value, SkNumber.valueOf(i), thiz), emptyMap(), state)
+            callback.call(listOf(value, SkNumber.valueOf(i), thiz), emptyMap(), state)
         }
 
         return SkUndefined

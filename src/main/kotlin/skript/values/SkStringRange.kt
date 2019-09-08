@@ -6,10 +6,10 @@ import skript.util.expectBoolean
 import skript.util.expectString
 
 class SkStringRange(val start: String, val end: String, val endInclusive: Boolean) : SkObject() {
-    override val klass: SkClass
-        get() = SkStringRangeClass
+    override val klass: SkClassDef
+        get() = SkStringRangeClassDef
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         val str = key.asString()
 
         return when {
@@ -21,8 +21,8 @@ class SkStringRange(val start: String, val end: String, val endInclusive: Boolea
     }
 }
 
-object SkStringRangeClass : SkClass("StringRange", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+object SkStringRangeClassDef : SkClassDef("StringRange", SkObjectClassDef) {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
         val args = ArgsExtractor(posArgs, kwArgs, "StringRange")
 
         val start = args.expectString("start", coerce = true, ifUndefined = "")

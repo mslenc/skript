@@ -1,38 +1,39 @@
 package skript.interop
 
+import skript.exec.RuntimeState
 import skript.values.SkObject
 import skript.values.SkString
 import skript.values.SkValue
 
-class SkNativeObject<T>(val nativeObj: T, override val klass: SkNativeClass<T>) : SkObject() {
-    override suspend fun setMember(key: String, value: SkValue) {
-        klass.properties[key]?.let { property ->
-            property.setValue(nativeObj, value)
-            return
-        }
-
-        super.setMember(key, value)
-    }
-
-    override suspend fun findMember(key: SkValue): SkValue {
+class SkNativeObject<T: Any>(val nativeObj: T, override val klass: SkNativeClassDef<T>) : SkObject() {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         (key as? SkString)?.let {
             klass.properties[it.value]?.let { property ->
-                return property.getValue(nativeObj)
+                property.setValue(nativeObj, value, state)
+                return
             }
         }
 
-        return super.findMember(key)
+        super.setMember(key, value, state)
     }
 
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
+        (key as? SkString)?.let {
+            klass.properties[it.value]?.let { property ->
+                return property.getValue(nativeObj, state)
+            }
+        }
+
+        return super.findMember(key, state)
+    }
+
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         (key as? SkString)?.let {
             klass.properties[it.value]?.let {
                 return true
             }
         }
 
-        return super.hasOwnMember(key)
+        return super.hasOwnMember(key, state)
     }
-
-
 }

@@ -24,7 +24,7 @@ data class TestObj(
 class InteropTest {
     @Test
     fun testManuallyConstructedClass() = runBlocking {
-        val TestObjClass = SkNativeClass<TestObj>("TestObj", null)
+        val TestObjClass = SkNativeClassDef<TestObj>("TestObj", TestObj::class, null)
 
         TestObjClass.defineInstanceMethod(
             SkNativeMethod(
@@ -45,7 +45,7 @@ class InteropTest {
         ), TestObj::class.primaryConstructor!!, TestObjClass)
 
         val result = runScriptWithEmit({ env ->
-            env.setGlobal("TestObj", TestObjClass)
+            env.setGlobal("TestObj", env.getClassObject(TestObjClass))
         }, """
             
             emit(TestObj("abc", 123).fooBar(" km"));

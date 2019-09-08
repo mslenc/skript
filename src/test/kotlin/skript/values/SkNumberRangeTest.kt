@@ -11,12 +11,12 @@ class SkNumberRangeTest {
     fun testNumberRangeBasicsInclusive() = runBlocking {
         val range = SkNumberRange(1.toSkript(), 6.toSkript(), true)
 
-        assertFalse(range.hasOwnMember(0.toSkript()))
-        assertTrue(range.hasOwnMember(1.toSkript()))
-        assertTrue(range.hasOwnMember(2.toSkript()))
-        assertTrue(range.hasOwnMember(5.9.toSkript()))
-        assertTrue(range.hasOwnMember(6.toSkript()))
-        assertFalse(range.hasOwnMember(6.1.toSkript()))
+        assertFalse(range.hasOwnMemberInternal(0.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(1.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(2.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(5.9.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(6.toSkript()))
+        assertFalse(range.hasOwnMemberInternal(6.1.toSkript()))
 
         val iter = range.makeIterator() as SkIterator
 
@@ -51,12 +51,12 @@ class SkNumberRangeTest {
     fun testNumberRangeBasicsExclusive() = runBlocking {
         val range = SkNumberRange(1.toSkript(), 6.toSkript(), false)
 
-        assertFalse(range.hasOwnMember(0.toSkript()))
-        assertTrue(range.hasOwnMember(1.toSkript()))
-        assertTrue(range.hasOwnMember(2.toSkript()))
-        assertTrue(range.hasOwnMember(5.999999.toSkript()))
-        assertFalse(range.hasOwnMember(6.toSkript()))
-        assertFalse(range.hasOwnMember(6.1.toSkript()))
+        assertFalse(range.hasOwnMemberInternal(0.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(1.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(2.toSkript()))
+        assertTrue(range.hasOwnMemberInternal(5.999999.toSkript()))
+        assertFalse(range.hasOwnMemberInternal(6.toSkript()))
+        assertFalse(range.hasOwnMemberInternal(6.1.toSkript()))
 
         val iter = range.makeIterator() as SkIterator
 

@@ -42,8 +42,8 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
 }
 
 class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
-    override val klass: SkClass
-        get() = BooleanClass
+    override val klass: SkClassDef
+        get() = SkBooleanClassDef
 
     override fun asString(): SkString {
         return value.asString()
@@ -60,5 +60,12 @@ class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
     companion object {
         val TRUE = SkBooleanObject(SkBoolean.TRUE)
         val FALSE = SkBooleanObject(SkBoolean.FALSE)
+    }
+}
+
+object SkBooleanClassDef : SkClassDef("Boolean", SkObjectClassDef) {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkBoolean.FALSE
+        return SkBooleanObject(valArg.asBoolean())
     }
 }

@@ -4,23 +4,15 @@ import skript.exec.RuntimeState
 import skript.typeError
 
 object SkNull : SkScalar() {
-    override suspend fun findMember(key: SkValue): SkValue {
+    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         return SkUndefined
     }
 
-    override suspend fun findMember(key: String): SkValue {
-        return SkUndefined
-    }
-
-    override suspend fun hasOwnMember(key: SkValue): Boolean {
+    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
         return false
     }
 
-    override suspend fun deleteMember(key: SkValue) {
-        // ignore
-    }
-
-    override suspend fun deleteMember(key: String) {
+    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
         // ignore
     }
 
@@ -28,11 +20,7 @@ object SkNull : SkScalar() {
         typeError("Can't convert null into an object")
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue) {
-        typeError("Can't set members on null")
-    }
-
-    override suspend fun setMember(key: String, value: SkValue) {
+    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         typeError("Can't set members on null")
     }
 

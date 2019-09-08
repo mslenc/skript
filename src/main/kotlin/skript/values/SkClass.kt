@@ -2,20 +2,22 @@ package skript.values
 
 import skript.exec.RuntimeState
 
-abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject() {
-    override val klass: SkClass
-        get() = ClassClass
+class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
+    val name: String
+        get() = def.name
 
-    abstract suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
+    override val klass: SkClassDef
+        get() = SkClassClassDef
 
-    private val instanceMethods = HashMap<String, SkMethod>()
-    private val staticFunctions = HashMap<String, SkFunction>()
+    suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+        return def.construct(this, posArgs, kwArgs, state)
+    }
 
-    final override fun getKind(): SkValueKind {
+    override fun getKind(): SkValueKind {
         return SkValueKind.CLASS
     }
 
-    final override fun asBoolean(): SkBoolean {
+    override fun asBoolean(): SkBoolean {
         return SkBoolean.TRUE
     }
 
@@ -23,96 +25,39 @@ abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject() 
         return construct(posArgs, kwArgs, state)
     }
 
-    open fun checkNameAvailable(name: String) {
-        check(!instanceMethods.containsKey(name)) { "This class already has a method named $name" }
-    }
-
-    open fun defineInstanceMethod(method: SkMethod, name: String = method.name) {
-        checkNameAvailable(name)
-        check(method.expectedClass.isSameOrSuperClassOf(this)) { "The method doesn't accept this class" }
-
-        instanceMethods[name] = method
-    }
-
-    fun defineStaticFunction(function: SkFunction, name: String = function.name) {
-        check(!staticFunctions.containsKey(name)) { "This class already has a static function named $name" }
-
-        staticFunctions[name] = function
-    }
-
     fun findInstanceMethod(key: String): SkMethod? {
-        return instanceMethods[key] ?: superClass?.findInstanceMethod(key)
+        return def.instanceMethods[key] ?: superClass?.findInstanceMethod(key)
     }
 
     fun isInstance(value: SkValue): Boolean {
-        if (value !is SkObject)
-            return false
-
-        var klass = value.klass
-        while (klass != this)
-            klass = klass.superClass ?: return false
-
-        return true
+        return def.isInstance(value)
     }
 }
 
-fun SkClass.isSuperClassOf(clazz: SkClass): Boolean {
+fun SkClassDef.isSuperClassOf(clazz: SkClassDef): Boolean {
+    val me = this
     var mama = clazz.superClass
     while (mama != null) {
-        if (mama == this)
+        if (mama == me)
             return true
         mama = mama.superClass
     }
     return false
 }
 
-fun SkClass.isSameOrSuperClassOf(clazz: SkClass): Boolean {
+fun SkClassDef.isSameOrSuperClassOf(clazz: SkClassDef): Boolean {
     return clazz == this || isSuperClassOf(clazz)
 }
 
-
-object ObjectClass : SkClass("Object", null) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        TODO()
-    }
-}
-
-object ClassClass : SkClass("Class", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        TODO()
-    }
-}
-
-object FunctionClass : SkClass("Function", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        TODO()
-    }
-}
-
-object NumberClass : SkClass("Number", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkNumber.ZERO
-        return SkNumberObject(valArg.asNumber())
-    }
-}
-
-object BooleanClass : SkClass("Boolean", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkBoolean.FALSE
-        return SkBooleanObject(valArg.asBoolean())
-    }
-}
+object SkClassClassDef : SkClassDef("Class", SkObjectClassDef)
 
 
 
-object MapClass : SkClass("Map", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        TODO()
-    }
-}
 
-object MethodClass : SkClass("Method", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        TODO()
-    }
-}
+
+
+
+
+
+
+
