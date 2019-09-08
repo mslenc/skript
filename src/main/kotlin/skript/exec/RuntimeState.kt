@@ -2,8 +2,10 @@ package skript.exec
 
 import skript.exec.Frame.Companion.EMPTY_ARRAY
 import skript.io.SkriptEnv
+import skript.io.toSkript
 import skript.util.Globals
 import skript.util.Stack
+import skript.values.SkNull
 import skript.values.SkValue
 
 val dummyFrame = Frame(0, emptyArray(), EMPTY_ARRAY, emptyList(), emptyMap())
@@ -35,5 +37,13 @@ class RuntimeState(val globals: Globals, val env: SkriptEnv) {
         } finally {
             topFrame = otherFrames.pop()
         }
+    }
+
+    fun importKotlinValue(value: Any?): SkValue {
+        if (value == null) return SkNull
+
+        if (value is String) return value.toSkript()
+
+        TODO("Can't import ${ value.javaClass }")
     }
 }

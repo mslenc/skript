@@ -15,7 +15,7 @@ class SkMap : SkObject {
     }
 
     internal fun setMemberInternal(key: SkValue, value: SkValue) {
-        defaultSetMember(key, value)
+        defaultSetMember(key.asString().value, value)
     }
 
     fun setMapMember(key: String, value: SkValue) {

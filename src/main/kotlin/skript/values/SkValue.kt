@@ -22,7 +22,7 @@ enum class SkValueKind {
 
 abstract class SkValue {
     abstract suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
-    abstract suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
+    abstract suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue
 
     abstract suspend fun hasOwnMember(key: SkValue): Boolean
 
@@ -46,5 +46,5 @@ abstract class SkValue {
         return SkUndefined
     }
 
-    abstract suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue
+    abstract suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue
 }

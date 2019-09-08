@@ -1,5 +1,6 @@
 package skript.values
 
+import skript.exec.RuntimeState
 import skript.io.toSkript
 import skript.opcodes.SkIterator
 import skript.toStrictNumberOrNull
@@ -33,7 +34,7 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
 }
 
 object SkNumberRangeClass : SkClass("NumberRange", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         val args = ArgsExtractor(posArgs, kwArgs, "NumberRange")
 
         val start = args.expectNumber("start", coerce = true, ifUndefined = SkNumber.ZERO)
@@ -73,7 +74,7 @@ class SkDoubleRangeIterator(start: Double, val end: Double, val endInclusive: Bo
 }
 
 object SkNumberRangeIteratorClass : SkClass("NumberRangeIterator", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         throw IllegalStateException("This should never be called")
     }
 }
@@ -106,7 +107,7 @@ class SkDecimalRangeIterator(start: SkDecimal, val end: SkDecimal, val endInclus
 }
 
 object SkDecimalRangeIteratorClass : SkClass("DecimalRangeIteratorClass", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         throw IllegalStateException("This should never be called")
     }
 }

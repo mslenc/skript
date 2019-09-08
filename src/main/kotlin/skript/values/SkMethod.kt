@@ -13,7 +13,7 @@ sealed class SkCallable(val name: String) : SkObject() {
     }
 }
 
-abstract class SkFunction(name: String) : SkCallable(name) {
+abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable(name) {
     override val klass: SkClass
         get() = FunctionClass
 
@@ -46,7 +46,7 @@ abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable
     abstract suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
 }
 
-class BoundMethod(val method: SkMethod, val thiz: SkValue, val boundPosArgs: List<SkValue>, val boundKwArgs: Map<String, SkValue>) : SkFunction(method.name + "(bound)") {
+class BoundMethod(val method: SkMethod, val thiz: SkValue, val boundPosArgs: List<SkValue>, val boundKwArgs: Map<String, SkValue>) : SkFunction(method.name + "(bound)", method.paramNames) {
     override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         val allPosArgs = when {
             boundPosArgs.isEmpty() -> posArgs

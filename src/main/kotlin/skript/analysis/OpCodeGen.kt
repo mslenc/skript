@@ -384,13 +384,13 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
 
     override fun visitBinaryExpr(expr: BinaryExpression) {
         expr.left.accept(this)
-        generateRestOfBinaryOp(expr.op, expr.right)
+        generateRestOfBinaryOp(expr.op, expr.right, expr.left.toString())
     }
 
     override fun visitAssignExpression(expr: AssignExpression) {
         expr.op?.let { binaryOp ->
             loadStoreGenerateLoad(expr.left)
-            generateRestOfBinaryOp(binaryOp, expr.right)
+            generateRestOfBinaryOp(binaryOp, expr.right, expr.left.toString())
             loadStoreGenerateStore(expr.left, true)
             return
         }
@@ -424,7 +424,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         }
     }
 
-    private fun generateRestOfBinaryOp(op: BinaryOp, right: Expression) {
+    private fun generateRestOfBinaryOp(op: BinaryOp, right: Expression, exprDebug: String) {
         val simpleOp = when (op) {
             BinaryOp.SUBTRACT -> BinarySubtractOp
             BinaryOp.ADD -> BinaryAddOp
@@ -445,8 +445,8 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             BinaryOp.GREATER_THAN -> BinaryGreaterThanOp
             BinaryOp.GREATER_OR_EQUAL -> BinaryGreaterOrEqualOp
 
-            BinaryOp.RANGE_TO -> MakeRangeEndInclusive
-            BinaryOp.RANGE_TO_EXCL -> MakeRangeEndExclusive
+            BinaryOp.RANGE_TO -> MakeRangeEndInclusive(exprDebug)
+            BinaryOp.RANGE_TO_EXCL -> MakeRangeEndExclusive(exprDebug)
 
             BinaryOp.OR -> {
                 val end = JumpTarget()
@@ -545,12 +545,12 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             expr.obj.accept(this)
             builder += JumpForSafeMethodCall(skipTarget)
             doArgs(expr.args)
-            builder += CallMethod(expr.methodName)
+            builder += CallMethod(expr.methodName, expr.obj.toString())
             builder += skipTarget
         } else {
             expr.obj.accept(this)
             doArgs(expr.args)
-            builder += CallMethod(expr.methodName)
+            builder += CallMethod(expr.methodName, expr.obj.toString())
         }
     }
 
@@ -634,7 +634,8 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
     override fun visitRange(expr: Range) {
         expr.start.accept(this)
         expr.end.accept(this)
-        builder += if (expr.endInclusive) MakeRangeEndInclusive else MakeRangeEndExclusive
+        val exprDebug = expr.start.toString()
+        builder += if (expr.endInclusive) MakeRangeEndInclusive(exprDebug) else MakeRangeEndExclusive(exprDebug)
     }
 
     override fun visitFunctionLiteral(expr: FunctionLiteral) {

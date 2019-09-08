@@ -1,5 +1,6 @@
 package skript.util
 
+import skript.exec.RuntimeState
 import skript.illegalArg
 import skript.values.*
 
@@ -55,7 +56,7 @@ class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, va
 }
 
 object ArgsExtractorClass : SkClass("ArgsExtractor", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         throw IllegalStateException("Shouldn't be called")
     }
 }

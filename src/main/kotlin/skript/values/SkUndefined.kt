@@ -52,11 +52,15 @@ object SkUndefined : SkScalar() {
         return SkString.UNDEFINED
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
-        typeError("Can't make a range with undefined")
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+        typeError("$exprDebug evaluated to undefined, so range can't be created")
     }
 
     override fun toString(sb: StringBuilder) {
         sb.append("undefined")
+    }
+
+    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
+        typeError("$exprDebug is undefined, so can't call methods on it")
     }
 }

@@ -34,7 +34,7 @@ sealed class SkNumber : SkScalar(), Comparable<SkNumber> {
 
     abstract fun negate(): SkNumber
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
         val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a ${getKind()} and a ${end.getKind()}")
 
         return SkNumberRange(this, endNum, endInclusive)
@@ -49,6 +49,8 @@ sealed class SkNumber : SkScalar(), Comparable<SkNumber> {
     abstract fun toDouble(): Double
 
     abstract fun toBigDecimal(): BigDecimal
+    abstract fun toInt(): Int
+    abstract fun toLong(): Long
 
     companion object {
         val MINUS_ONE get() = SkDouble.MINUS_ONE
@@ -114,7 +116,15 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
         return value
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+    override fun toInt(): Int {
+        return value.toInt()
+    }
+
+    override fun toLong(): Long {
+        return value.toLong()
+    }
+
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
         val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a NUMBER and a ${end.getKind()}")
 
         return SkNumberRange(this, endNum, endInclusive)
@@ -194,11 +204,19 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         return dvalue.toBigDecimal()
     }
 
+    override fun toInt(): Int {
+        return dvalue.toInt()
+    }
+
+    override fun toLong(): Long {
+        return dvalue.toLong()
+    }
+
     override fun compareTo(other: SkNumber): Int {
         return doubleCompare(dvalue, other.toDouble())
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
         val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a NUMBER and a ${end.getKind()}")
 
         return SkNumberRange(this, endNum, endInclusive)

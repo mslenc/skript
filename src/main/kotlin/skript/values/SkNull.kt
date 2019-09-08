@@ -36,8 +36,8 @@ object SkNull : SkScalar() {
         typeError("Can't set members on null")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
-        typeError("Can't make a range with null")
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+        typeError("$exprDebug evaluated to null, so range can't be created")
     }
 
     override fun getKind(): SkValueKind {
@@ -58,5 +58,9 @@ object SkNull : SkScalar() {
 
     override fun toString(sb: StringBuilder) {
         sb.append("null")
+    }
+
+    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
+        typeError("$exprDebug is null, so can't call methods on it")
     }
 }

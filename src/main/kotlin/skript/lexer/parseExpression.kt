@@ -154,8 +154,8 @@ fun Tokens.parseInIs(): Expression {
             IN ->     { next(); ValueIn(result, parseElvis(), true) }
             NOT_IN -> { next(); ValueIn(result, parseElvis(), false) }
 
-            IS ->     { next(); ObjectIs(result, Variable(expect(IDENTIFIER).rawText), true) }
-            NOT_IS -> { next(); ObjectIs(result, Variable(expect(IDENTIFIER).rawText), false) }
+            IS ->     { next(); val ident = expect(IDENTIFIER); ObjectIs(result, Variable(ident.rawText, ident.pos), true) }
+            NOT_IS -> { next(); val ident = expect(IDENTIFIER); ObjectIs(result, Variable(ident.rawText, ident.pos), false) }
 
             else -> return result
         }
@@ -314,12 +314,11 @@ fun Tokens.parseCallArgs(): List<CallArg> {
             }
             else -> {
                 val arg = parseExpression()
-                if (arg is Variable && peek().type == ASSIGN) {
-                    val tok = next()
-                    if (namesSeen.add(arg.varName)) {
-                        args += KwArg(arg.varName, parseExpression())
+                if (arg is AssignExpression && arg.op == null && arg.left is Variable) {
+                    if (namesSeen.add(arg.left.varName)) {
+                        args += KwArg(arg.left.varName, arg.right)
                     } else {
-                        syntaxError("This name is already present", tok.pos)
+                        syntaxError("This name is already present", arg.left.pos)
                     }
                 } else {
                     args += PosArg(arg)
@@ -355,7 +354,7 @@ fun Tokens.parsePrimary(): Expression {
         }
 
         IDENTIFIER -> {
-            return Variable(tok.rawText)
+            return Variable(tok.rawText, tok.pos)
         }
 
         FUNCTION -> {

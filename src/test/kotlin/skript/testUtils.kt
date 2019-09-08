@@ -6,6 +6,7 @@ import skript.exec.RuntimeState
 import skript.io.ModuleSourceProvider
 import skript.io.ParsedModuleProvider
 import skript.io.SkriptEngine
+import skript.io.SkriptEnv
 import skript.opcodes.equals.strictlyEqual
 import skript.util.ArgsExtractor
 import skript.values.SkFunction
@@ -14,7 +15,7 @@ import skript.values.SkValue
 import kotlin.math.min
 
 fun emitInto(outputs: MutableList<SkValue>): SkFunction {
-    return object : SkFunction("emit") {
+    return object : SkFunction("emit", listOf("value")) {
         override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
             val args = ArgsExtractor(posArgs, kwArgs, "emit")
             val value = args.extractParam("value")
@@ -26,6 +27,10 @@ fun emitInto(outputs: MutableList<SkValue>): SkFunction {
 }
 
 suspend fun runScriptWithEmit(script: String): List<SkValue> {
+    return runScriptWithEmit({ }, script)
+}
+
+suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String): List<SkValue> {
     val sourceProvider = ModuleSourceProvider.static(emptyMap<String, String>())
     val moduleProvider = ParsedModuleProvider.from(sourceProvider)
     val skriptEngine = SkriptEngine(moduleProvider)
@@ -33,6 +38,7 @@ suspend fun runScriptWithEmit(script: String): List<SkValue> {
     val outputs = ArrayList<SkValue>()
 
     val env = skriptEngine.createEnv()
+    initEnv(env)
     env.setGlobal("emit", emitInto(outputs))
 
     env.runAnonymousScript(script)

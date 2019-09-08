@@ -3,7 +3,6 @@ package skript.ast
 import skript.analysis.VarInfo
 import skript.lexer.Pos
 import skript.values.SkScalar
-import skript.values.SkValue
 
 interface ExprVisitor {
     fun visitUnaryExpr(expr: UnaryExpression) { expr.inner.accept(this) }
@@ -315,7 +314,7 @@ class MapLiteral(val parts: List<MapLiteralPart>): Expression() {
     }
 }
 
-class Variable(val varName: String): LValue() {
+class Variable(val varName: String, val pos: Pos): LValue() {
     lateinit var varInfo: VarInfo
 
     override fun accept(visitor: ExprVisitor) {

@@ -6,7 +6,7 @@ abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject() 
     override val klass: SkClass
         get() = ClassClass
 
-    abstract suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue
+    abstract suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
 
     private val instanceMethods = HashMap<String, SkMethod>()
     private val staticFunctions = HashMap<String, SkFunction>()
@@ -20,11 +20,15 @@ abstract class SkClass(val name: String, val superClass: SkClass?) : SkObject() 
     }
 
     override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        return construct(posArgs, kwArgs)
+        return construct(posArgs, kwArgs, state)
     }
 
-    fun defineInstanceMethod(method: SkMethod, name: String = method.name) {
+    open fun checkNameAvailable(name: String) {
         check(!instanceMethods.containsKey(name)) { "This class already has a method named $name" }
+    }
+
+    open fun defineInstanceMethod(method: SkMethod, name: String = method.name) {
+        checkNameAvailable(name)
         check(method.expectedClass.isSameOrSuperClassOf(this)) { "The method doesn't accept this class" }
 
         instanceMethods[name] = method
@@ -68,32 +72,32 @@ fun SkClass.isSameOrSuperClassOf(clazz: SkClass): Boolean {
 
 
 object ObjectClass : SkClass("Object", null) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         TODO()
     }
 }
 
 object ClassClass : SkClass("Class", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         TODO()
     }
 }
 
 object FunctionClass : SkClass("Function", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         TODO()
     }
 }
 
 object NumberClass : SkClass("Number", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkNumber.ZERO
         return SkNumberObject(valArg.asNumber())
     }
 }
 
 object BooleanClass : SkClass("Boolean", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkBoolean.FALSE
         return SkBooleanObject(valArg.asBoolean())
     }
@@ -102,13 +106,13 @@ object BooleanClass : SkClass("Boolean", ObjectClass) {
 
 
 object MapClass : SkClass("Map", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         TODO()
     }
 }
 
 object MethodClass : SkClass("Method", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         TODO()
     }
 }

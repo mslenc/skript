@@ -10,8 +10,8 @@ abstract class SkScalar : SkValue() {
         notSupported(sb.toString())
     }
 
-    final override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        return asObject().callMethod(methodName, posArgs, kwArgs, state)
+    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
+        return asObject().callMethod(methodName, posArgs, kwArgs, state, exprDebug)
     }
 
     override suspend fun hasOwnMember(key: SkValue): Boolean {
@@ -58,7 +58,7 @@ abstract class SkScalarObject() : SkObject() {
         return value.makeIterator()
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
-        return value.makeRange(end, endInclusive, state)
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+        return value.makeRange(end, endInclusive, state, exprDebug)
     }
 }

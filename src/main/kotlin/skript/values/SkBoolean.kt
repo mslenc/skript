@@ -25,8 +25,8 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
         return if (value) SkBooleanObject.TRUE else SkBooleanObject.FALSE
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
-        typeError("Can't make ranges from booleans")
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+        typeError("$exprDebug evaluated to a boolean, so range can't be created")
     }
 
     override fun toString(sb: StringBuilder) {

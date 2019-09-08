@@ -44,22 +44,22 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
     }
 }
 
-object MakeRangeEndInclusive : SuspendOpCode() {
+class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.stack.apply {
             val to = pop()
             val from = pop()
-            push(from.makeRange(to, true, state))
+            push(from.makeRange(to, true, state, exprDebug))
         }
     }
 }
 
-object MakeRangeEndExclusive : SuspendOpCode() {
+class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.stack.apply {
             val to = pop()
             val from = pop()
-            push(from.makeRange(to, false, state))
+            push(from.makeRange(to, false, state, exprDebug))
         }
     }
 }

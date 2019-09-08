@@ -53,7 +53,7 @@ class SkString(val value: String) : SkScalar() {
         return asNumberOrNull() ?: throw IllegalStateException("Couldn't parse string (${value.atMostChars(20)}) as a number")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
         val endStr = end.asString()
 
         return SkStringRange(this.value, endStr.value, endInclusive)
@@ -138,7 +138,7 @@ object StringClass : SkClass("String", ObjectClass) {
         defineInstanceMethod(String_substring)
     }
 
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkString.EMPTY
         return SkStringObject(valArg.asString())
     }

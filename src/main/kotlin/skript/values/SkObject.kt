@@ -30,15 +30,11 @@ abstract class SkObject() : SkValue() {
     }
 
     override suspend fun setMember(key: SkValue, value: SkValue) {
-        defaultSetMember(key, value)
+        setMember(key.asString().value, value)
     }
 
     override suspend fun setMember(key: String, value: SkValue) {
         defaultSetMember(key, value)
-    }
-
-    protected fun defaultSetMember(key: SkValue, value: SkValue) {
-        defaultSetMember(key.asString().value, value)
     }
 
     protected fun defaultSetMember(key: String, value: SkValue) {
@@ -73,15 +69,11 @@ abstract class SkObject() : SkValue() {
     }
 
     override suspend fun findMember(key: SkValue): SkValue {
-        return defaultFindMember(key)
+        return defaultFindMember(key.asString().value)
     }
 
     override suspend fun findMember(key: String): SkValue {
         return defaultFindMember(key)
-    }
-
-    protected fun defaultFindMember(key: SkValue): SkValue {
-        return defaultFindMember(key.asString().value)
     }
 
     protected fun defaultFindMember(key: String): SkValue {
@@ -120,16 +112,16 @@ abstract class SkObject() : SkValue() {
         notSupported("Can't call objects")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState): SkValue {
-        return callMethod("rangeTo", listOf(end, endInclusive.toSkript()), emptyMap(), state)
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+        return callMethod("rangeTo", listOf(end, endInclusive.toSkript()), emptyMap(), state, exprDebug)
     }
 
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
         props.get(methodName)?.let { override ->
             return when (override) {
                 is SkMethod -> override.call(this, posArgs, kwArgs, state)
                 is SkFunction -> override.call(posArgs, kwArgs, state)
-                else -> throw UnsupportedOperationException("Member $methodName is not a method")
+                else -> throw UnsupportedOperationException("$exprDebug.$methodName is neither a method nor a function")
             }
         }
 
@@ -137,6 +129,6 @@ abstract class SkObject() : SkValue() {
             return method.call(this, posArgs, kwArgs, state)
         }
 
-        throw UnsupportedOperationException("Object has no method $methodName")
+        throw UnsupportedOperationException("$exprDebug has no method $methodName")
     }
 }

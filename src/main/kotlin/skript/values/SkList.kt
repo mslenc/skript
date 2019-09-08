@@ -27,7 +27,7 @@ class SkList : SkObject {
             return elements.getOrNull(index) ?: SkUndefined
         }
 
-        return defaultFindMember(key)
+        return defaultFindMember(key.asString().value)
     }
 
     override suspend fun hasOwnMember(key: SkValue): Boolean {
@@ -67,7 +67,7 @@ class SkList : SkObject {
             return
         }
 
-        defaultSetMember(key, value)
+        defaultSetMember(key.asString().value, value)
     }
 
     override suspend fun deleteMember(key: SkValue) {
@@ -157,7 +157,7 @@ object ListClass : SkClass("List", ObjectClass) {
         defineInstanceMethod(List_forEach)
     }
 
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         check(kwArgs.isEmpty()) { "List constructor doesn't support named arguments" }
         return SkList(posArgs)
     }

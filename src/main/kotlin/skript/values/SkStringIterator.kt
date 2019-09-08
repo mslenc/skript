@@ -1,5 +1,6 @@
 package skript.values
 
+import skript.exec.RuntimeState
 import skript.opcodes.SkIterator
 
 // this type should only ever appear on the stack, used for implementing for-in loops
@@ -25,7 +26,7 @@ class SkStringIterator(value: SkString) : SkObject(), SkIterator {
 
 // and this class should never appear anywhere
 object SkStringIteratorClass : SkClass("StringIterator", ObjectClass) {
-    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>): SkValue {
+    override suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
         throw IllegalStateException("This should never be called")
     }
 }

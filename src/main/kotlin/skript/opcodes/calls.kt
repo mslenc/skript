@@ -78,12 +78,12 @@ object SpreadKwArgs : FastOpCode() {
     }
 }
 
-class CallMethod(val name: String) : SuspendOpCode() {
+class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.apply {
             val thiz = stack.pop()
             val argsBuilder = args.pop()
-            val result = thiz.callMethod(name, argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
+            val result = thiz.callMethod(name, argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state, exprDebug)
             stack.push(result)
         }
     }
@@ -95,11 +95,11 @@ class CallFunction(val exprDebug: String) : SuspendOpCode() {
             val func = stack.pop()
             val argsBuilder = args.pop()
 
-            if (func is SkFunction) {
+            if (func is SkFunction || func is SkClass) {
                 val result = func.call(argsBuilder.getPosArgs(), argsBuilder.getKwArgs(), state)
                 stack.push(result)
             } else {
-                typeError("$exprDebug is not a function")
+                typeError("$exprDebug is not a function or a class")
             }
         }
     }
