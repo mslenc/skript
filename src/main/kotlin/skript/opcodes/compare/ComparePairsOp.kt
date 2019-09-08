@@ -17,26 +17,28 @@ class ComparePairsOp(val ops: Array<BinaryOp>): FastOpCode() {
                 values[i] = pop()
 
             for (i in ops.indices) {
-                val left = values[i]
-                val right = values[i + 1]
+                for (j in i + 1 until values.size) {
+                    val left = values[i]
+                    val right = values[j]
 
-                val result: Boolean? = when (ops[i]) {
-                    BinaryOp.NOT_EQUALS -> !aboutEqual(left, right)
-                    BinaryOp.NOT_STRICT_EQUALS -> !strictlyEqual(left, right)
-                    else -> throw IllegalStateException()
-                }
+                    val result: Boolean? = when (ops[i]) {
+                        BinaryOp.NOT_EQUALS -> !aboutEqual(left, right)
+                        BinaryOp.NOT_STRICT_EQUALS -> !strictlyEqual(left, right)
+                        else -> throw IllegalStateException()
+                    }
 
-                when (result) {
-                    null -> {
-                        push(SkUndefined)
-                        return
-                    }
-                    false -> {
-                        push(SkBoolean.FALSE)
-                        return
-                    }
-                    else -> {
-                        // continue..
+                    when (result) {
+                        null -> {
+                            push(SkUndefined)
+                            return
+                        }
+                        false -> {
+                            push(SkBoolean.FALSE)
+                            return
+                        }
+                        else -> {
+                            // continue..
+                        }
                     }
                 }
             }

@@ -506,7 +506,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         for (operand in expr.operands) {
             operand.accept(this)
         }
-        builder += CompareSeqOp(expr.ops.toTypedArray())
+        builder += ComparePairsOp(expr.ops.toTypedArray())
     }
 
     override fun visitTernaryExpression(expr: TernaryExpression) {

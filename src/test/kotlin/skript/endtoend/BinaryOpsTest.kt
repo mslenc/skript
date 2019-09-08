@@ -504,6 +504,99 @@ class BinaryOpsTest {
 
         return result
     }
+
+    @Test
+    fun testCompareChainBasics() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            emit(1 < 2 < 3 < 4);
+            emit(1 <= 2 <= 3 <= 4);
+            emit(1 >= 2 >= 3 >= 4);
+            emit(1 > 2 > 3 > 4);
+            
+            emit(1 <= 1 <= 2);
+            emit(1 < 1 < 2);
+            emit(1 == 1 < 2);
+            
+            emit(1 > 2 > 3 > 4);
+            emit(1 >= 2 >= 3 >= 4);
+            emit(4 > 3 > 2 > 1);
+            emit(4 >= 3 >= 2 >= 1);
+            emit(4 >= 3 == 3 >= 2 == 2 >= 1 == 1);
+        """.trimIndent())
+
+        val expect = listOf(
+            true.toSkript(),
+            true.toSkript(),
+            false.toSkript(),
+            false.toSkript(),
+
+            true.toSkript(),
+            false.toSkript(),
+            true.toSkript(),
+
+            false.toSkript(),
+            false.toSkript(),
+            true.toSkript(),
+            true.toSkript(),
+            true.toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
+
+    @Test
+    fun testCompareChainNotEqual() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            emit(1 != 2 != 3 != 1);
+            emit(1 != 2 != 3);
+            
+            emit(1 != 2 != 3 != "1");
+            emit(1 != 2 != 3 != "abc");
+            
+            emit([ 1, 2 ] != [ 2, 3 ] != [ 1, 2 ]);
+            emit([ 1, 2 ] != [ 2, 3 ] != [ 3, 4 ]);
+        """.trimIndent())
+
+        val expect = listOf(
+            false.toSkript(),
+            true.toSkript(),
+
+            false.toSkript(),
+            true.toSkript(),
+
+            false.toSkript(),
+            true.toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
+
+    @Test
+    fun testCompareChainNotStrictlyEqual() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            emit(1 !== 2 !== 3 !== 1);
+            emit(1 !== 2 !== 3);
+            
+            emit(1 !== 2 !== 3 !== "1");
+            emit(1 !== 2 !== 3 !== "abc");
+
+            emit([ 1, 2 ] !== [ 2, 3 ] !== [ 1, 2 ]);
+            emit([ 1, 2 ] !== [ 2, 3 ] !== [ 3, 4 ]);
+        """.trimIndent())
+
+        val expect = listOf(
+            false.toSkript(),
+            true.toSkript(),
+
+            true.toSkript(),
+            true.toSkript(),
+
+            true.toSkript(),
+            true.toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
 }
 
 /*
