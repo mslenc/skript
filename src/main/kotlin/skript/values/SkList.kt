@@ -264,7 +264,7 @@ object List_forEach : SkMethod("forEach", listOf("callback")) {
     }
 }
 
-private fun SkValue.toNonNegativeIntOrNull(): Int? {
+fun SkValue.toNonNegativeIntOrNull(): Int? {
     return when (getKind()) {
         SkValueKind.BOOLEAN,
         SkValueKind.NUMBER -> {

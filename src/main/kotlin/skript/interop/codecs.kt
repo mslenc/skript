@@ -1,6 +1,7 @@
 package skript.interop
 
 import skript.exec.RuntimeState
+import skript.interop.wrappers.SkByteArray
 import skript.io.toSkript
 import skript.typeError
 import skript.values.SkMap
