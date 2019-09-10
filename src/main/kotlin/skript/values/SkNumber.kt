@@ -2,6 +2,8 @@ package skript.values
 
 import skript.doubleCompare
 import skript.exec.RuntimeState
+import skript.io.SkriptEnv
+import skript.io.toSkript
 import skript.isInteger
 import skript.toStrictNumberOrNull
 import skript.typeError
@@ -51,6 +53,8 @@ sealed class SkNumber : SkScalar(), Comparable<SkNumber> {
     abstract fun toBigDecimal(): BigDecimal
     abstract fun toInt(): Int
     abstract fun toLong(): Long
+    abstract fun asDouble(): SkDouble
+    abstract fun asDecimal(): SkDecimal
 
     companion object {
         val MINUS_ONE get() = SkDouble.MINUS_ONE
@@ -122,6 +126,14 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
 
     override fun toLong(): Long {
         return value.toLong()
+    }
+
+    override fun asDouble(): SkDouble {
+        return value.toDouble().toSkript()
+    }
+
+    override fun asDecimal(): SkDecimal {
+        return this
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
@@ -212,6 +224,14 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         return dvalue.toLong()
     }
 
+    override fun asDouble(): SkDouble {
+        return this
+    }
+
+    override fun asDecimal(): SkDecimal {
+        return dvalue.toBigDecimal().toSkript()
+    }
+
     override fun compareTo(other: SkNumber): Int {
         return doubleCompare(dvalue, other.toDouble())
     }
@@ -263,7 +283,7 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject() {
 }
 
 object SkNumberClassDef : SkClassDef("Number", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
         val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkNumber.ZERO
         return SkNumberObject(valArg.asNumber())
     }

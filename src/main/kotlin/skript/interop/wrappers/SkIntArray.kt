@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecInt
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkIntArray(val array: IntArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecInt.toKotlin(key, state)
+                array[index] = SkCodecInt.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkIntArrayClassDef : SkClassDef("IntArray", null)
 
 object SkCodecIntArray : SkCodec<IntArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is IntArray
-    override suspend fun toSkript(value: IntArray, state: RuntimeState) = SkIntArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): IntArray {
+    override suspend fun toSkript(value: IntArray, env: SkriptEnv) = SkIntArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): IntArray {
         if (value is SkIntArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecIntArray : SkCodec<IntArray> {
             val len = value.getLength()
             val result = IntArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecInt.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecInt.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

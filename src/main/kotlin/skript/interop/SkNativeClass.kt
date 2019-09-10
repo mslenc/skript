@@ -1,6 +1,6 @@
 package skript.interop
 
-import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.typeError
 import skript.values.*
 import kotlin.reflect.KClass
@@ -9,9 +9,9 @@ class SkNativeClassDef<T : Any>(name: String, val nativeClass: KClass<T>, superC
     var constructor : SkNativeConstructor<T>? = null
     var properties = HashMap<String, SkNativeProperty<T, *>>()
 
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
         constructor?.let { constructor ->
-            return constructor.call(posArgs, kwArgs, state)
+            return constructor.call(posArgs, kwArgs, env)
         }
 
         typeError("Can't construct instances of $name")

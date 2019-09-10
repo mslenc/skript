@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 
 class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
     val name: String
@@ -9,8 +10,8 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
     override val klass: SkClassDef
         get() = SkClassClassDef
 
-    suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        return def.construct(this, posArgs, kwArgs, state)
+    suspend fun construct(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkValue {
+        return def.construct(this, posArgs, kwArgs, env)
     }
 
     override fun getKind(): SkValueKind {
@@ -22,7 +23,7 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
     }
 
     override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        return construct(posArgs, kwArgs, state)
+        return construct(posArgs, kwArgs, state.env)
     }
 
     fun findInstanceMethod(key: String): SkMethod? {

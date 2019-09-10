@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecFloat
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkFloatArray(val array: FloatArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecFloat.toKotlin(key, state)
+                array[index] = SkCodecFloat.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkFloatArrayClassDef : SkClassDef("FloatArray", null)
 
 object SkCodecFloatArray : SkCodec<FloatArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is FloatArray
-    override suspend fun toSkript(value: FloatArray, state: RuntimeState) = SkFloatArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): FloatArray {
+    override suspend fun toSkript(value: FloatArray, env: SkriptEnv) = SkFloatArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): FloatArray {
         if (value is SkFloatArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecFloatArray : SkCodec<FloatArray> {
             val len = value.getLength()
             val result = FloatArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecFloat.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecFloat.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
 import skript.toStrictNumberOrNull
@@ -36,7 +37,7 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
 }
 
 object SkNumberRangeClassDef : SkClassDef("NumberRange", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
         val args = ArgsExtractor(posArgs, kwArgs, "NumberRange")
 
         val start = args.expectNumber("start", coerce = true, ifUndefined = SkNumber.ZERO)

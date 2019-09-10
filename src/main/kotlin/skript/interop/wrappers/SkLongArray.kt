@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecLong
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkLongArray(val array: LongArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecLong.toKotlin(key, state)
+                array[index] = SkCodecLong.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkLongArrayClassDef : SkClassDef("LongArray", null)
 
 object SkCodecLongArray : SkCodec<LongArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is LongArray
-    override suspend fun toSkript(value: LongArray, state: RuntimeState) = SkLongArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): LongArray {
+    override suspend fun toSkript(value: LongArray, env: SkriptEnv) = SkLongArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): LongArray {
         if (value is SkLongArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecLongArray : SkCodec<LongArray> {
             val len = value.getLength()
             val result = LongArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecLong.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecLong.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

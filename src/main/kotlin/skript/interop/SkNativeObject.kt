@@ -9,7 +9,7 @@ class SkNativeObject<T: Any>(val nativeObj: T, override val klass: SkNativeClass
     override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
         (key as? SkString)?.let {
             klass.properties[it.value]?.let { property ->
-                property.setValue(nativeObj, value, state)
+                property.setValue(nativeObj, value, state.env)
                 return
             }
         }
@@ -20,7 +20,7 @@ class SkNativeObject<T: Any>(val nativeObj: T, override val klass: SkNativeClass
     override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
         (key as? SkString)?.let {
             klass.properties[it.value]?.let { property ->
-                return property.getValue(nativeObj, state)
+                return property.getValue(nativeObj, state.env)
             }
         }
 

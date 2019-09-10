@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecDouble
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkDoubleArray(val array: DoubleArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecDouble.toKotlin(key, state)
+                array[index] = SkCodecDouble.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkDoubleArrayClassDef : SkClassDef("DoubleArray", null)
 
 object SkCodecDoubleArray : SkCodec<DoubleArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is DoubleArray
-    override suspend fun toSkript(value: DoubleArray, state: RuntimeState) = SkDoubleArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): DoubleArray {
+    override suspend fun toSkript(value: DoubleArray, env: SkriptEnv) = SkDoubleArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): DoubleArray {
         if (value is SkDoubleArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecDoubleArray : SkCodec<DoubleArray> {
             val len = value.getLength()
             val result = DoubleArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecDouble.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecDouble.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecBoolean
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkBooleanArray(val array: BooleanArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecBoolean.toKotlin(key, state)
+                array[index] = SkCodecBoolean.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkBooleanArrayClassDef : SkClassDef("BooleanArray", null)
 
 object SkCodecBooleanArray : SkCodec<BooleanArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is BooleanArray
-    override suspend fun toSkript(value: BooleanArray, state: RuntimeState) = SkBooleanArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): BooleanArray {
+    override suspend fun toSkript(value: BooleanArray, env: SkriptEnv) = SkBooleanArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): BooleanArray {
         if (value is SkBooleanArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecBooleanArray : SkCodec<BooleanArray> {
             val len = value.getLength()
             val result = BooleanArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecBoolean.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecBoolean.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

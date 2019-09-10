@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.util.ArgsExtractor
 import skript.util.expectBoolean
 import skript.util.expectString
@@ -22,7 +23,7 @@ class SkStringRange(val start: String, val end: String, val endInclusive: Boolea
 }
 
 object SkStringRangeClassDef : SkClassDef("StringRange", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
         val args = ArgsExtractor(posArgs, kwArgs, "StringRange")
 
         val start = args.expectString("start", coerce = true, ifUndefined = "")

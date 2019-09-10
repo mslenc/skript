@@ -10,6 +10,7 @@ import skript.runScriptWithEmit
 import skript.typeError
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.findParameterByName
+import kotlin.reflect.full.instanceParameter
 import kotlin.reflect.full.primaryConstructor
 
 data class TestObj(
@@ -29,10 +30,11 @@ class InteropTest {
         TestObjClass.defineInstanceMethod(
             SkNativeMethod(
                 "fooBar",
-                TestObj::fooBar.parameters.single { it.kind == KParameter.Kind.INSTANCE },
+                TestObj::fooBar.instanceParameter!!,
                 listOf(
                     ParamInfo("suffix", TestObj::fooBar.findParameterByName("suffix") ?: typeError("Couldn't find suffix"), ParamType.NORMAL, SkCodecString)
                 ),
+                SkCodecString,
                 TestObj::fooBar, TestObjClass)
         )
 

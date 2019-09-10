@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecShort
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkShortArray(val array: ShortArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecShort.toKotlin(key, state)
+                array[index] = SkCodecShort.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkShortArrayClassDef : SkClassDef("ShortArray", null)
 
 object SkCodecShortArray : SkCodec<ShortArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is ShortArray
-    override suspend fun toSkript(value: ShortArray, state: RuntimeState) = SkShortArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): ShortArray {
+    override suspend fun toSkript(value: ShortArray, env: SkriptEnv) = SkShortArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): ShortArray {
         if (value is SkShortArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecShortArray : SkCodec<ShortArray> {
             val len = value.getLength()
             val result = ShortArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecShort.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecShort.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

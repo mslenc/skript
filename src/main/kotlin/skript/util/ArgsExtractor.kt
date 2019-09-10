@@ -2,6 +2,7 @@ package skript.util
 
 import skript.exec.RuntimeState
 import skript.illegalArg
+import skript.io.SkriptEnv
 import skript.values.*
 
 private val emptyKwMap = LinkedHashMap<String, SkValue>(0)
@@ -55,11 +56,7 @@ class ArgsExtractor(val posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, va
     }
 }
 
-object ArgsExtractorClassDef : SkClassDef("ArgsExtractor", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
-        throw IllegalStateException("Shouldn't be called")
-    }
-}
+object ArgsExtractorClassDef : SkClassDef("ArgsExtractor", SkObjectClassDef)
 
 fun ArgsExtractor.expectBoolean(name: String, coerce: Boolean = true, ifUndefined: Boolean? = null): Boolean {
     val value = extractParam(name)

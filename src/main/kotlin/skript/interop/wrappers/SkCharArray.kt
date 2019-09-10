@@ -3,6 +3,7 @@ package skript.interop.wrappers
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecChar
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isString
 import skript.notSupported
@@ -35,7 +36,7 @@ class SkCharArray(val array: CharArray) : SkObject() {
 
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < array.size) {
-                array[index] = SkCodecChar.toKotlin(key, state)
+                array[index] = SkCodecChar.toKotlin(key, state.env)
                 return
             }
         }
@@ -88,8 +89,8 @@ object SkCharArrayClassDef : SkClassDef("CharArray", null)
 
 object SkCodecCharArray : SkCodec<CharArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is CharArray
-    override suspend fun toSkript(value: CharArray, state: RuntimeState) = SkCharArray(value)
-    override suspend fun toKotlin(value: SkValue, state: RuntimeState): CharArray {
+    override suspend fun toSkript(value: CharArray, env: SkriptEnv) = SkCharArray(value)
+    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): CharArray {
         if (value is SkCharArray)
             return value.array
 
@@ -97,7 +98,7 @@ object SkCodecCharArray : SkCodec<CharArray> {
             val len = value.getLength()
             val result = CharArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecChar.toKotlin(value.elements[i] ?: SkNull, state)
+                result[i] = SkCodecChar.toKotlin(value.elements[i] ?: SkNull, env)
             }
             return result
         }

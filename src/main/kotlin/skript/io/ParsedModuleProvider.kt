@@ -47,6 +47,12 @@ interface ParsedModuleProvider {
     }
 }
 
+object NoModuleProvider : ParsedModuleProvider {
+    override suspend fun getModule(moduleName: String): Module? {
+        return null
+    }
+}
+
 fun ModuleSource.parse(): Module {
     val tokens = CharStream(source, fileName).lex()
     return Tokens(tokens).parseModule(moduleName)

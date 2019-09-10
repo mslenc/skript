@@ -2,6 +2,7 @@ package skript.values
 
 import skript.*
 import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.util.ArgsExtractor
 import skript.util.expectBoolean
 import skript.util.expectInt
@@ -138,7 +139,7 @@ object SkStringClassDef : SkClassDef("String", SkObjectClassDef) {
         defineInstanceMethod(String_substring)
     }
 
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
         val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkString.EMPTY
         return SkStringObject(valArg.asString())
     }

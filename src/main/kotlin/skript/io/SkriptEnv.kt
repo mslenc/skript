@@ -10,6 +10,7 @@ import skript.values.SkClassDef
 import skript.values.SkUndefined
 import skript.values.SkValue
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.reflect.KClass
 
 val anonCounter = AtomicLong()
 
@@ -22,6 +23,15 @@ class SkriptEnv(val engine: SkriptEngine) {
     fun getClassObject(classDef: SkClassDef): SkClass {
         val superClass = classDef.superClass?.let { getClassObject(it) }
         return classes.getOrElse(classDef) { SkClass(classDef, superClass) }
+    }
+
+    suspend fun <T: Any> setNativeGlobal(name: String, value: T, klass: KClass<T> = value::class as KClass<T>, protected: Boolean = true) {
+        if (value is SkValue)
+            return setGlobal(name, value, protected)
+
+        val codec = engine.getNativeCodec(klass) ?: throw UnsupportedOperationException("Couldn't reflect class $klass")
+        val obj = codec.toSkript(value, this)
+        setGlobal(name, obj, protected)
     }
 
     fun setGlobal(name: String, value: SkValue, protected: Boolean = true) {

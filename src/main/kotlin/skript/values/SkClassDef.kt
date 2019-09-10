@@ -1,13 +1,13 @@
 package skript.values
 
-import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.typeError
 
 open class SkClassDef(val name: String, val superClass: SkClassDef?) {
     internal val instanceMethods = HashMap<String, SkMethod>()
     internal val staticFunctions = HashMap<String, SkFunction>()
 
-    open suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkObject {
+    open suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
         typeError("Can't construct new instances of $name")
     }
 
