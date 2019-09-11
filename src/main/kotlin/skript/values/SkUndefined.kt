@@ -2,6 +2,7 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.typeError
+import skript.util.SkArguments
 
 object SkUndefined : SkScalar() {
     override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
@@ -48,7 +49,7 @@ object SkUndefined : SkScalar() {
         sb.append("undefined")
     }
 
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
         typeError("$exprDebug is undefined, so can't call methods on it")
     }
 }

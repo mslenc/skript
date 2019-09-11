@@ -2,6 +2,7 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.typeError
+import skript.util.SkArguments
 
 object SkNull : SkScalar() {
     override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
@@ -48,7 +49,7 @@ object SkNull : SkScalar() {
         sb.append("null")
     }
 
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
         typeError("$exprDebug is null, so can't call methods on it")
     }
 }

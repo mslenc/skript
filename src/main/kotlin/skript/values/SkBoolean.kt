@@ -3,6 +3,7 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.typeError
+import skript.util.SkArguments
 import java.lang.StringBuilder
 
 class SkBoolean private constructor(val value: Boolean) : SkScalar() {
@@ -65,8 +66,8 @@ class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
 }
 
 object SkBooleanClassDef : SkClassDef("Boolean", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
-        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkBoolean.FALSE
+    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
+        val valArg = args.getParam("value")
         return SkBooleanObject(valArg.asBoolean())
     }
 }

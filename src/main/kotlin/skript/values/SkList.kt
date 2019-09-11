@@ -4,7 +4,7 @@ import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.isString
 import skript.notSupported
-import skript.util.ArgsExtractor
+import skript.util.SkArguments
 import skript.util.expectFunction
 
 class SkList : SkObject {
@@ -158,9 +158,9 @@ object SkListClassDef : SkClassDef("List", SkObjectClassDef) {
         defineInstanceMethod(List_forEach)
     }
 
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
-        check(kwArgs.isEmpty()) { "List constructor doesn't support named arguments" }
-        return SkList(posArgs)
+    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
+        check(args.noKwArgs()) { "List constructor doesn't support named arguments" }
+        return SkList(args.getRemainingPosArgs())
     }
 }
 
@@ -168,10 +168,12 @@ object List_push : SkMethod("push", emptyList()) {
     override val expectedClass: SkClassDef
         get() = SkListClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.push()")
-        check(kwArgs.isEmpty()) { "List.push() doesn't accept named parameters" }
-        thiz.elements.addAll(posArgs)
+        check(args.noKwArgs()) { "List.push() doesn't accept named parameters" }
+
+        thiz.elements.addAll(args.getRemainingPosArgs())
+
         return SkNumber.valueOf(thiz.elements.size)
     }
 }
@@ -180,13 +182,14 @@ object List_concat : SkMethod("concat", emptyList()) {
     override val expectedClass: SkClassDef
         get() = SkListClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.push()")
-        check(kwArgs.isEmpty()) { "List.concat() doesn't accept named parameters" }
+
+        check(args.noKwArgs()) { "List.concat() doesn't accept named parameters" }
 
         val newList = SkList()
         newList.elements.addAll(thiz.elements)
-        for (arg in posArgs) {
+        for (arg in args.getRemainingPosArgs()) {
             if (arg is SkList) {
                 newList.elements.addAll(arg.elements)
             } else {
@@ -201,17 +204,16 @@ object List_every : SkMethod("every", listOf("callback")) {
     override val expectedClass: SkClassDef
         get() = SkListClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.push()")
 
-        val callback = kwArgs["callback"] ?: posArgs.getOrNull(0)
-        check(callback != null) { "No callback was specified" }
-        check(callback is SkFunction) { "The callback must be a function" }
+        val callback = args.expectFunction("callback")
+        args.expectNothingElse()
 
         for (i in thiz.elements.indices) {
             val value = thiz.elements[i] ?: continue
 
-            val result = callback.call(listOf(value, SkNumber.valueOf(i), thiz), emptyMap(), state)
+            val result = callback.call(SkArguments.of(value, SkNumber.valueOf(i), thiz), state)
             if (!result.asBoolean().value)
                 return SkBoolean.FALSE
         }
@@ -224,18 +226,17 @@ object List_filter : SkMethod("filter", listOf("callback")) {
     override val expectedClass: SkClassDef
         get() = SkListClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.filter()")
 
-        val callback = kwArgs["callback"] ?: posArgs.getOrNull(0)
-        check(callback != null) { "No callback was specified" }
-        check(callback is SkFunction) { "The callback must be a function" }
+        val callback = args.expectFunction("callback")
+        args.expectNothingElse()
 
         val result = SkList()
         for (i in thiz.elements.indices) {
             val value = thiz.elements[i] ?: continue
 
-            val test = callback.call(listOf(value, SkNumber.valueOf(i), thiz), emptyMap(), state)
+            val test = callback.call(SkArguments.of(value, SkNumber.valueOf(i), thiz), state)
             if (test.asBoolean().value) {
                 result.elements.add(value)
             }
@@ -249,16 +250,15 @@ object List_forEach : SkMethod("forEach", listOf("callback")) {
     override val expectedClass: SkClassDef
         get() = SkListClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
         (thiz as? SkList) ?: throw IllegalStateException("Expected a list in List.forEach()")
 
-        val args = ArgsExtractor(posArgs, kwArgs, "forEach")
         val callback = args.expectFunction("callback")
         args.expectNothingElse()
 
         for (i in thiz.elements.indices) {
             val value = thiz.elements[i] ?: continue
-            callback.call(listOf(value, SkNumber.valueOf(i), thiz), emptyMap(), state)
+            callback.call(SkArguments.of(value, SkNumber.valueOf(i), thiz), state)
         }
 
         return SkUndefined

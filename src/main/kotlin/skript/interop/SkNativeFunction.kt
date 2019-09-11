@@ -3,7 +3,7 @@ package skript.interop
 import skript.exec.ParamType
 import skript.exec.RuntimeState
 import skript.io.SkriptEnv
-import skript.util.ArgsExtractor
+import skript.util.SkArguments
 import skript.values.*
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
@@ -15,7 +15,7 @@ class ParamInfo<T>(
     val paramType: ParamType,
     val codec: SkCodec<T>
 ) {
-    suspend fun doImportInto(nativeArgs: MutableMap<KParameter, Any?>, instance: Any?, args: ArgsExtractor, env: SkriptEnv) {
+    suspend fun doImportInto(nativeArgs: MutableMap<KParameter, Any?>, instance: Any?, args: SkArguments, env: SkriptEnv) {
         nativeArgs[kotlinParam] = when (kotlinParam.kind) {
             KParameter.Kind.EXTENSION_RECEIVER, // TODO is this ok, just using the instance as receiver like this?
             KParameter.Kind.INSTANCE -> {
@@ -24,7 +24,7 @@ class ParamInfo<T>(
             KParameter.Kind.VALUE -> {
                 val value = when(paramType) {
                     ParamType.NORMAL -> {
-                        args.extractParam(name)
+                        args.getParam(name)
                     }
 
                     ParamType.POS_ARGS -> {
@@ -47,9 +47,8 @@ class ParamInfo<T>(
 }
 
 class SkNativeFunction<T>(name: String, val params: List<ParamInfo<*>>, val impl: KFunction<*>, val resultCodec: SkCodec<T>) : SkFunction(name, params.map { it.name }) {
-    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
         val env = state.env
-        val args = ArgsExtractor(posArgs, kwArgs, name)
         val nativeArgs = HashMap<KParameter, Any?>()
         params.forEach { it.doImportInto(nativeArgs, null, args, env) }
 
@@ -67,12 +66,11 @@ class SkNativeFunction<T>(name: String, val params: List<ParamInfo<*>>, val impl
 }
 
 class SkNativeConstructor<T : Any>(name: String, val params: List<ParamInfo<*>>, val impl: KFunction<T>, val skClass: SkNativeClassDef<T>) : SkFunction(name, params.map { it.name }) {
-    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkNativeObject<T> {
-        return call(posArgs, kwArgs, state.env)
+    override suspend fun call(args: SkArguments, state: RuntimeState): SkNativeObject<T> {
+        return call(args, state.env)
     }
 
-    suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkNativeObject<T> {
-        val args = ArgsExtractor(posArgs, kwArgs, name)
+    suspend fun call(args: SkArguments, env: SkriptEnv): SkNativeObject<T> {
         val nativeArgs = HashMap<KParameter, Any?>()
         params.forEach { it.doImportInto(nativeArgs, null, args, env) }
 

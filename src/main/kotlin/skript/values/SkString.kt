@@ -3,10 +3,7 @@ package skript.values
 import skript.*
 import skript.exec.RuntimeState
 import skript.io.SkriptEnv
-import skript.util.ArgsExtractor
-import skript.util.expectBoolean
-import skript.util.expectInt
-import skript.util.expectString
+import skript.util.*
 import java.lang.UnsupportedOperationException
 
 class SkString(val value: String) : SkScalar() {
@@ -139,9 +136,9 @@ object SkStringClassDef : SkClassDef("String", SkObjectClassDef) {
         defineInstanceMethod(String_substring)
     }
 
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
-        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkString.EMPTY
-        return SkStringObject(valArg.asString())
+    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
+        val str = args.expectString("value", ifUndefined = "")
+        return SkStringObject(SkString(str))
     }
 }
 
@@ -149,12 +146,11 @@ object String_trim : SkMethod("trim", listOf("chars", "start", "end")) {
     override val expectedClass: SkClassDef
         get() = SkStringClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkString {
-        val args = ArgsExtractor(posArgs, kwArgs, "trim")
-
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkString {
         val chars = args.expectString("chars", ifUndefined = "")
         val trimStart = args.expectBoolean("start", ifUndefined = true)
         val trimEnd = args.expectBoolean("end", ifUndefined = true)
+        args.expectNothingElse()
 
         val str = thiz.asString()
 
@@ -185,17 +181,13 @@ object String_substring : SkMethod("substring", listOf("start", "end")) {
     override val expectedClass: SkClassDef
         get() = SkStringClassDef
 
-    override suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkString {
+    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkString {
         val strVal = thiz.asString()
         val string = strVal.value
 
-        val args = ArgsExtractor(posArgs, kwArgs, "substring")
-        val startArg = args.expectInt("start", ifUndefined = 0)
-        val endArg = args.expectInt("end", ifUndefined = string.length)
+        val start = args.expectInt("start", ifUndefined = 0).rangeParam(string.length)
+        val end = args.expectInt("end", ifUndefined = string.length).rangeParam(string.length)
         args.expectNothingElse()
-
-        val start = startArg.rangeParam(string.length)
-        val end = endArg.rangeParam(string.length)
 
         return when {
             start == end -> SkString.EMPTY

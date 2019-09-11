@@ -8,7 +8,7 @@ import skript.io.ParsedModuleProvider
 import skript.io.SkriptEngine
 import skript.io.SkriptEnv
 import skript.opcodes.equals.strictlyEqual
-import skript.util.ArgsExtractor
+import skript.util.SkArguments
 import skript.values.SkFunction
 import skript.values.SkUndefined
 import skript.values.SkValue
@@ -16,9 +16,8 @@ import kotlin.math.min
 
 fun emitInto(outputs: MutableList<SkValue>): SkFunction {
     return object : SkFunction("emit", listOf("value")) {
-        override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-            val args = ArgsExtractor(posArgs, kwArgs, "emit")
-            val value = args.extractParam("value")
+        override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+            val value = args.getParam("value")
             args.expectNothingElse()
             outputs += value
             return SkUndefined

@@ -3,6 +3,7 @@ package skript.interop
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.typeError
+import skript.util.SkArguments
 import skript.values.*
 import java.math.BigDecimal
 
@@ -34,9 +35,7 @@ class SkCodecNativeObject<T: Any>(val klass: SkNativeClassDef<T>): SkCodec<T> {
 
         if (value is SkMap) {
             klass.constructor?.let { constructor ->
-                val mapAsArgs = value.asArgs()
-                val constructed = constructor.call(emptyList(), mapAsArgs, env)
-                return constructed.nativeObj
+                return constructor.call(value.asArgs(), env).nativeObj
             }
             typeError("Can't construct ${klass.nativeClass} from a Map because the constructor is not defined")
         }
@@ -45,10 +44,10 @@ class SkCodecNativeObject<T: Any>(val klass: SkNativeClassDef<T>): SkCodec<T> {
     }
 }
 
-private fun SkMap.asArgs(): Map<String, SkValue> {
-    val result = HashMap<String, SkValue>()
+private fun SkMap.asArgs(): SkArguments {
+    val result = SkArguments()
     this.props.forEach { key, value ->
-        result[key] = value
+        result.addKwArg(key, value)
     }
     return result
 }

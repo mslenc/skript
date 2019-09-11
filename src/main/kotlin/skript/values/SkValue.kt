@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.util.SkArguments
 
 enum class SkValueKind {
     NULL,
@@ -21,8 +22,8 @@ enum class SkValueKind {
 }
 
 abstract class SkValue {
-    abstract suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
-    abstract suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue
+    abstract suspend fun call(args: SkArguments, state: RuntimeState): SkValue
+    abstract suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue
 
     abstract suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean
     abstract suspend fun findMember(key: SkValue, state: RuntimeState): SkValue

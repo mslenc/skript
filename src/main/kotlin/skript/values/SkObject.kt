@@ -4,6 +4,7 @@ import skript.exec.RuntimeState
 import skript.illegalArg
 import skript.io.toSkript
 import skript.notSupported
+import skript.util.SkArguments
 
 abstract class SkObject : SkValue() {
     internal var props: Props = EmptyProps
@@ -72,7 +73,7 @@ abstract class SkObject : SkValue() {
         props.get(key)?.let { return it }
 
         klass.findInstanceMethod(key)?.let { method ->
-            val bound = BoundMethod(method, this, emptyList(), emptyMap())
+            val bound = BoundMethod(method, this, SkArguments())
             props = props.withAdded(key, bound)
             return bound
         }
@@ -92,25 +93,25 @@ abstract class SkObject : SkValue() {
         props = props.withRemoved(key)
     }
 
-    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
         notSupported("Can't call objects")
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
-        return callMethod("rangeTo", listOf(end, endInclusive.toSkript()), emptyMap(), state, exprDebug)
+        return callMethod("rangeTo", SkArguments.of(end, endInclusive.toSkript()), state, exprDebug)
     }
 
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
         props.get(methodName)?.let { override ->
             return when (override) {
-                is SkMethod -> override.call(this, posArgs, kwArgs, state)
-                is SkFunction -> override.call(posArgs, kwArgs, state)
+                is SkMethod -> override.call(this, args, state)
+                is SkFunction -> override.call(args, state)
                 else -> throw UnsupportedOperationException("$exprDebug.$methodName is neither a method nor a function")
             }
         }
 
         klass.findInstanceMethod(methodName)?.let { method ->
-            return method.call(this, posArgs, kwArgs, state)
+            return method.call(this, args, state)
         }
 
         throw UnsupportedOperationException("$exprDebug has no method $methodName")

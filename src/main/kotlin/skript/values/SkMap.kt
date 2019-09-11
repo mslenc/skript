@@ -1,9 +1,9 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.notSupported
 import skript.typeError
+import skript.util.SkArguments
 
 class SkMap : SkObject {
     override val klass: SkClassDef
@@ -60,9 +60,9 @@ class SkMap : SkObject {
 }
 
 object SkMapClassDef : SkClassDef("Map", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
+    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val result = SkMap()
-        for (el in posArgs) {
+        for (el in args.getRemainingPosArgs()) {
             if (el is SkMap) {
                 el.props.forEach { key, value ->
                     result.setMapMember(key, value)
@@ -72,7 +72,7 @@ object SkMapClassDef : SkClassDef("Map", SkObjectClassDef) {
             }
         }
 
-        for ((key, value) in kwArgs) {
+        for ((key, value) in args.getRemainingKwArgs()) {
             result.setMapMember(key, value)
         }
 

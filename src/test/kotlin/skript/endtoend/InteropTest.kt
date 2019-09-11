@@ -8,7 +8,6 @@ import skript.interop.*
 import skript.io.toSkript
 import skript.runScriptWithEmit
 import skript.typeError
-import kotlin.reflect.KParameter
 import kotlin.reflect.full.findParameterByName
 import kotlin.reflect.full.instanceParameter
 import kotlin.reflect.full.primaryConstructor

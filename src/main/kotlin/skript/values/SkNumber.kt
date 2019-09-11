@@ -7,6 +7,7 @@ import skript.io.toSkript
 import skript.isInteger
 import skript.toStrictNumberOrNull
 import skript.typeError
+import skript.util.SkArguments
 import java.math.BigDecimal
 import java.math.BigInteger
 
@@ -288,8 +289,7 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject() {
 }
 
 object SkNumberClassDef : SkClassDef("Number", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
-        val valArg = kwArgs["value"] ?: posArgs.getOrNull(0) ?: SkNumber.ZERO
-        return SkNumberObject(valArg.asNumber())
+    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
+        return SkNumberObject(args.getParam("value").asNumber())
     }
 }

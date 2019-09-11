@@ -1,25 +1,13 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
-import skript.util.ArgsExtractor
 import skript.values.SkList
 import skript.values.SkMap
-
-class MakeArgsConstructor(val funcName: String): FastOpCode() {
-    override fun execute(state: RuntimeState) {
-        state.topFrame.apply {
-            val args = ArgsExtractor(posArgs, kwArgs, funcName)
-            stack.push(args)
-        }
-    }
-}
 
 class ArgsExtractNamed(val name: String, val localIndex: Int): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            val args = stack.top() as ArgsExtractor
-            val value = args.extractParam(name)
-            locals[localIndex] = value
+            locals[localIndex] = args.getParam(name)
         }
     }
 }
@@ -27,9 +15,7 @@ class ArgsExtractNamed(val name: String, val localIndex: Int): FastOpCode() {
 class ArgsExtractRemainingPos(val localIndex: Int): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            val args = stack.top() as ArgsExtractor
-            val values = args.getRemainingPosArgs()
-            locals[localIndex] = SkList(values)
+            locals[localIndex] = SkList(args.getRemainingPosArgs())
         }
     }
 }
@@ -37,9 +23,7 @@ class ArgsExtractRemainingPos(val localIndex: Int): FastOpCode() {
 class ArgsExtractRemainingKw(val localIndex: Int): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            val args = stack.top() as ArgsExtractor
-            val values = args.getRemainingKwArgs()
-            locals[localIndex] = SkMap(values)
+            locals[localIndex] = SkMap(args.getRemainingKwArgs())
         }
     }
 }
@@ -47,7 +31,6 @@ class ArgsExtractRemainingKw(val localIndex: Int): FastOpCode() {
 object ArgsExpectNothingElse : FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            val args = stack.top() as ArgsExtractor
             args.expectNothingElse()
         }
     }

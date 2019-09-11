@@ -5,7 +5,7 @@ import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
 import skript.toStrictNumberOrNull
-import skript.util.ArgsExtractor
+import skript.util.SkArguments
 import skript.util.expectBoolean
 import skript.util.expectNumber
 import java.math.BigDecimal
@@ -37,9 +37,7 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
 }
 
 object SkNumberRangeClassDef : SkClassDef("NumberRange", SkObjectClassDef) {
-    override suspend fun construct(runtimeClass: SkClass, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, env: SkriptEnv): SkObject {
-        val args = ArgsExtractor(posArgs, kwArgs, "NumberRange")
-
+    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val start = args.expectNumber("start", coerce = true, ifUndefined = SkNumber.ZERO)
         val end = args.expectNumber("end", coerce = true, ifUndefined = SkNumber.ZERO)
         val endInclusive = args.expectBoolean("endInclusive", coerce = true, ifUndefined = true)

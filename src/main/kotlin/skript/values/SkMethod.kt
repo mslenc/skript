@@ -2,6 +2,7 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.notSupported
+import skript.util.SkArguments
 
 sealed class SkCallable(val name: String) : SkObject() {
     final override fun asBoolean(): SkBoolean {
@@ -17,7 +18,7 @@ abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallab
     override val klass: SkClassDef
         get() = SkFunctionClassDef
 
-    abstract override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
+    abstract override suspend fun call(args: SkArguments, state: RuntimeState): SkValue
 
     final override fun getKind(): SkValueKind {
         return SkValueKind.FUNCTION
@@ -43,24 +44,26 @@ abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable
         return nameString
     }
 
-    abstract suspend fun call(thiz: SkValue, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue
+    abstract suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue
 }
 
-class BoundMethod(val method: SkMethod, val thiz: SkValue, val boundPosArgs: List<SkValue>, val boundKwArgs: Map<String, SkValue>) : SkFunction(method.name + "(bound)", method.paramNames) {
-    override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
-        val allPosArgs = when {
-            boundPosArgs.isEmpty() -> posArgs
-            posArgs.isEmpty() -> boundPosArgs
-            else -> boundPosArgs + posArgs
+class BoundMethod(private val method: SkMethod, private val thiz: SkValue, boundArgs: SkArguments) : SkFunction(method.name + "(bound)", method.paramNames) {
+    private val boundPosArgs = boundArgs.getRemainingPosArgs()
+    private val boundKwArgs = boundArgs.getRemainingKwArgs()
+
+    override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+        val combinedArgs = if (boundPosArgs.isEmpty() && boundKwArgs.isEmpty()) {
+            args
+        } else {
+            SkArguments().apply {
+                spreadPosArgs(boundPosArgs)
+                spreadKwArgs(boundKwArgs)
+                spreadPosArgs(args.getRemainingPosArgs())
+                spreadKwArgs(args.getRemainingKwArgs())
+            }
         }
 
-        val allKwArgs = when {
-            boundKwArgs.isEmpty() -> kwArgs
-            kwArgs.isEmpty() -> boundKwArgs
-            else -> boundKwArgs + kwArgs
-        }
-
-        return method.call(thiz, allPosArgs, allKwArgs, state)
+        return method.call(thiz, combinedArgs, state)
     }
 }
 

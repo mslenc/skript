@@ -2,16 +2,17 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.notSupported
+import skript.util.SkArguments
 
 abstract class SkScalar : SkValue() {
-    final override suspend fun call(posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState): SkValue {
+    final override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
         val sb = StringBuilder("Can't call ")
         toString(sb)
         notSupported(sb.toString())
     }
 
-    override suspend fun callMethod(methodName: String, posArgs: List<SkValue>, kwArgs: Map<String, SkValue>, state: RuntimeState, exprDebug: String): SkValue {
-        return asObject().callMethod(methodName, posArgs, kwArgs, state, exprDebug)
+    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
+        return asObject().callMethod(methodName, args, state, exprDebug)
     }
 
     override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {

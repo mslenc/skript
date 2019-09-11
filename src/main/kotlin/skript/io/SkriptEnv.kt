@@ -8,6 +8,7 @@ import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.parser.*
 import skript.util.Globals
+import skript.util.SkArguments
 import skript.values.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KClass
@@ -57,7 +58,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val runtimeModule = RuntimeModule(module)
         modules[module.name] = runtimeModule
         try {
-            return RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), emptyList(), emptyMap())
+            return RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), SkArguments())
         } finally {
             modules.remove(module.name)
         }
@@ -79,7 +80,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val theFunction: SkScriptFunction
         modules[module.name] = runtimeModule
         try {
-            theFunction = RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), emptyList(), emptyMap()) as SkScriptFunction
+            theFunction = RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), SkArguments()) as SkScriptFunction
         } finally {
             modules.remove(module.name)
         }
@@ -99,20 +100,20 @@ interface SuspendFun<T> {
 
 internal class SuspendFunImpl<T>(val params: List<Pair<String, SkCodec<*>>>, val retCodec: SkCodec<T>, val function: SkFunction, val env: SkriptEnv) : SuspendFun<T> {
     override suspend fun invoke(vararg args: Any?): T {
-        val skArgs = ArrayList<SkValue>()
+        val skArgs = SkArguments()
 
         for (i in params.indices) {
             val arg = args.getOrNull(i)
 
             when {
-                i >= args.size -> skArgs += SkUndefined
-                arg == null -> skArgs += SkNull
-                else -> skArgs += doImport(params[i].second, arg)
+                i >= args.size -> skArgs.addPosArg(SkUndefined)
+                arg == null -> skArgs.addPosArg(SkNull)
+                else -> skArgs.addPosArg(doImport(params[i].second, arg))
             }
         }
 
         val runtimeState = RuntimeState(env)
-        val skResult = function.call(skArgs, emptyMap(), runtimeState)
+        val skResult = function.call(skArgs, runtimeState)
         return retCodec.toKotlin(skResult, env)
     }
 

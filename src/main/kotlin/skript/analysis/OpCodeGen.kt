@@ -163,16 +163,12 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         val funcName = stmt.funcName ?: "<anonFun>" // TODO: improve this name
         val funcBuilder = FunctionDefBuilder(funcName, paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
         builders.withTop(funcBuilder) {
-            if (paramDefs.isNotEmpty()) {
-                builder += MakeArgsConstructor(funcName)
-                for (param in paramDefs) {
-                    builder += when (param.type) {
-                        ParamType.NORMAL -> ArgsExtractNamed(param.name, param.localIndex)
-                        ParamType.POS_ARGS -> ArgsExtractRemainingPos(param.localIndex)
-                        ParamType.KW_ARGS -> ArgsExtractRemainingKw(param.localIndex)
-                    }
+            for (param in paramDefs) {
+                builder += when (param.type) {
+                    ParamType.NORMAL -> ArgsExtractNamed(param.name, param.localIndex)
+                    ParamType.POS_ARGS -> ArgsExtractRemainingPos(param.localIndex)
+                    ParamType.KW_ARGS -> ArgsExtractRemainingKw(param.localIndex)
                 }
-                builder += Pop
             }
 
             for (param in stmt.params) {
