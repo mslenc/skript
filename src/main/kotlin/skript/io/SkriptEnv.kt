@@ -1,14 +1,14 @@
 package skript.io
 
 import skript.analysis.*
-import skript.ast.Module
+import skript.ast.*
+import skript.exec.ParamType
 import skript.exec.RuntimeModule
 import skript.exec.RuntimeState
+import skript.interop.SkCodec
+import skript.lexer.*
 import skript.util.Globals
-import skript.values.SkClass
-import skript.values.SkClassDef
-import skript.values.SkUndefined
-import skript.values.SkValue
+import skript.values.*
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KClass
 
@@ -50,16 +50,73 @@ class SkriptEnv(val engine: SkriptEngine) {
     suspend fun runAnonymousScript(scriptSource: String): SkValue {
         val moduleName = "<anonModule${ anonCounter.incrementAndGet() }>"
         val source = ModuleSource(scriptSource, moduleName, moduleName)
-        val parsedModule = source.parse()
+        val module = source.parse()
 
-        analyze(parsedModule)
+        analyze(module)
 
-        val runtimeModule = RuntimeModule(moduleName, parsedModule.moduleScope.varsAllocated)
-        modules[moduleName] = runtimeModule
+        val runtimeModule = RuntimeModule(module)
+        modules[module.name] = runtimeModule
         try {
-            return RuntimeState(globals, this).executeFunction(parsedModule.moduleInit, emptyArray(), emptyList(), emptyMap())
+            return RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), emptyList(), emptyMap())
         } finally {
-            modules.remove(moduleName)
+            modules.remove(module.name)
         }
+    }
+
+    suspend fun createFunction(paramNames: List<String>, functionBody: String): SkScriptFunction {
+        val funcName = "<callable${ anonCounter.incrementAndGet() }>"
+        val moduleName = "<anonModule${ anonCounter.incrementAndGet() }>"
+
+        val tokens = CharStream(functionBody, funcName).lex()
+        val funcBody = Tokens(tokens).parseStatements(TokenType.EOF, allowFunctions = true, allowClasses = false, allowVars = true)
+        val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody))
+        val returnFunc = ReturnStatement(Variable(funcName, Pos(0, 0, "generated")))
+        val module = Module(moduleName, listOf(funcDecl, returnFunc))
+
+        analyze(module)
+
+        val runtimeModule = RuntimeModule(module)
+        val theFunction: SkScriptFunction
+        modules[module.name] = runtimeModule
+        try {
+            theFunction = RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), emptyList(), emptyMap()) as SkScriptFunction
+        } finally {
+            modules.remove(module.name)
+        }
+
+        return theFunction
+    }
+
+    suspend fun <T> createCallable(params: List<Pair<String, SkCodec<*>>>, returnType: SkCodec<T>, functionBody: String): SuspendFun<T> {
+        val function = createFunction(params.map { it.first }, functionBody)
+        return SuspendFunImpl(params, returnType, function, this)
+    }
+}
+
+interface SuspendFun<T> {
+    suspend operator fun invoke(vararg args: Any?): T
+}
+
+internal class SuspendFunImpl<T>(val params: List<Pair<String, SkCodec<*>>>, val retCodec: SkCodec<T>, val function: SkFunction, val env: SkriptEnv) : SuspendFun<T> {
+    override suspend fun invoke(vararg args: Any?): T {
+        val skArgs = ArrayList<SkValue>()
+
+        for (i in params.indices) {
+            val arg = args.getOrNull(i)
+
+            when {
+                i >= args.size -> skArgs += SkUndefined
+                arg == null -> skArgs += SkNull
+                else -> skArgs += doImport(params[i].second, arg)
+            }
+        }
+
+        val runtimeState = RuntimeState(env)
+        val skResult = function.call(skArgs, emptyMap(), runtimeState)
+        return retCodec.toKotlin(skResult, env)
+    }
+
+    private suspend fun <T> doImport(codec: SkCodec<T>, value: Any): SkValue {
+        return codec.toSkript(value as T, env)
     }
 }

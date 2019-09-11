@@ -27,6 +27,9 @@ fun String.atMostChars(maxLen: Int): String {
     if (maxLen <= 0)
         return ""
 
+    if (length <= maxLen)
+        return this
+
     return when (length) {
         1 -> "_"
         2 -> "[]"

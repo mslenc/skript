@@ -4,6 +4,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import skript.interop.SkCodec
+import skript.interop.SkCodecString
 import skript.io.NativeAccessGranter
 import skript.io.SkriptEngine
 import java.lang.UnsupportedOperationException
@@ -11,6 +13,8 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.KTypeProjection.Companion.invariant
+import kotlin.reflect.full.createType
 
 object ImporterNativeObjects : NativeAccessGranter {
     override fun isAccessAllowed(klass: KClass<*>): Boolean {
@@ -43,6 +47,38 @@ class ImporterTest {
         assertTrue(updater.firstNameProperty.holder is UpdatedValue)
         assertEquals("Janez", updater.firstName)
         assertEquals(EntityState.NEW, updater.state)
+    }
+
+    @Test
+    fun testFunctionMode() = runBlocking {
+        val engine = SkriptEngine(nativeAccessGranter = ImporterNativeObjects)
+        val env = engine.createEnv()
+
+        val stringType = String::class.createType()
+        val stringsType = List::class.createType(listOf(invariant(stringType)))
+
+        val skriptFunc = env.createCallable(
+            listOf<Pair<String, SkCodec<*>>>(
+                "updater" to engine.getNativeCodec(ContactInfoUpdater::class)!!,
+                "row" to engine.getNativeCodec(stringsType)!!
+            ),
+            SkCodecString,
+            """
+                updater.createNew();
+                updater.firstName = [ row[1], row[2] ];
+                updater.lastName = row[0];
+                return "OK";
+            """)
+
+        repeat(100000) { idx ->
+            val updater = ContactInfoUpdater()
+            val row = listOf("Mimi", "Rogers", idx.toString())
+            val skriptResult = skriptFunc(updater, row)
+
+            assertEquals("OK", skriptResult)
+            assertEquals("Rogers,$idx", updater.firstName)
+            assertEquals("Mimi", updater.lastName)
+        }
     }
 }
 

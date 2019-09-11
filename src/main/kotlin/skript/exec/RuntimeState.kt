@@ -10,7 +10,8 @@ import skript.values.SkValue
 
 val dummyFrame = Frame(0, emptyArray(), EMPTY_ARRAY, emptyList(), emptyMap())
 
-class RuntimeState(val globals: Globals, val env: SkriptEnv) {
+class RuntimeState(val env: SkriptEnv) {
+    val globals: Globals = env.globals
     var topFrame: Frame = dummyFrame
     val otherFrames = Stack<Frame>()
 
