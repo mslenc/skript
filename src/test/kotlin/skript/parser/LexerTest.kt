@@ -1,8 +1,8 @@
-package skript.lexer
+package skript.parser
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import skript.lexer.TokenType.*
+import skript.parser.TokenType.*
 import kotlin.math.min
 
 class LexerTest {

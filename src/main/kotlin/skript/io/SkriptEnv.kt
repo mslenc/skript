@@ -6,7 +6,7 @@ import skript.exec.ParamType
 import skript.exec.RuntimeModule
 import skript.exec.RuntimeState
 import skript.interop.SkCodec
-import skript.lexer.*
+import skript.parser.*
 import skript.util.Globals
 import skript.values.*
 import java.util.concurrent.atomic.AtomicLong

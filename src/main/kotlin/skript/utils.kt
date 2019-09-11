@@ -1,6 +1,6 @@
 package skript
 
-import skript.lexer.Pos
+import skript.parser.Pos
 import skript.util.Stack
 import skript.values.*
 import java.math.BigDecimal

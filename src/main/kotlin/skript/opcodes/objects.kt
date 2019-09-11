@@ -3,7 +3,7 @@ package skript.opcodes
 import skript.exec.Frame
 import skript.exec.FunctionDef
 import skript.exec.RuntimeState
-import skript.lexer.Pos
+import skript.parser.Pos
 import skript.typeError
 import skript.values.SkBoolean
 import skript.values.SkClass

@@ -1,7 +1,7 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
-import skript.lexer.Pos
+import skript.parser.Pos
 import skript.typeError
 import skript.values.*
 

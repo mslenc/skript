@@ -1,7 +1,7 @@
 package skript.ast
 
 import skript.analysis.VarInfo
-import skript.lexer.Pos
+import skript.parser.Pos
 import skript.values.SkScalar
 
 interface ExprVisitor {

@@ -4,7 +4,7 @@ import skript.analysis.FunctionScope
 import skript.analysis.LocalVarInfo
 import skript.analysis.VarInfo
 import skript.exec.ParamType
-import skript.lexer.Pos
+import skript.parser.Pos
 
 interface StatementVisitor {
     fun visitBlock(stmts: Statements)

@@ -3,10 +3,10 @@ package skript.io
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import skript.ast.Module
-import skript.lexer.CharStream
-import skript.lexer.Tokens
-import skript.lexer.lex
-import skript.lexer.parseModule
+import skript.parser.CharStream
+import skript.parser.Tokens
+import skript.parser.lex
+import skript.parser.parseModule
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
