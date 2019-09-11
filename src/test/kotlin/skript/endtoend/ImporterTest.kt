@@ -65,7 +65,7 @@ class ImporterTest {
             SkCodecString,
             """
                 updater.createNew();
-                updater.firstName = [ row[1], row[2] ];
+                updater.firstName = `${'$'}{ row[1] } : ${'$'}{ row[2] }`;
                 updater.lastName = row[0];
                 return "OK";
             """)
@@ -76,7 +76,7 @@ class ImporterTest {
             val skriptResult = skriptFunc(updater, row)
 
             assertEquals("OK", skriptResult)
-            assertEquals("Rogers,$idx", updater.firstName)
+            assertEquals("Rogers : $idx", updater.firstName)
             assertEquals("Mimi", updater.lastName)
         }
     }
