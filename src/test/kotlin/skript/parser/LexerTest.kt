@@ -39,6 +39,7 @@ class LexerTest {
             ++a--
             a?b?.c:e
             12d 12.34d 12E5D 12E-4D 14E+2d 12.34E+5D 12.34E-5d
+            `abc ${'$'}{ a + { c: d } } def`
         """.trimIndent()
 
         val tokens = CharStream(source, filename).lex()
@@ -74,7 +75,7 @@ class LexerTest {
             Token(DOUBLE,             "8",              Pos( 3, 35, filename)),
             Token(SEMI,               ";",              Pos( 3, 36, filename)),
 
-            Token(STRING,             "\"abc\\\"def\"", Pos( 5,  1, filename)),
+            Token(STRING,             "\"abc\\\"def\"", Pos( 5,  1, filename), "abc\"def"),
             Token(DOUBLE,             "12",             Pos( 5, 12, filename)),
             Token(DOUBLE,             "12.34",          Pos( 5, 15, filename)),
             Token(DOUBLE,             "12E5",           Pos( 5, 21, filename)),
@@ -235,15 +236,30 @@ class LexerTest {
             Token(COLON,              ":",              Pos(27,  7, filename)),
             Token(IDENTIFIER,         "e",              Pos(27,  8, filename)),
 
-            Token(DECIMAL,            "12d",            Pos(28,  1, filename)),
-            Token(DECIMAL,            "12.34d",         Pos(28,  5, filename)),
-            Token(DECIMAL,            "12E5D",          Pos(28, 12, filename)),
-            Token(DECIMAL,            "12E-4D",         Pos(28, 18, filename)),
-            Token(DECIMAL,            "14E+2d",         Pos(28, 25, filename)),
-            Token(DECIMAL,            "12.34E+5D",      Pos(28, 32, filename)),
-            Token(DECIMAL,            "12.34E-5d",      Pos(28, 42, filename)),
+            Token(DECIMAL,            "12d",            Pos(28,  1, filename), "12"),
+            Token(DECIMAL,            "12.34d",         Pos(28,  5, filename), "12.34"),
+            Token(DECIMAL,            "12E5D",          Pos(28, 12, filename), "12E5"),
+            Token(DECIMAL,            "12E-4D",         Pos(28, 18, filename), "12E-4"),
+            Token(DECIMAL,            "14E+2d",         Pos(28, 25, filename), "14E+2"),
+            Token(DECIMAL,            "12.34E+5D",      Pos(28, 32, filename), "12.34E+5"),
+            Token(DECIMAL,            "12.34E-5d",      Pos(28, 42, filename), "12.34E-5"),
 
-            Token(EOF,                "",               Pos(28, 51, filename))
+            Token(TEMPLATE,           "`abc \${ a + { c: d } } def`", Pos(29, 1, filename), listOf(
+                TemplatePartString("abc "),
+                TemplatePartExpr(listOf(
+                    Token(IDENTIFIER, "a", Pos(29,  9, filename)),
+                    Token(PLUS,       "+", Pos(29, 11, filename)),
+                    Token(LCURLY,     "{", Pos(29, 13, filename)),
+                    Token(IDENTIFIER, "c", Pos(29, 15, filename)),
+                    Token(COLON,      ":", Pos(29, 16, filename)),
+                    Token(IDENTIFIER, "d", Pos(29, 18, filename)),
+                    Token(RCURLY,     "}", Pos(29, 20, filename)),
+                    Token(EOF,        "",  Pos(29, 23, filename))
+                )),
+                TemplatePartString(" def")
+            )),
+
+            Token(EOF,                "",               Pos(29, 28, filename))
         )
 
         for (i in 0 until min(tokens.size, expect.size))

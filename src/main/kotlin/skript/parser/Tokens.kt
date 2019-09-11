@@ -5,6 +5,10 @@ import skript.syntaxError
 class Tokens(val tokens: List<Token>) {
     var pos: Int = 0
 
+    fun hasMore(): Boolean {
+        return pos < tokens.size
+    }
+
     fun peek(): Token {
         return tokens[pos]
     }

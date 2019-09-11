@@ -34,3 +34,11 @@ object ConvertToBool : FastOpCode() {
         }
     }
 }
+
+object ConvertToString : FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.stack.apply {
+            push(pop().asString())
+        }
+    }
+}

@@ -14,6 +14,7 @@ import skript.opcodes.numeric.*
 import skript.syntaxError
 import skript.util.Stack
 import skript.values.SkNumber
+import skript.values.SkString
 import skript.values.SkUndefined
 import skript.withTop
 
@@ -641,5 +642,26 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
     override fun visitFunctionLiteral(expr: FunctionLiteral) {
         val funcDef = makeFuncDef(expr.funDecl)
         builder += MakeFunction(funcDef)
+    }
+
+    override fun visitStringTemplate(expr: StringTemplateExpr) {
+        if (expr.parts.isEmpty()) {
+            builder += PushLiteral(SkString.EMPTY)
+            return
+        }
+
+        builder += StringTemplateStart
+        for (part in expr.parts) {
+            when (part) {
+                is StrTemplateText -> {
+                    builder += StringTemplateAppendRaw(part.text)
+                }
+                is StrTemplateExpr -> {
+                    part.expr.accept(this)
+                    builder += StringTemplateAppend
+                }
+            }
+        }
+        builder += StringTemplateEnd
     }
 }

@@ -7,7 +7,7 @@ import java.lang.IllegalStateException
 val isWhitespace: (Char)->Boolean = Character::isWhitespace
 val notNewLine: (Char)->Boolean = { it != '\r' && it != '\n' }
 
-private fun ArrayList<Token>.add(type: TokenType, rawText: String, pos: Pos) {
+private fun ArrayList<Token>.add(type: TokenType, rawText: String, pos: Pos, value: Any = rawText) {
     // merging !in and !is into one token
     if (this.lastOrNull()?.type == EXCL) {
         if (type == IN || type == IS) {
@@ -25,12 +25,80 @@ private fun ArrayList<Token>.add(type: TokenType, rawText: String, pos: Pos) {
         }
     }
 
-    add(Token(type, rawText, pos))
+    add(Token(type, rawText, pos, value))
 }
 
-fun CharStream.lex(withEof: Boolean = true): List<Token> {
+sealed class TemplatePart
+data class TemplatePartString(val text: String) : TemplatePart()
+data class TemplatePartExpr(val tokens: List<Token>) : TemplatePart()
+
+val notTickNotBackSlashNotDollar: (Char)->Boolean = { it != '`' && it != '\\' && it != '$' }
+val isHexChar: (Char)->Boolean = { it in '0'..'9' || it in 'a'..'f' || it in 'A'..'F' }
+
+fun CharStream.lexTemplate(startPos: Int, pos: Pos): Token {
+    val parts = ArrayList<TemplatePart>()
+    val sb = StringBuilder()
+
+    nextPart@
+    while (moreChars()) {
+        consumeInto(sb, notTickNotBackSlashNotDollar)
+
+        if (consume('`')) {
+            if (sb.isNotEmpty()) {
+                parts.add(TemplatePartString(sb.toString()))
+            }
+            return Token(TEMPLATE, rawTextSince(startPos), pos, parts)
+        }
+
+        if (consume('$')) {
+            if (consume('{')) {
+                if (sb.isNotEmpty()) {
+                    parts.add(TemplatePartString(sb.toString()))
+                    sb.clear()
+                }
+
+                val tokens = lex(inTemplate = true)
+                parts += TemplatePartExpr(tokens)
+                continue@nextPart
+            } else {
+                sb.append('$')
+                continue@nextPart
+            }
+        }
+
+        if (consume('\\')) {
+            doEscapeChar(sb)
+        }
+    }
+
+    syntaxError("Unterminated string template", getPos())
+}
+
+fun CharStream.doEscapeChar(out: StringBuilder) {
+    when (nextChar()) {
+        'r' -> out.append('\r')
+        'n' -> out.append('\n')
+        't' -> out.append('\t')
+        'b' -> out.append('\b')
+        '"' -> out.append('"')
+        '\'' -> out.append('\'')
+        '`' -> out.append('`')
+        '$' -> out.append('$')
+        '\\' -> out.append('\\')
+        'u' -> {
+            val hexStr = nextChars(4, isHexChar) ?: syntaxError("Expected 4 hexadecimal characters after \\u", getPos())
+            out.append(hexStr.toInt(16).toChar())
+        }
+        else -> {
+            syntaxError("Unsupported escape sequence", getPos())
+        }
+    }
+}
+
+fun CharStream.lex(withEof: Boolean = true, inTemplate: Boolean = false): List<Token> {
     val tokens = ArrayList<Token>()
     val sb = StringBuilder()
+    var curlyDepth = 1
 
     nextToken@
     while (moreChars()) {
@@ -47,12 +115,25 @@ fun CharStream.lex(withEof: Boolean = true): List<Token> {
         }
 
         val pos = getPos()
+        val startPos = currentPos()
 
         when (val c = nextChar()) {
+            '{' -> {
+                tokens.add(LCURLY, "{", pos)
+                curlyDepth++
+            }
+
+            '}' -> {
+                if (inTemplate && curlyDepth == 1) {
+                    break@nextToken
+                } else {
+                    tokens.add(RCURLY, "}", pos)
+                    curlyDepth--
+                }
+            }
+
             '(' -> { tokens.add(LPAREN, "(", pos) }
             ')' -> { tokens.add(RPAREN, ")", pos) }
-            '{' -> { tokens.add(LCURLY, "{", pos) }
-            '}' -> { tokens.add(RCURLY, "}", pos) }
             '[' -> { tokens.add(LBRACK, "[", pos) }
             ']' -> { tokens.add(RBRACK, "]", pos) }
 
@@ -172,10 +253,12 @@ fun CharStream.lex(withEof: Boolean = true): List<Token> {
                     parseNumber(sb, c, tokens, pos)
                 } else
                 if (c == '"' || c == '\'') {
-                    parseString(sb, c, tokens, pos)
+                    parseString(sb, c, tokens, pos, startPos)
+                } else
+                if (c == '`') {
+                    tokens.add(lexTemplate(startPos, pos))
                 } else {
                     // TODO: """ strings
-                    // TODO: `...${}...` strings
                     syntaxError("Unexpected character ${c.toPrintable()}", pos)
                 }
             }
@@ -207,8 +290,8 @@ fun Char.toPrintable(): String {
 }
 
 val isNotQuoteOrBackSlash: (Char)->Boolean = { it != '"' && it != '\'' && it != '\\' }
-private fun CharStream.parseString(sb: StringBuilder, quote: Char, tokens: ArrayList<Token>, pos: Pos) {
-    sb.clear().append(quote)
+private fun CharStream.parseString(sb: StringBuilder, quote: Char, tokens: ArrayList<Token>, pos: Pos, startPos: Int) {
+    sb.clear()
     val otherQuote = if (quote == '"') '\'' else '"'
 
     while (moreChars()) {
@@ -218,8 +301,7 @@ private fun CharStream.parseString(sb: StringBuilder, quote: Char, tokens: Array
             syntaxError("Unterminated string", getPos())
 
         if (consume(quote)) {
-            sb.append(quote)
-            tokens.add(STRING, sb.toString(), pos)
+            tokens.add(STRING, rawTextSince(startPos), pos, sb.toString())
             return
         }
 
@@ -228,18 +310,16 @@ private fun CharStream.parseString(sb: StringBuilder, quote: Char, tokens: Array
             continue
         }
 
-        sb.append(nextChar()) // must be backslash
-        if (moreChars()) {
-            sb.append(nextChar())
-        } else {
-            syntaxError("Unterminated string", getPos())
-        }
+        // must be backslash
+        nextChar()
+        doEscapeChar(sb)
     }
 }
 
 val isDigit: (Char)->Boolean = { it in '0'..'9' }
 private fun CharStream.parseNumber(sb: StringBuilder, firstChar: Char, tokens: ArrayList<Token>, pos: Pos) {
-    consumeInto(sb.clear().append(firstChar), isDigit)
+    sb.clear().append(firstChar)
+    consumeInto(sb, isDigit)
 
     if (peek() == '.') {
         sb.append(nextChar())
@@ -262,8 +342,9 @@ private fun CharStream.parseNumber(sb: StringBuilder, firstChar: Char, tokens: A
     }
 
     if (peek() == 'd' || peek() == 'D') {
+        val beforePrefix = sb.toString()
         sb.append(nextChar())
-        tokens.add(DECIMAL, sb.toString(), pos)
+        tokens.add(DECIMAL, sb.toString(), pos, beforePrefix)
     } else {
         tokens.add(DOUBLE, sb.toString(), pos)
     }
@@ -271,7 +352,8 @@ private fun CharStream.parseNumber(sb: StringBuilder, firstChar: Char, tokens: A
 
 val isIdentChar: (Char)->Boolean = Character::isJavaIdentifierPart
 private fun CharStream.parseIdentOrKw(sb: StringBuilder, firstChar: Char, tokens: ArrayList<Token>, pos: Pos) {
-    consumeInto(sb.clear().append(firstChar), isIdentChar)
+    sb.clear().append(firstChar)
+    consumeInto(sb, isIdentChar)
     val ident = sb.toString()
 
     val kwType = skriptKeywords[ident]

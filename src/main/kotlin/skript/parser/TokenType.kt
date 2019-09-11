@@ -30,6 +30,8 @@ enum class TokenType {
     STAR_STAR_ASSIGN, SLASH_SLASH_ASSIGN,                                 // **= //=
     OR_ASSIGN, AND_ASSIGN, OR_OR_ASSIGN, AND_AND_ASSIGN,                  // |= &= ||= &&=
 
+    TEMPLATE,
+
     EOF
 }
 

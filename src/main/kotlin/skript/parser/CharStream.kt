@@ -62,6 +62,26 @@ class CharStream(private val str: String, private val fileName: String) {
     }
 
     /**
+     * Reads (consumes) next len chars, returning them as String. Returns null if there aren't that many chars,
+     * or if any of them doesn't satisfy the matcher.
+     */
+    fun nextChars(len: Int, match: ((Char)->Boolean)? = null): String? {
+        assert(len >= 0)
+
+        if (pos + len > str.length)
+            return null
+
+        if (match != null)
+            for (offset in 0 until len)
+                if (!match(str[pos + offset]))
+                    return null
+
+        val result = str.substring(pos, pos + len)
+        pos += len
+        return result
+    }
+
+    /**
      * Returns the next char, if any, but does not consume it. If there are no more chars, 0 is returned.
      */
     fun peek(): Char {
@@ -119,5 +139,13 @@ class CharStream(private val str: String, private val fileName: String) {
             pos++
 
         return pos - start
+    }
+
+    fun currentPos(): Int {
+        return pos
+    }
+
+    fun rawTextSince(start: Int): String {
+        return str.substring(start, pos)
     }
 }

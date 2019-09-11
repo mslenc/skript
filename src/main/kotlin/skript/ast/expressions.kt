@@ -17,6 +17,14 @@ interface ExprVisitor {
     fun visitArrayAccess(expr: ArrayAccess) { expr.arr.accept(this); expr.index.accept(this) }
     fun visitParentheses(expr: Parentheses) { expr.inner.accept(this) }
 
+    fun visitStringTemplate(expr: StringTemplateExpr) {
+        for (part in expr.parts) {
+            if (part is StrTemplateExpr) {
+                part.expr.accept(this)
+            }
+        }
+    }
+
     fun visitMethodCall(expr: MethodCall) {
         expr.obj.accept(this)
         for (arg in expr.args) {
@@ -478,5 +486,31 @@ class FunctionLiteral(val funDecl: DeclareFunction): Expression() {
 
     override fun toString(sb: StringBuilder) {
         sb.append("fun(...){...}") // TODO
+    }
+}
+
+sealed class StrTemplatePart
+class StrTemplateText(val text: String) : StrTemplatePart()
+class StrTemplateExpr(val expr: Expression) : StrTemplatePart()
+
+class StringTemplateExpr(val parts: List<StrTemplatePart>) : Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitStringTemplate(this)
+    }
+
+    override fun toString(sb: StringBuilder) {
+        sb.append('`')
+        for (part in parts) {
+            when (part) {
+                is StrTemplateText -> {
+                    sb.append(part.text)
+                }
+                is StrTemplateExpr -> {
+                    sb.append("\${")
+                    part.expr.toString(sb)
+                    sb.append("}")
+                }
+            }
+        }
     }
 }

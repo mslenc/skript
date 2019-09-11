@@ -100,3 +100,28 @@ object ListDupAppendSpread : FastOpCode() {
         }
     }
 }
+
+object StringTemplateStart : FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.stack.push(SkStringBuilder())
+    }
+}
+
+val StringTemplateEnd = ConvertToString
+
+class StringTemplateAppendRaw(val text: String) : FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        val sb = state.topFrame.stack.top() as SkStringBuilder
+        sb.appendRawText(text)
+    }
+}
+
+object StringTemplateAppend : FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.stack.apply {
+            val value = pop()
+            val sb = top() as SkStringBuilder
+            sb.append(value)
+        }
+    }
+}

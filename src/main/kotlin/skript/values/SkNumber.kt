@@ -183,7 +183,12 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
     }
 
     override fun asString(): SkString {
-        return SkString(dvalue.toString())
+        val str = dvalue.toString()
+        return if (str.endsWith(".0")) {
+            SkString(str.substring(0, str.length - 2))
+        } else {
+            SkString(str)
+        }
     }
 
     override fun asObject(): SkObject {

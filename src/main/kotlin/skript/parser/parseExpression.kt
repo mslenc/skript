@@ -344,8 +344,8 @@ fun Tokens.parsePrimary(): Expression {
         NULL -> { Literal(SkNull) }
         UNDEFINED -> { Literal(SkUndefined) }
         DOUBLE -> { Literal(SkDouble.valueOf(tok.rawText.toDoubleOrNull() ?: syntaxError("Couldn't parse double ${tok.rawText}", tok.pos))) }
-        DECIMAL -> { Literal(SkDecimal.valueOf(tok.rawText.substring(0, tok.rawText.length - 1).toBigDecimalOrNull() ?: syntaxError("Couldn't parse decimal ${tok.rawText}", tok.pos))) }
-        STRING -> { Literal(SkString(tok.unescapeString())) }
+        DECIMAL -> { Literal(SkDecimal.valueOf(tok.value.toString().toBigDecimalOrNull() ?: syntaxError("Couldn't parse decimal ${tok.value}", tok.pos))) }
+        STRING -> { Literal(SkString(tok.value.toString())) }
 
         LPAREN -> {
             val result = parseExpression()
@@ -369,10 +369,35 @@ fun Tokens.parsePrimary(): Expression {
             return parseRestOfMapLiteral()
         }
 
+        TEMPLATE -> {
+            return processStringTemplate(tok)
+        }
+
         else -> {
             syntaxError("Unexpected token ${tok.type}", tok.pos)
         }
     }
+}
+
+fun processStringTemplate(token: Token): StringTemplateExpr {
+    val parts = (token.value as List<TemplatePart>).map { part ->
+        when (part) {
+            is TemplatePartString -> {
+                StrTemplateText(part.text)
+            }
+            is TemplatePartExpr -> {
+                val tokens = Tokens(part.tokens)
+                val expr = tokens.parseExpression()
+                if (tokens.peek().type != EOF) {
+                    syntaxError("Unexpected token", tokens.peek().pos)
+                } else {
+                    StrTemplateExpr(expr)
+                }
+            }
+        }
+    }
+
+    return StringTemplateExpr(parts)
 }
 
 fun Tokens.parseRestOfMapLiteral(): MapLiteral {
@@ -428,13 +453,4 @@ fun Tokens.parseRestOfListLiteral(): ListLiteral {
         if (peek().type != RBRACK)
             expect(COMMA)
     }
-}
-
-fun Token.unescapeString(): String {
-    val raw = rawText
-
-    if (raw.indexOf('\\') < 0)
-        return raw.substring(1, raw.length - 1) // (strip quotes)
-
-    syntaxError("Escape sequences not supported (yet)", pos) // TODO
 }
