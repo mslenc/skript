@@ -1,7 +1,7 @@
-package skript.lexer
+package skript.parser
 
 import skript.ast.*
-import skript.lexer.TokenType.*
+import skript.parser.TokenType.*
 import skript.syntaxError
 import skript.values.*
 

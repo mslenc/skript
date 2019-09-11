@@ -1,8 +1,8 @@
-package skript.lexer
+package skript.parser
 
 import skript.ast.*
 import skript.exec.ParamType
-import skript.lexer.TokenType.*
+import skript.parser.TokenType.*
 import skript.syntaxError
 
 fun Tokens.parseModule(moduleName: String): Module {

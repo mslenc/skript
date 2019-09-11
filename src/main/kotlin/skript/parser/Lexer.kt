@@ -1,6 +1,6 @@
-package skript.lexer
+package skript.parser
 
-import skript.lexer.TokenType.*
+import skript.parser.TokenType.*
 import skript.syntaxError
 import java.lang.IllegalStateException
 

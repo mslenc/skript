@@ -1,4 +1,4 @@
-package skript.lexer
+package skript.parser
 
 class CharStream(private val str: String, private val fileName: String) {
     private var pos = 0

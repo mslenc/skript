@@ -1,4 +1,4 @@
-package skript.lexer
+package skript.parser
 
 import skript.syntaxError
 
