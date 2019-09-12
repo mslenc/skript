@@ -12,6 +12,7 @@ import kotlin.reflect.full.isSubclassOf
 
 class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, val nativeAccessGranter: NativeAccessGranter = NoNativeAccess) {
     val nativeCodecs = HashMap<KType, SkCodec<*>>()
+    val nativeClassDefs = HashMap<KClass<*>, SkNativeClassDef<*>>()
 
     init {
         initCodecs(nativeCodecs)
@@ -100,13 +101,20 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
         // we first store it, then go digging in; that way we only look at each class once
         nativeCodecs[nullableType] = result
         nativeCodecs[nonNullType] = result
+        nativeClassDefs[klass] = classDef
 
         if (!reflectNativeClass(klass, classDef, this)) {
             nativeCodecs.remove(nullableType)
             nativeCodecs.remove(nonNullType)
+            nativeClassDefs.remove(klass)
             return null
         }
 
         return result
+    }
+
+    fun <T: Any> getNativeClassDef(klass: KClass<T>): SkNativeClassDef<T>? {
+        getNativeCodec(klass)
+        return nativeClassDefs[klass] as SkNativeClassDef<T>?
     }
 }

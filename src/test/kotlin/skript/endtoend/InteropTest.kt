@@ -75,4 +75,37 @@ class InteropTest {
 
         assertEmittedEquals(expect, result)
     }
+
+    @Test
+    fun testReflectedClass() = runBlocking {
+        val result = runScriptWithEmit({ env ->
+            env.setClassAsGlobal(TestObj::class) // now isn't this much easier than the 1kb/20 lines of code above? :)
+        }, """
+            
+            emit(TestObj("abc", 123).fooBar(" km"));
+            emit(TestObj(foo = "def", 234).fooBar(" m"));
+            emit(TestObj("ghi", bar = 345).fooBar(" cm"));
+            emit(TestObj(foo = "jkl", bar = 456).fooBar(" mm"));
+            emit(TestObj(foo = "jkl").fooBar(" um"));
+            emit(TestObj(bar = 666).fooBar(" nm"));
+            emit(TestObj().fooBar(" pm"));
+            
+            var bibi = TestObj(bar=432);
+            bibi.foo = "daFoo";
+            emit(bibi.fooBar(" Mm"));
+        """.trimIndent())
+
+        val expect = listOf(
+            "abc123 km".toSkript(),
+            "def234 m".toSkript(),
+            "ghi345 cm".toSkript(),
+            "jkl456 mm".toSkript(),
+            "jkl1000 um".toSkript(),
+            "deffoo666 nm".toSkript(),
+            "deffoo1000 pm".toSkript(),
+            "daFoo432 Mm".toSkript()
+        )
+
+        assertEmittedEquals(expect, result)
+    }
 }

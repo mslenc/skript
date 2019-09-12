@@ -2,6 +2,7 @@ package skript.interop
 
 import skript.exec.ParamType
 import skript.io.SkriptEngine
+import skript.io.SkriptIgnore
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 
@@ -10,6 +11,9 @@ fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>,
 
     for (member in klass.members) {
         if (member.visibility != KVisibility.PUBLIC)
+            continue
+
+        if (member.findAnnotation<SkriptIgnore>() != null)
             continue
 
         if (member is KProperty2<*, *, *>)
@@ -55,6 +59,27 @@ fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>,
         }
     }
 
+    val constructors = klass.constructors.filter { cons ->
+        cons.visibility == KVisibility.PUBLIC &&
+        cons.findAnnotation<SkriptIgnore>() == null &&
+        cons.parameters.all { engine.getNativeCodec(it.type) != null }
+    }
+
+    val constructor: KFunction<T>? = when {
+        constructors.isEmpty() -> null
+        constructors.size == 1 -> constructors.single()
+        else -> {
+            val primary = klass.primaryConstructor
+            if (primary != null && primary in constructors) {
+                primary
+            } else {
+                null
+            }
+        }
+    }
+
+    constructor?.let { reflectConstructor(it, classDef, engine) }
+
     return true
 }
 
@@ -77,6 +102,22 @@ fun <T: Any, R> reflectFunction(prop: KFunction<R>, classDef: SkNativeClassDef<T
     val skMethod = SkNativeMethod(prop.name, thisParam, params, returnCodec, prop, classDef)
     classDef.defineInstanceMethod(skMethod)
 }
+
+fun <T: Any> reflectConstructor(impl: KFunction<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
+    val params = impl.valueParameters.map { param ->
+        if (param.isVararg) {
+            return // TODO()
+        }
+
+        val paramName = param.name ?: return
+        val paramCodec = engine.getNativeCodec(param.type) ?: return
+
+        ParamInfo(paramName, param, ParamType.NORMAL, paramCodec)
+    }
+
+    classDef.constructor = SkNativeConstructor(classDef.className, params, impl, classDef)
+}
+
 
 fun <T: Any, R> reflectMutableProperty(prop: KMutableProperty1<T, R>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
     val codec = engine.getNativeCodec(prop.returnType) ?: return

@@ -5,6 +5,7 @@ import skript.ast.*
 import skript.exec.ParamType
 import skript.exec.RuntimeModule
 import skript.exec.RuntimeState
+import skript.illegalArg
 import skript.interop.SkCodec
 import skript.parser.*
 import skript.util.Globals
@@ -23,16 +24,22 @@ class SkriptEnv(val engine: SkriptEngine) {
 
     fun getClassObject(classDef: SkClassDef): SkClass {
         val superClass = classDef.superClass?.let { getClassObject(it) }
-        return classes.getOrElse(classDef) { SkClass(classDef, superClass) }
+        return classes.getOrPut(classDef) { SkClass(classDef, superClass) }
     }
 
-    suspend fun <T: Any> setNativeGlobal(name: String, value: T, klass: KClass<T> = value::class as KClass<T>, protected: Boolean = true) {
+    fun <T: Any> setNativeGlobal(name: String, value: T, klass: KClass<T> = value::class as KClass<T>, protected: Boolean = true) {
         if (value is SkValue)
             return setGlobal(name, value, protected)
 
         val codec = engine.getNativeCodec(klass) ?: throw UnsupportedOperationException("Couldn't reflect class $klass")
         val obj = codec.toSkript(value, this)
         setGlobal(name, obj, protected)
+    }
+
+    fun <T: Any> setClassAsGlobal(klass: KClass<T>, name: String = klass.simpleName ?: illegalArg("Need a class name"), protected: Boolean = true) {
+        val classDef = engine.getNativeClassDef(klass) ?: throw UnsupportedOperationException("Couldn't reflect class $klass")
+        val classObj = getClassObject(classDef)
+        setGlobal(name, classObj, protected = protected)
     }
 
     fun setGlobal(name: String, value: SkValue, protected: Boolean = true) {
@@ -117,7 +124,7 @@ internal class SuspendFunImpl<T>(val params: List<Pair<String, SkCodec<*>>>, val
         return retCodec.toKotlin(skResult, env)
     }
 
-    private suspend fun <T> doImport(codec: SkCodec<T>, value: Any): SkValue {
+    private fun <T> doImport(codec: SkCodec<T>, value: Any): SkValue {
         return codec.toSkript(value as T, env)
     }
 }
