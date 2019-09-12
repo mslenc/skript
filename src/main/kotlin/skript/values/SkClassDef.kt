@@ -1,17 +1,18 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.illegalArg
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.*
 
-open class SkClassDef(val name: String, val superClass: SkClassDef? = null) {
+open class SkClassDef(val className: String, val superClass: SkClassDef? = SkObjectClassDef) {
     internal val instanceMethods = HashMap<String, SkMethod>()
     internal val instanceProps = HashMap<String, SkObjectProperty>()
     internal val staticFunctions = HashMap<String, SkFunction>()
 
     open suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
-        typeError("Can't construct new instances of $name")
+        typeError("Can't construct new instances of $className")
     }
 
     open fun checkNameAvailable(name: String) {
@@ -21,22 +22,22 @@ open class SkClassDef(val name: String, val superClass: SkClassDef? = null) {
 
     open fun defineInstanceMethod(method: SkMethod) {
         checkNameAvailable(method.name)
-//        check(method.expectedClass.isSameOrSuperClassOf(this)) { "The method doesn't accept this class" }
+        check(method.expectedClass.isSameOrSuperClassOf(this)) { "The method doesn't accept this class" }
 
         instanceMethods[method.name] = method
     }
 
     open fun defineInstanceProperty(property: SkObjectProperty) {
         checkNameAvailable(property.name)
-//        check(property.expectedClass.isSameOrSuperClassOf(this)) { "The property doesn't accept this class" }
+        check(property.expectedClass.isSameOrSuperClassOf(this)) { "The property doesn't accept this class" }
 
         instanceProps[property.name] = property
     }
 
-    fun defineStaticFunction(function: SkFunction, name: String = function.name) {
-        check(!staticFunctions.containsKey(name)) { "This class already has a static function named $name" }
+    fun defineStaticFunction(function: SkFunction) {
+        check(!staticFunctions.containsKey(function.name)) { "This class already has a static function named ${function.name}" }
 
-        staticFunctions[name] = function
+        staticFunctions[function.name] = function
     }
 
     fun findInstanceMethod(key: String): SkMethod? {
@@ -45,6 +46,10 @@ open class SkClassDef(val name: String, val superClass: SkClassDef? = null) {
 
     fun findInstanceProperty(key: String): SkObjectProperty? {
         return instanceProps[key] ?: superClass?.findInstanceProperty(key)
+    }
+
+    fun findStaticFunction(key: String): SkFunction? {
+        return staticFunctions[key] ?: superClass?.findStaticFunction(key)
     }
 
     fun isInstance(value: SkValue): Boolean {
@@ -120,6 +125,38 @@ class ExtractNumberOpt(name: String): ExtractArg<SkNumber?>(name) {
 }
 
 
+class ExtractInt(name: String, val ifUndefined: Int?): ExtractArg<Int>(name) {
+    override fun extract(args: SkArguments) = args.expectInt(name, ifUndefined = ifUndefined)
+}
+
+class ExtractIntOpt(name: String): ExtractArg<Int?>(name) {
+    override fun extract(args: SkArguments): Int? {
+        return when (val value = args.getParam(name)) {
+            SkUndefined -> null
+            else -> value.toIntOrNull() ?: illegalArg("Expected an integer value for parameter $name")
+        }
+    }
+}
+
+class ExtractNonNegativeInt(name: String, val ifUndefined: Int?): ExtractArg<Int>(name) {
+    override fun extract(args: SkArguments): Int {
+        val i = args.expectInt(name, ifUndefined = ifUndefined)
+        return when {
+            i >= 0 -> i
+            else -> illegalArg("Expected an non-negative integer value for parameter $name")
+        }
+    }
+}
+
+class ExtractNonNegativeIntOpt(name: String): ExtractArg<Int?>(name) {
+    override fun extract(args: SkArguments): Int? {
+        return when (val value = args.getParam(name)) {
+            SkUndefined -> null
+            else -> value.toNonNegativeIntOrNull() ?: illegalArg("Expected an non-negative integer value for parameter $name")
+        }
+    }
+}
+
 class ExtractFunction(name: String): ExtractArg<SkFunction>(name) {
     override fun extract(args: SkArguments) = args.expectFunction(name)
 }
@@ -134,8 +171,9 @@ class ExtractRestKwArgs(name: String) : ExtractArg<Map<String, SkValue>>(name) {
 }
 
 
-open class SkCustomClass<OBJ>(name: String, superClass: SkClassDef? = null) : SkClassDef(name, superClass) {
-    fun defineMethod(methodName: String): MethodBuilder0<OBJ> {
+open class SkCustomClass<OBJ>(name: String, superClass: SkClassDef = SkObjectClassDef) : SkClassDef(name, superClass) {
+    // TODO: do something with isInfix and isOperator
+    fun defineMethod(methodName: String, isInfix: Boolean = false, isOperator: Boolean = false): MethodBuilder0<OBJ> {
         return MethodBuilder0(this, methodName)
     }
 
@@ -184,11 +222,11 @@ class SkCustomMutableProperty<OBJ>(override val expectedClass: SkClassDef, overr
 }
 
 
-class MethodBuilder0<OBJ>(val klass: SkCustomClass<OBJ>, val methodName: String) {
+class MethodBuilder0<OBJ>(val holderClass: SkCustomClass<OBJ>, val methodName: String) {
     fun withImpl(impl: suspend (OBJ)->SkValue) {
-        klass.defineInstanceMethod(object : SkMethod(methodName, emptyList()) {
+        holderClass.defineInstanceMethod(object : SkMethod(methodName, emptyList()) {
             override val expectedClass: SkClassDef
-                get() = klass
+                get() = holderClass
 
             override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
                 args.expectNothingElse()
@@ -198,26 +236,30 @@ class MethodBuilder0<OBJ>(val klass: SkCustomClass<OBJ>, val methodName: String)
     }
 
     fun <T> withParam(param: ExtractArg<T>): MethodBuilder1<OBJ, T> {
-        return MethodBuilder1(klass, methodName, param)
+        return MethodBuilder1(holderClass, methodName, param)
     }
 
     fun withParam(paramName: String) = withParam(NoCoerce(paramName))
     fun withBooleanParam(paramName: String, defaultValue: Boolean? = null) = withParam(ExtractBoolean(paramName, defaultValue))
     fun withStringParam(paramName: String, defaultValue: String? = null) = withParam(ExtractString(paramName, defaultValue))
     fun withNumberParam(paramName: String, defaultValue: SkNumber? = null) = withParam(ExtractNumber(paramName, defaultValue))
+    fun withIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractInt(paramName, defaultValue))
+    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractNonNegativeInt(paramName, defaultValue))
     fun withOptBooleanParam(paramName: String) = withParam(ExtractBooleanOpt(paramName))
     fun withOptStringParam(paramName: String) = withParam(ExtractStringOpt(paramName))
     fun withOptNumberParam(paramName: String) = withParam(ExtractNumberOpt(paramName))
+    fun withOptIntParam(paramName: String) = withParam(ExtractIntOpt(paramName))
+    fun withNonNegIntParam(paramName: String) = withParam(ExtractNonNegativeIntOpt(paramName))
     fun withFunctionParam(paramName: String) = withParam(ExtractFunction(paramName))
     fun withRestPosArgs(paramName: String) = withParam(ExtractRestPosArgs(paramName))
     fun withRestKwArgs(paramName: String) = withParam(ExtractRestKwArgs(paramName))
 }
 
-class MethodBuilder1<OBJ, T1>(val klass: SkCustomClass<OBJ>, val methodName: String, val param1: ExtractArg<T1>) {
+class MethodBuilder1<OBJ, T1>(val holderClass: SkCustomClass<OBJ>, val methodName: String, val param1: ExtractArg<T1>) {
     fun withImpl(impl: suspend (OBJ, T1, RuntimeState)->SkValue) {
-        klass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name)) {
+        holderClass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name)) {
             override val expectedClass: SkClassDef
-                get() = klass
+                get() = holderClass
 
             override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
                 val arg1 = param1.extract(args)
@@ -228,26 +270,30 @@ class MethodBuilder1<OBJ, T1>(val klass: SkCustomClass<OBJ>, val methodName: Str
     }
 
     fun <T> withParam(param: ExtractArg<T>): MethodBuilder2<OBJ, T1, T> {
-        return MethodBuilder2(klass, methodName, param1, param)
+        return MethodBuilder2(holderClass, methodName, param1, param)
     }
 
     fun withParam(paramName: String) = withParam(NoCoerce(paramName))
     fun withBooleanParam(paramName: String, defaultValue: Boolean? = null) = withParam(ExtractBoolean(paramName, defaultValue))
     fun withStringParam(paramName: String, defaultValue: String? = null) = withParam(ExtractString(paramName, defaultValue))
     fun withNumberParam(paramName: String, defaultValue: SkNumber? = null) = withParam(ExtractNumber(paramName, defaultValue))
+    fun withIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractInt(paramName, defaultValue))
+    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractNonNegativeInt(paramName, defaultValue))
     fun withOptBooleanParam(paramName: String) = withParam(ExtractBooleanOpt(paramName))
     fun withOptStringParam(paramName: String) = withParam(ExtractStringOpt(paramName))
     fun withOptNumberParam(paramName: String) = withParam(ExtractNumberOpt(paramName))
+    fun withOptIntParam(paramName: String) = withParam(ExtractIntOpt(paramName))
+    fun withNonNegIntParam(paramName: String) = withParam(ExtractNonNegativeIntOpt(paramName))
     fun withFunctionParam(paramName: String) = withParam(ExtractFunction(paramName))
     fun withRestPosArgs(paramName: String) = withParam(ExtractRestPosArgs(paramName))
     fun withRestKwArgs(paramName: String) = withParam(ExtractRestKwArgs(paramName))
 }
 
-class MethodBuilder2<OBJ, T1, T2>(val klass: SkCustomClass<OBJ>, val methodName: String, val param1: ExtractArg<T1>, val param2: ExtractArg<T2>) {
+class MethodBuilder2<OBJ, T1, T2>(val holderClass: SkCustomClass<OBJ>, val methodName: String, val param1: ExtractArg<T1>, val param2: ExtractArg<T2>) {
     fun withImpl(impl: suspend (OBJ, T1, T2, RuntimeState)->SkValue) {
-        klass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name, param2.name)) {
+        holderClass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name, param2.name)) {
             override val expectedClass: SkClassDef
-                get() = klass
+                get() = holderClass
 
             override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
                 val arg1 = param1.extract(args)
@@ -259,31 +305,35 @@ class MethodBuilder2<OBJ, T1, T2>(val klass: SkCustomClass<OBJ>, val methodName:
     }
 
     fun <T> withParam(param: ExtractArg<T>): MethodBuilder3<OBJ, T1, T2, T> {
-        return MethodBuilder3(klass, methodName, param1, param2, param)
+        return MethodBuilder3(holderClass, methodName, param1, param2, param)
     }
 
     fun withParam(paramName: String) = withParam(NoCoerce(paramName))
     fun withBooleanParam(paramName: String, defaultValue: Boolean? = null) = withParam(ExtractBoolean(paramName, defaultValue))
     fun withStringParam(paramName: String, defaultValue: String? = null) = withParam(ExtractString(paramName, defaultValue))
     fun withNumberParam(paramName: String, defaultValue: SkNumber? = null) = withParam(ExtractNumber(paramName, defaultValue))
+    fun withIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractInt(paramName, defaultValue))
+    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractNonNegativeInt(paramName, defaultValue))
     fun withOptBooleanParam(paramName: String) = withParam(ExtractBooleanOpt(paramName))
     fun withOptStringParam(paramName: String) = withParam(ExtractStringOpt(paramName))
     fun withOptNumberParam(paramName: String) = withParam(ExtractNumberOpt(paramName))
+    fun withOptIntParam(paramName: String) = withParam(ExtractIntOpt(paramName))
+    fun withNonNegIntParam(paramName: String) = withParam(ExtractNonNegativeIntOpt(paramName))
     fun withFunctionParam(paramName: String) = withParam(ExtractFunction(paramName))
     fun withRestPosArgs(paramName: String) = withParam(ExtractRestPosArgs(paramName))
     fun withRestKwArgs(paramName: String) = withParam(ExtractRestKwArgs(paramName))
 }
 
 class MethodBuilder3<OBJ, T1, T2, T3>(
-    val klass: SkCustomClass<OBJ>, val methodName: String,
+    val holderClass: SkCustomClass<OBJ>, val methodName: String,
     val param1: ExtractArg<T1>,
     val param2: ExtractArg<T2>,
     val param3: ExtractArg<T3>) {
 
     fun withImpl(impl: suspend (OBJ, T1, T2, T3, RuntimeState)->SkValue) {
-        klass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name, param2.name, param3.name)) {
+        holderClass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name, param2.name, param3.name)) {
             override val expectedClass: SkClassDef
-                get() = klass
+                get() = holderClass
 
             override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
                 val arg1 = param1.extract(args)

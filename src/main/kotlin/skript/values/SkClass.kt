@@ -6,7 +6,7 @@ import skript.util.SkArguments
 
 class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
     val name: String
-        get() = def.name
+        get() = def.className
 
     override val klass: SkClassDef
         get() = SkClassClassDef
@@ -25,6 +25,14 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
 
     override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
         return construct(args, state.env)
+    }
+
+    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
+        klass.findStaticFunction(methodName)?.let { function ->
+            return function.call(args, state)
+        }
+
+        throw UnsupportedOperationException("$exprDebug has no static function $methodName")
     }
 
     fun isInstance(value: SkValue): Boolean {
@@ -47,7 +55,7 @@ fun SkClassDef.isSameOrSuperClassOf(clazz: SkClassDef): Boolean {
     return clazz == this || isSuperClassOf(clazz)
 }
 
-object SkClassClassDef : SkClassDef("Class", SkObjectClassDef)
+object SkClassClassDef : SkClassDef("Class")
 
 
 

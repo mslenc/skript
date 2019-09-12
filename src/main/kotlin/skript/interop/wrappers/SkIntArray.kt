@@ -29,7 +29,7 @@ class SkIntArray(val array: IntArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkIntArrayClassDef : SkClassDef("IntArray", null)
+object SkIntArrayClassDef : SkClassDef("IntArray", SkAbstractListClassDef)
 
 object SkCodecIntArray : SkCodec<IntArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is IntArray

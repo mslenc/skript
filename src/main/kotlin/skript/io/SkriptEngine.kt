@@ -28,6 +28,7 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
                 setGlobal("Object", env.getClassObject(SkObjectClassDef), true)
                 setGlobal("List", env.getClassObject(SkListClassDef), true)
                 setGlobal("Map", env.getClassObject(SkMapClassDef), true)
+                setGlobal("Regex", env.getClassObject(SkRegexClassDef), true)
             }
         }
 

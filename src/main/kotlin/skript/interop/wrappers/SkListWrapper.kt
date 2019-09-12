@@ -17,7 +17,7 @@ class SkListWrapper<T>(val list: List<T>, val elementCodec: SkCodec<T>, val env:
     }
 }
 
-object SkListWrapperClassDef : SkClassDef("ListWrapper", null)
+object SkListWrapperClassDef : SkClassDef("ListWrapper", SkAbstractListClassDef)
 
 class SkCodecNativeList<T>(val elementCodec: SkCodec<T>) : SkCodec<List<T>> {
     override fun isMatch(kotlinVal: Any): Boolean {

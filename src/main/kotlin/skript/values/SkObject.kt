@@ -27,7 +27,7 @@ abstract class SkObject : SkValue() {
     }
 
     override fun asString(): SkString {
-        return SkString("[object ${klass.name}]")
+        return SkString("[object ${klass.className}]")
     }
 
     override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {

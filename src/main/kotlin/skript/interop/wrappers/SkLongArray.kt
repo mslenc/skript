@@ -29,7 +29,7 @@ class SkLongArray(val array: LongArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkLongArrayClassDef : SkClassDef("LongArray", null)
+object SkLongArrayClassDef : SkClassDef("LongArray", SkAbstractListClassDef)
 
 object SkCodecLongArray : SkCodec<LongArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is LongArray

@@ -14,7 +14,7 @@ class SkNativeClassDef<T : Any>(name: String, val nativeClass: KClass<T>, superC
             return constructor.call(args, env)
         }
 
-        typeError("Can't construct instances of $name")
+        typeError("Can't construct instances of $className")
     }
 
     fun defineNativeProperty(property: SkNativeProperty<T, *>) {

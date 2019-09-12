@@ -29,7 +29,7 @@ class SkFloatArray(val array: FloatArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkFloatArrayClassDef : SkClassDef("FloatArray", null)
+object SkFloatArrayClassDef : SkClassDef("FloatArray", SkAbstractListClassDef)
 
 object SkCodecFloatArray : SkCodec<FloatArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is FloatArray

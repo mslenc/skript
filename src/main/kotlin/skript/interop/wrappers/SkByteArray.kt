@@ -29,7 +29,7 @@ class SkByteArray(val array: ByteArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkByteArrayClassDef : SkClassDef("ByteArray", null)
+object SkByteArrayClassDef : SkClassDef("ByteArray", SkAbstractListClassDef)
 
 object SkCodecByteArray : SkCodec<ByteArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is ByteArray

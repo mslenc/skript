@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.interop.HoldsNative
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.util.SkArguments
@@ -8,25 +9,11 @@ import skript.util.expectBoolean
 import skript.util.expectString
 import java.util.*
 
-class SkRegex(val regex: Regex) : SkObject() {
+class SkRegex(override val nativeObj: Regex) : SkObject(), HoldsNative<Regex> {
     override val klass: SkClassDef
         get() = SkRegexClassDef
 
 
-}
-
-object SkRegex_containsMatchIn : SkMethod("containsMatchIn", listOf("input")) {
-    override val expectedClass: SkClassDef
-        get() = SkRegexClassDef
-
-    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
-        val regex = (thiz as SkRegex).regex
-
-        val input = args.expectString("input")
-        args.expectNothingElse()
-
-        return regex.containsMatchIn(input).toSkript()
-    }
 }
 
 fun MatchGroup.toSkript() = SkMap(mapOf(
@@ -42,9 +29,114 @@ private inline fun SkArguments.ifTrue(key: String, block: ()->Unit) {
     }
 }
 
-object SkRegexClassDef : SkClassDef("Regex") {
+object SkRegexClassDef : SkCustomClass<SkRegex>("Regex") {
     init {
-        defineInstanceMethod(SkRegex_containsMatchIn)
+        defineMethod("containsMatchIn").
+            withStringParam("input").
+            withImpl { regex, input, _ ->
+                regex.nativeObj.containsMatchIn(input).toSkript()
+            }
+
+        defineMethod("find").
+            withStringParam("input").
+            withIntParam("startIndex", defaultValue = 0).
+            withImpl { regex, input, startIndex, _ ->
+                val match = regex.nativeObj.find(input, startIndex) ?: return@withImpl SkNull
+                SkMatchResult(match)
+            }
+
+        defineMethod("findAll").
+            withStringParam("input").
+            withIntParam("startIndex", defaultValue = 0).
+            withImpl { regex, input, startIndex, _ ->
+                val matches = regex.nativeObj.findAll(input, startIndex)
+                SkList(matches.map { SkMatchResult(it) }.toList())
+            }
+
+        defineMethod("matchEntire").
+            withStringParam("input").
+            withImpl { regex, input, _ ->
+                val match = regex.nativeObj.matchEntire(input) ?: return@withImpl SkNull
+                SkMatchResult(match)
+            }
+
+        defineMethod("matches", isInfix = true).
+            withStringParam("input").
+            withImpl { regex, input, _ ->
+                regex.nativeObj.matches(input).toSkript()
+            }
+
+        defineMethod("replace").
+            withStringParam("input").
+            withParam("replacement").
+            withImpl { regex, input, repl, state ->
+                if (repl !is SkFunction)
+                    return@withImpl regex.nativeObj.replace(input, repl.asString().value).toSkript()
+
+                var match = regex.nativeObj.find(input) ?: return@withImpl input.toSkript()
+                val inputLen = input.length
+                val sb = StringBuilder(inputLen)
+                var pos = 0
+
+                while (pos < inputLen) {
+                    val range = match.range
+                    if (range.first > pos)
+                        sb.append(input, pos, range.start)
+
+                    val replaced = repl.call(SkArguments.of(SkMatchResult(match)), state)
+                    sb.append(replaced.asString().value)
+                    pos = range.last + 1
+
+                    match = match.next() ?: break
+                }
+
+                if (pos < inputLen)
+                    sb.append(input, pos, inputLen)
+
+                sb.toString().toSkript()
+            }
+
+        defineMethod("replaceFirst").
+            withStringParam("input").
+            withStringParam("replacement").
+            withImpl { regex, input, replacement, _ ->
+                regex.nativeObj.replaceFirst(input, replacement).toSkript()
+            }
+
+        defineMethod("split").
+            withStringParam("input").
+            withIntParam("limit", defaultValue = 0).
+            withImpl { regex, input, limit, _ ->
+                val results = regex.nativeObj.split(input, limit)
+                SkList(results.map { it.toSkript() })
+            }
+
+        defineStaticFunction(object : SkFunction("escape", listOf("literal")) {
+            override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+                val literal = args.expectString("literal")
+                args.expectNothingElse()
+
+                return Regex.escape(literal).toSkript()
+            }
+        })
+
+        defineStaticFunction(object : SkFunction("escapeReplacement", listOf("literal")) {
+            override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+                val literal = args.expectString("literal")
+                args.expectNothingElse()
+
+                return Regex.escapeReplacement(literal).toSkript()
+            }
+        })
+
+        defineStaticFunction(object : SkFunction("fromLiteral", listOf("literal")) {
+            override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+                val literal = args.expectString("literal")
+                args.expectNothingElse()
+
+                return SkRegex(Regex.fromLiteral(literal))
+            }
+        })
     }
 
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
@@ -63,10 +155,33 @@ object SkRegexClassDef : SkClassDef("Regex") {
     }
 }
 
-class SkMatchResult() : SkObject() {
+class SkMatchGroup(override val nativeObj: MatchGroup): SkObject(), HoldsNative<MatchGroup> {
     override val klass: SkClassDef
-        get() = SkMatchResultClassDef
-    
+        get() = SkMatchGroupClassDef
 }
 
-object SkMatchResultClassDef : SkClassDef("MatchResult")
+object SkMatchGroupClassDef : SkCustomClass<SkMatchGroup>("MatchGroup") {
+    init {
+        defineReadOnlyProperty("value") { it.nativeObj.value.toSkript() }
+        defineReadOnlyProperty("range") { it.nativeObj.range.toSkript() }
+    }
+}
+
+class SkMatchResult(override val nativeObj: MatchResult) : SkObject(), HoldsNative<MatchResult> {
+    override val klass: SkClassDef
+        get() = SkMatchResultClassDef
+}
+
+object SkMatchResultClassDef : SkCustomClass<SkMatchResult>("MatchResult") {
+    init {
+        defineReadOnlyProperty("value") { it.nativeObj.value.toSkript() }
+        defineReadOnlyProperty("range") { it.nativeObj.range.toSkript() }
+
+        defineMethod("next").withImpl {
+            when (val nextResult = it.nativeObj.next()) {
+                null -> SkNull
+                else -> SkMatchResult(nextResult)
+            }
+        }
+    }
+}

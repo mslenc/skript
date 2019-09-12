@@ -19,4 +19,4 @@ class SkStringBuilder() : SkObject() {
     }
 }
 
-object SkStringBuilderClassDef : SkClassDef("StringBuilder", null)
+object SkStringBuilderClassDef : SkClassDef("StringBuilder")

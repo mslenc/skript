@@ -74,7 +74,7 @@ class SkMap : SkObject {
     }
 }
 
-object SkMapClassDef : SkClassDef("Map", SkObjectClassDef) {
+object SkMapClassDef : SkClassDef("Map") {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val result = SkMap()
 

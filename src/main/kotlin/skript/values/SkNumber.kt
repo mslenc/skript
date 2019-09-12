@@ -288,7 +288,7 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject() {
     }
 }
 
-object SkNumberClassDef : SkClassDef("Number", SkObjectClassDef) {
+object SkNumberClassDef : SkClassDef("Number") {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         return SkNumberObject(args.getParam("value").asNumber())
     }

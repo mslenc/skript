@@ -111,7 +111,7 @@ class SkArguments : SkObject() {
     }
 }
 
-object SkArgumentsClassDef : SkClassDef("Arguments", SkObjectClassDef)
+object SkArgumentsClassDef : SkClassDef("Arguments")
 
 fun SkArguments.expectBoolean(name: String, coerce: Boolean = true, ifUndefined: Boolean? = null): Boolean {
     val value = getParam(name)

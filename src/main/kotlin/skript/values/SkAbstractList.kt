@@ -170,7 +170,7 @@ object SkAbstractListClassDef : SkCustomClass<SkAbstractList>("AbstractList", Sk
 
         defineMethod("concat").
             withRestPosArgs("arrays").
-            withImpl { list, arrays, state ->
+            withImpl { list, arrays, _ ->
                 val result = SkList()
 
                 for (index in 0 until list.getSize())

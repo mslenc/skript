@@ -29,7 +29,7 @@ class SkShortArray(val array: ShortArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkShortArrayClassDef : SkClassDef("ShortArray", null)
+object SkShortArrayClassDef : SkClassDef("ShortArray", SkAbstractListClassDef)
 
 object SkCodecShortArray : SkCodec<ShortArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is ShortArray

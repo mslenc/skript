@@ -12,7 +12,7 @@ abstract class SkIterator : SkObject() {
     abstract fun getCurrentValue(): SkValue
 }
 
-object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator", null) {
+object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator") {
     init {
         defineMethod("moveToNext").withImpl {
             it.moveToNext().toSkript()

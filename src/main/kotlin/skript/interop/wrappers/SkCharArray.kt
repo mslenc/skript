@@ -27,7 +27,7 @@ class SkCharArray(val array: CharArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkCharArrayClassDef : SkClassDef("CharArray", null)
+object SkCharArrayClassDef : SkClassDef("CharArray", SkAbstractListClassDef)
 
 object SkCodecCharArray : SkCodec<CharArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is CharArray

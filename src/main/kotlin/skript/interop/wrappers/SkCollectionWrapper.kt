@@ -25,7 +25,7 @@ class SkCollectionWrapper<T>(val collection: Collection<T>, val elementCodec: Sk
     }
 }
 
-object SkCollectionWrapperClassDef : SkClassDef("CollectionWrapper", null)
+object SkCollectionWrapperClassDef : SkClassDef("CollectionWrapper", SkAbstractListClassDef)
 
 class SkCollectionIterator<T>(val iterator: Iterator<T>, val elementCodec: SkCodec<T>, val env: SkriptEnv): SkIterator() {
     override val klass: SkClassDef

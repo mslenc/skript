@@ -29,7 +29,7 @@ class SkDoubleArray(val array: DoubleArray) : SkAbstractNativeArray() {
     }
 }
 
-object SkDoubleArrayClassDef : SkClassDef("DoubleArray", null)
+object SkDoubleArrayClassDef : SkClassDef("DoubleArray", SkAbstractListClassDef)
 
 object SkCodecDoubleArray : SkCodec<DoubleArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is DoubleArray
