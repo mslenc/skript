@@ -81,11 +81,11 @@ fun <T: Any, R> reflectFunction(prop: KFunction<R>, classDef: SkNativeClassDef<T
 fun <T: Any, R> reflectMutableProperty(prop: KMutableProperty1<T, R>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
     val codec = engine.getNativeCodec(prop.returnType) ?: return
     val skProp = SkNativeMutableProperty(prop, codec as SkCodec<R>)
-    classDef.defineProperty(skProp)
+    classDef.defineNativeProperty(skProp)
 }
 
 fun <T: Any, R> reflectReadOnlyProperty(prop: KProperty1<T, R>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
     val codec = engine.getNativeCodec(prop.returnType) ?: return
     val skProp = SkNativeReadOnlyProperty(prop, codec as SkCodec<R>)
-    classDef.defineProperty(skProp)
+    classDef.defineNativeProperty(skProp)
 }

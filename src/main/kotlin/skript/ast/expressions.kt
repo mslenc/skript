@@ -13,8 +13,8 @@ interface ExprVisitor {
     fun visitLiteral(expr: Literal) { }
     fun visitListLiteral(expr: ListLiteral) { expr.parts.forEach { it.value.accept(this) } }
     fun visitVarRef(expr: Variable) { }
-    fun visitFieldAccess(expr: FieldAccess) { expr.obj.accept(this) }
-    fun visitArrayAccess(expr: ArrayAccess) { expr.arr.accept(this); expr.index.accept(this) }
+    fun visitPropertyAccess(expr: PropertyAccess) { expr.obj.accept(this) }
+    fun visitElementAccess(expr: ElementAccess) { expr.arr.accept(this); expr.index.accept(this) }
     fun visitParentheses(expr: Parentheses) { expr.inner.accept(this) }
 
     fun visitStringTemplate(expr: StringTemplateExpr) {
@@ -334,20 +334,20 @@ class Variable(val varName: String, val pos: Pos): LValue() {
     }
 }
 
-class FieldAccess(val obj: Expression, val fieldName: String): LValue() {
+class PropertyAccess(val obj: Expression, val propName: String): LValue() {
     override fun accept(visitor: ExprVisitor) {
-        visitor.visitFieldAccess(this)
+        visitor.visitPropertyAccess(this)
     }
 
     override fun toString(sb: StringBuilder) {
         obj.toString(sb)
-        sb.append(".").append(fieldName)
+        sb.append(".").append(propName)
     }
 }
 
-class ArrayAccess(val arr: Expression, val index: Expression): LValue() {
+class ElementAccess(val arr: Expression, val index: Expression): LValue() {
     override fun accept(visitor: ExprVisitor) {
-        visitor.visitArrayAccess(this)
+        visitor.visitElementAccess(this)
     }
 
     override fun toString(sb: StringBuilder) {

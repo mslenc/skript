@@ -276,14 +276,14 @@ fun Tokens.parsePostfixes(primary: Expression): Expression {
                 if (peek().type == LPAREN) {
                     MethodCall(result, ident.rawText, parseCallArgs(), callType)
                 } else {
-                    FieldAccess(result, ident.rawText)
+                    PropertyAccess(result, ident.rawText)
                 }
             }
             LBRACK -> {
                 next()
                 val index = parseExpression()
                 expect(RBRACK)
-                ArrayAccess(result, index)
+                ElementAccess(result, index)
             }
             LPAREN -> {
                 FuncCall(result, parseCallArgs())

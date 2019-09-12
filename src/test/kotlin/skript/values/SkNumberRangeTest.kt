@@ -18,7 +18,7 @@ class SkNumberRangeTest {
         assertTrue(range.hasOwnMemberInternal(6.toSkript()))
         assertFalse(range.hasOwnMemberInternal(6.1.toSkript()))
 
-        val iter = range.makeIterator() as SkIterator
+        val iter = range.makeIterator()
 
         assertTrue(iter.moveToNext())
         assertEquals(0.0, (iter.getCurrentKey() as SkNumber).value)

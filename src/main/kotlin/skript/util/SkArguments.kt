@@ -27,8 +27,7 @@ class SkArguments : SkObject() {
     fun spreadPosArgs(args: SkList) {
         check(state == 0) { "Can't add parameters after some have already been extracted" }
 
-        for (arg in args.elements)
-            posArgs.add(arg ?: SkUndefined)
+        posArgs.addAll(args.listEls)
     }
 
     fun spreadPosArgs(args: List<SkValue>) {
@@ -40,7 +39,7 @@ class SkArguments : SkObject() {
     fun spreadKwArgs(args: SkMap) {
         check(state == 0) { "Can't add parameters after some have already been extracted" }
 
-        args.props.extractInto(kwArgs)
+        kwArgs.putAll(args.elements)
     }
 
     fun spreadKwArgs(args: Map<String, SkValue>) {

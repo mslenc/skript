@@ -1,86 +1,28 @@
 package skript.interop.wrappers
 
-import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.interop.SkCodecChar
 import skript.io.SkriptEnv
 import skript.io.toSkript
-import skript.isString
-import skript.notSupported
 import skript.opcodes.SkIterator
+import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkCharArray(val array: CharArray) : SkObject() {
+class SkCharArray(val array: CharArray) : SkAbstractNativeArray() {
     override val klass: SkClassDef
         get() = SkCharArrayClassDef
 
-    override fun getKind(): SkValueKind {
-        return SkValueKind.OBJECT
+    override fun getSize() = array.size
+
+    override fun getValidSlot(index: Int): SkValue {
+        return array[index].toSkript()
     }
 
-    override fun asObject(): SkObject {
-        return this
+    override fun setValidSlot(index: Int, value: SkValue) {
+        array[index] = SkCodecChar.toKotlin(value)
     }
 
-    override fun asBoolean(): SkBoolean {
-        return SkBoolean.valueOf(array.isNotEmpty())
-    }
-
-    override fun asNumber(): SkNumber {
-        notSupported("Can't convert a CharArray into a number")
-    }
-
-    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
-        if (key.isString("length"))
-            notSupported("Can't change length of a CharArray")
-
-        key.toNonNegativeIntOrNull()?.let { index ->
-            if (index < array.size) {
-                array[index] = SkCodecChar.toKotlin(key, state.env)
-                return
-            }
-        }
-
-        super.setMember(key, value, state)
-    }
-
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
-        if (key.isString("length"))
-            return true
-
-        key.toNonNegativeIntOrNull()?.let { index ->
-            if (index < array.size)
-                return true
-        }
-
-        return super.hasOwnMember(key, state)
-    }
-
-    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
-        if (key.isString("length"))
-            return SkNumber.valueOf(array.size)
-
-        key.toNonNegativeIntOrNull()?.let { index ->
-            if (index < array.size) {
-                return array[index].toSkript()
-            }
-        }
-
-        return super.findMember(key, state)
-    }
-
-    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
-        if (key.isString("length"))
-            notSupported("Can't delete length of CharArrays")
-
-        super.deleteMember(key, state)
-    }
-
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
-        notSupported("CharArrays can't be used to make ranges")
-    }
-
-    override suspend fun makeIterator(): SkValue {
+    override suspend fun makeIterator(): SkIterator {
         return SkCharArrayIterator(array)
     }
 }
@@ -89,16 +31,16 @@ object SkCharArrayClassDef : SkClassDef("CharArray", null)
 
 object SkCodecCharArray : SkCodec<CharArray> {
     override fun isMatch(kotlinVal: Any) = kotlinVal is CharArray
-    override suspend fun toSkript(value: CharArray, env: SkriptEnv) = SkCharArray(value)
-    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): CharArray {
+    override fun toSkript(value: CharArray, env: SkriptEnv) = SkCharArray(value)
+    override fun toKotlin(value: SkValue, env: SkriptEnv): CharArray {
         if (value is SkCharArray)
             return value.array
 
-        if (value is SkList) {
-            val len = value.getLength()
+        if (value is SkAbstractList) {
+            val len = value.getSize()
             val result = CharArray(len)
             for (i in 0 until len) {
-                result[i] = SkCodecChar.toKotlin(value.elements[i] ?: SkNull, env)
+                result[i] = SkCodecChar.toKotlin(value.getSlot(i))
             }
             return result
         }
@@ -107,7 +49,7 @@ object SkCodecCharArray : SkCodec<CharArray> {
     }
 }
 
-class SkCharArrayIterator(val array: CharArray) : SkObject(), SkIterator {
+class SkCharArrayIterator(val array: CharArray) : SkIterator() {
     override val klass: SkClassDef
         get() = SkCharArrayIteratorClassDef
 
@@ -126,4 +68,4 @@ class SkCharArrayIterator(val array: CharArray) : SkObject(), SkIterator {
     }
 }
 
-object SkCharArrayIteratorClassDef : SkClassDef("CharArrayIterator", null)
+object SkCharArrayIteratorClassDef : SkClassDef("CharArrayIterator", SkIteratorClassDef)

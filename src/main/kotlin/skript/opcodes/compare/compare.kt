@@ -68,7 +68,7 @@ fun deepCompare(a: SkList, b: SkList, seen: HashSet<RefPair>): Int? {
     if (!seen.add(RefPair(a, b)))
         return 0 // TODO: does this make sense?
 
-    for (i in 0 until min(a.getLength(), b.getLength())) {
+    for (i in 0 until min(a.getSize(), b.getSize())) {
         val elA = a.getSlot(i)
         val elB = b.getSlot(i)
 
@@ -83,5 +83,5 @@ fun deepCompare(a: SkList, b: SkList, seen: HashSet<RefPair>): Int? {
             return cmp
     }
 
-    return a.getLength().compareTo(b.getLength())
+    return a.getSize().compareTo(b.getSize())
 }

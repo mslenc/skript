@@ -4,7 +4,7 @@ import skript.exec.RuntimeState
 import skript.notSupported
 import skript.util.SkArguments
 
-sealed class SkCallable(val name: String) : SkObject() {
+sealed class SkCallable<ACTUAL: SkCallable<ACTUAL>>(val name: String) : SkObject() {
     final override fun asBoolean(): SkBoolean {
         return SkBoolean.TRUE
     }
@@ -14,7 +14,7 @@ sealed class SkCallable(val name: String) : SkObject() {
     }
 }
 
-abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable(name) {
+abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable<SkFunction>(name) {
     override val klass: SkClassDef
         get() = SkFunctionClassDef
 
@@ -29,7 +29,7 @@ abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallab
     }
 }
 
-abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable(name) {
+abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable<SkMethod>(name) {
     override val klass: SkClassDef
         get() = SkMethodClassDef
 

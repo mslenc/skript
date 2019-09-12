@@ -15,7 +15,7 @@ class ParamInfo<T>(
     val paramType: ParamType,
     val codec: SkCodec<T>
 ) {
-    suspend fun doImportInto(nativeArgs: MutableMap<KParameter, Any?>, instance: Any?, args: SkArguments, env: SkriptEnv) {
+    fun doImportInto(nativeArgs: MutableMap<KParameter, Any?>, instance: Any?, args: SkArguments, env: SkriptEnv) {
         nativeArgs[kotlinParam] = when (kotlinParam.kind) {
             KParameter.Kind.EXTENSION_RECEIVER, // TODO is this ok, just using the instance as receiver like this?
             KParameter.Kind.INSTANCE -> {
@@ -70,15 +70,11 @@ class SkNativeConstructor<T : Any>(name: String, val params: List<ParamInfo<*>>,
         return call(args, state.env)
     }
 
-    suspend fun call(args: SkArguments, env: SkriptEnv): SkNativeObject<T> {
+    fun call(args: SkArguments, env: SkriptEnv): SkNativeObject<T> {
         val nativeArgs = HashMap<KParameter, Any?>()
         params.forEach { it.doImportInto(nativeArgs, null, args, env) }
 
-        val nativeObject = if (impl.isSuspend) {
-            impl.callSuspendBy(nativeArgs)
-        } else {
-            impl.callBy(nativeArgs)
-        }
+        val nativeObject = impl.callBy(nativeArgs)
 
         return SkNativeObject(nativeObject, skClass)
     }

@@ -324,9 +324,9 @@ class BinaryOpsTest {
             val b = [ 71, 2, 3 ];
             val c = [ 3, 2, 3 ];
             
-            a.push(b);
-            b.push(a);
-            c.push(a);
+            a.add(b);
+            b.add(a);
+            c.add(a);
             
             emit(a[3][3][3][3][3][3][3][3][3][0]);
             

@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.opcodes.SkIterator
 import skript.util.SkArguments
 
 enum class SkValueKind {
@@ -25,10 +26,14 @@ abstract class SkValue {
     abstract suspend fun call(args: SkArguments, state: RuntimeState): SkValue
     abstract suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue
 
-    abstract suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean
-    abstract suspend fun findMember(key: SkValue, state: RuntimeState): SkValue
-    abstract suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState)
-    abstract suspend fun deleteMember(key: SkValue, state: RuntimeState)
+    abstract suspend fun contains(key: SkValue, state: RuntimeState): Boolean
+
+    abstract suspend fun propSet(key: String, value: SkValue, state: RuntimeState)
+    abstract suspend fun propGet(key: String, state: RuntimeState): SkValue
+
+    abstract suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState)
+    abstract suspend fun elementGet(key: SkValue, state: RuntimeState): SkValue
+    abstract suspend fun elementDelete(key: SkValue, state: RuntimeState): Boolean
 
     abstract fun getKind(): SkValueKind
 
@@ -37,8 +42,8 @@ abstract class SkValue {
     abstract fun asString(): SkString
     abstract fun asObject(): SkObject
 
-    open suspend fun makeIterator(): SkValue {
-        return SkUndefined
+    open suspend fun makeIterator(): SkIterator? {
+        return null
     }
 
     abstract suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue

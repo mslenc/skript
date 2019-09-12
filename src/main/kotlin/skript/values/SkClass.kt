@@ -27,10 +27,6 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
         return construct(args, state.env)
     }
 
-    fun findInstanceMethod(key: String): SkMethod? {
-        return def.instanceMethods[key] ?: superClass?.findInstanceMethod(key)
-    }
-
     fun isInstance(value: SkValue): Boolean {
         return def.isInstance(value)
     }

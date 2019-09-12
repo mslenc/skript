@@ -10,7 +10,7 @@ class SkStringRange(val start: String, val end: String, val endInclusive: Boolea
     override val klass: SkClassDef
         get() = SkStringRangeClassDef
 
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
         val str = key.asString()
 
         return when {

@@ -14,6 +14,7 @@ import skript.values.*
  * * maps are equal if they have the same members (as in, about equal, recursively)
  * * other objects, functions, classes and methods only equal themselves
  */
+// TODO: native objects should probably use equals()
 fun aboutEqual(aObj: SkValue, bObj: SkValue): Boolean {
     val a = if (aObj is SkScalarObject) aObj.value else aObj
     val b = if (bObj is SkScalarObject) bObj.value else bObj
@@ -111,8 +112,8 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
         val aList = a as SkList
         val bList = b as SkList
 
-        val len = aList.getLength()
-        if (bList.getLength() != len)
+        val len = aList.getSize()
+        if (bList.getSize() != len)
             return false
 
         for (i in 0 until len)
@@ -124,7 +125,7 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
 
     if (aKind == SkValueKind.MAP) {
         if (bKind != SkValueKind.MAP)
-            return false;
+            return false
 
         if (!seen.add(RefPair(a, b)))
             return true
@@ -132,19 +133,19 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
         val aMap = a as SkMap
         val bMap = b as SkMap
 
-        if (aMap.props.size != bMap.props.size)
+        if (aMap.elements.size != bMap.elements.size)
             return false
 
         val aKeys = HashSet<String>()
         val bKeys = HashSet<String>()
-        aMap.props.forEach { key, _ -> aKeys.add(key) }
-        bMap.props.forEach { key, _ -> bKeys.add(key) }
+        aMap.elements.forEach { (key, _) -> aKeys.add(key) }
+        bMap.elements.forEach { (key, _) -> bKeys.add(key) }
 
         if (aKeys != bKeys)
             return false
 
         for (key in aKeys)
-            if (!deepEquals(aMap.getMapMember(key)!!, bMap.getMapMember(key)!!, seen))
+            if (!deepEquals(aMap.elements[key]!!, bMap.elements[key]!!, seen))
                 return false
 
         return true

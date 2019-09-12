@@ -8,7 +8,6 @@ import kotlin.reflect.KClass
 
 class SkNativeClassDef<T : Any>(name: String, val nativeClass: KClass<T>, superClass: SkNativeClassDef<*>?) : SkClassDef(name, superClass ?: SkObjectClassDef) {
     var constructor : SkNativeConstructor<T>? = null
-    var properties = HashMap<String, SkNativeProperty<T, *>>()
 
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         constructor?.let { constructor ->
@@ -18,14 +17,38 @@ class SkNativeClassDef<T : Any>(name: String, val nativeClass: KClass<T>, superC
         typeError("Can't construct instances of $name")
     }
 
-    override fun checkNameAvailable(name: String) {
-        super.checkNameAvailable(name)
-        check(!properties.containsKey(name)) { "This class already has $name defined" }
-    }
+    fun defineNativeProperty(property: SkNativeProperty<T, *>) {
+        defineInstanceProperty(object : SkObjectProperty() {
+            override val expectedClass: SkClassDef
+                get() = this@SkNativeClassDef
 
-    fun defineProperty(property: SkNativeProperty<T, *>) {
-        checkNameAvailable(property.name)
+            override val name: String
+                get() = property.name
 
-        properties[property.name] = property
+            override val nullable: Boolean
+                get() = property.nullable
+
+            override val readOnly: Boolean
+                get() = property.readOnly
+
+            private fun getNativeObj(obj: SkObject): T {
+                obj as? SkNativeObject<*> ?: typeError("Accessing property $name on wrong class object")
+                val nativeObj = obj.nativeObj
+                @Suppress("UNCHECKED_CAST")
+                if (nativeClass.isInstance(nativeObj)) {
+                    return nativeObj as T
+                } else {
+                    typeError("Accessing property $name on wrong class object")
+                }
+            }
+
+            override suspend fun getValue(obj: SkObject, env: SkriptEnv): SkValue {
+                return property.getValue(getNativeObj(obj), env)
+            }
+
+            override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
+                property.setValue(getNativeObj(obj), value, env)
+            }
+        })
     }
 }

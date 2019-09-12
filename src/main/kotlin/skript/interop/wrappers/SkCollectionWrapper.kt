@@ -1,67 +1,66 @@
 package skript.interop.wrappers
 
-import skript.exec.RuntimeState
 import skript.interop.SkCodec
 import skript.io.SkriptEnv
-import skript.isString
-import skript.notSupported
+import skript.io.toSkript
+import skript.opcodes.SkIterator
+import skript.opcodes.SkIteratorClassDef
+import skript.typeError
 import skript.values.*
 
-class SkCollectionWrapper<T>(val collection: Collection<T>, val elementCodec: SkCodec<T>) : SkObject() {
+class SkCollectionWrapper<T>(val collection: Collection<T>, val elementCodec: SkCodec<T>, val env: SkriptEnv) : SkAbstractList() {
     override val klass: SkClassDef
         get() = SkCollectionWrapperClassDef
 
-    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
-        if (key.isString("size"))
-            return SkNumber.valueOf(collection.size)
-
-        return super.findMember(key, state)
+    override fun getSize(): Int {
+        return collection.size
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
-        if (key.isString("size"))
-            notSupported("Can't set size of collections")
-
-        super.setMember(key, value, state)
+    override fun getValidSlot(index: Int): SkValue {
+        typeError("This collection doesn't support random access, use iteration instead")
     }
 
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
-        if (key.isString("size"))
-            return true
-
-        return super.hasOwnMember(key, state)
-    }
-
-    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
-        if (key.isString("size"))
-            notSupported("Can't delete size of collections")
-
-        super.deleteMember(key, state)
-    }
-
-    override fun asBoolean(): SkBoolean {
-        return SkBoolean.valueOf(collection.isNotEmpty())
-    }
-
-    override fun asNumber(): SkNumber {
-        notSupported("Can't convert collections into numbers")
+    override suspend fun makeIterator(): SkIterator {
+        return SkCollectionIterator(collection.iterator(), elementCodec, env)
     }
 }
 
 object SkCollectionWrapperClassDef : SkClassDef("CollectionWrapper", null)
 
-class SkCollectionIterator<T>(val iterator: Iterator<T>, val elementCodec: SkCodec<T>) {
-    // TODO
+class SkCollectionIterator<T>(val iterator: Iterator<T>, val elementCodec: SkCodec<T>, val env: SkriptEnv): SkIterator() {
+    override val klass: SkClassDef
+        get() = SkCollectionIteratorClassDef
+
+    private var index = -1
+    private var value: SkValue = SkUndefined
+
+    override fun moveToNext(): Boolean {
+        if (iterator.hasNext()) {
+            index++
+            value = elementCodec.toSkript(iterator.next(), env)
+            return true
+        }
+
+        return false
+    }
+
+    override fun getCurrentKey(): SkValue {
+        return index.toSkript()
+    }
+
+    override fun getCurrentValue(): SkValue {
+        return value
+    }
 }
 
-object SkCollectionIteratorClassDef : SkClassDef("CollectionIterator", null)
+object SkCollectionIteratorClassDef : SkClassDef("CollectionIterator", SkIteratorClassDef)
 
 class SkCodecNativeCollection<T>(val elementCodec: SkCodec<T>) : SkCodec<Collection<T>> {
     override fun isMatch(kotlinVal: Any): Boolean {
         return kotlinVal is Collection<*> // TODO: check sub type somehow?
     }
 
-    override suspend fun toKotlin(value: SkValue, env: SkriptEnv): Collection<T> {
+    override fun toKotlin(value: SkValue, env: SkriptEnv): Collection<T> {
         if (value is SkCollectionWrapper<*>) {
             // TODO: do innards? for now we'll just assume it's right
             return value.collection as Collection<T>
@@ -70,8 +69,8 @@ class SkCodecNativeCollection<T>(val elementCodec: SkCodec<T>) : SkCodec<Collect
         }
     }
 
-    override suspend fun toSkript(value: Collection<T>, env: SkriptEnv): SkValue {
-        return SkCollectionWrapper(value, elementCodec)
+    override fun toSkript(value: Collection<T>, env: SkriptEnv): SkValue {
+        return SkCollectionWrapper(value, elementCodec, env)
     }
 }
 

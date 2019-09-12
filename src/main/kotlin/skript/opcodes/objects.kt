@@ -68,7 +68,7 @@ object ValueInOp : SuspendOpCode() {
             val container = pop()
             val value = pop()
 
-            push(SkBoolean.valueOf(container.hasOwnMember(value, state)))
+            push(SkBoolean.valueOf(container.contains(value, state)))
         }
     }
 }
@@ -79,7 +79,7 @@ object ValueNotInOp : SuspendOpCode() {
             val container = pop()
             val value = pop()
 
-            push(SkBoolean.valueOf(!container.hasOwnMember(value, state)))
+            push(SkBoolean.valueOf(!container.contains(value, state)))
         }
     }
 }

@@ -67,7 +67,7 @@ class ClosuresTest {
                 [ 1, 2, 3 ].forEach(fun(step) {
                     val holder = [];
                     [ step ].forEach(fun(stepAgain) {
-                        holder.push(fun() {
+                        holder.add(fun() {
                             val cur = 0;
                             return fun() {
                                 return cur += step;
@@ -75,7 +75,7 @@ class ClosuresTest {
                         }());
                     });
                     
-                    result.push(holder[0]);
+                    result.add(holder[0]);
                 });
                 
                 return result;

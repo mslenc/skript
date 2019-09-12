@@ -29,7 +29,12 @@ object SkRegex_containsMatchIn : SkMethod("containsMatchIn", listOf("input")) {
     }
 }
 
+fun MatchGroup.toSkript() = SkMap(mapOf(
+    "value" to this.value.toSkript(),
+    "range" to this.range.toSkript()
+))
 
+fun IntRange.toSkript() = SkNumberRange(this.first.toSkript(), this.last.toSkript(), true)
 
 private inline fun SkArguments.ifTrue(key: String, block: ()->Unit) {
     if (expectBoolean(key, ifUndefined = false)) {
@@ -57,3 +62,11 @@ object SkRegexClassDef : SkClassDef("Regex") {
         return SkRegex(Regex(pattern, options))
     }
 }
+
+class SkMatchResult() : SkObject() {
+    override val klass: SkClassDef
+        get() = SkMatchResultClassDef
+    
+}
+
+object SkMatchResultClassDef : SkClassDef("MatchResult")

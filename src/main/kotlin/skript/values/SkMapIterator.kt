@@ -1,15 +1,15 @@
 package skript.values
 
 import skript.opcodes.SkIterator
+import skript.opcodes.SkIteratorClassDef
 
-// this type should only ever appear on the stack, used for implementing for-in loops
-class SkMapIterator(val map: SkMap) : SkObject(), SkIterator {
+class SkMapIterator(val map: SkMap) : SkIterator() {
     override val klass: SkClassDef
         get() = SkMapIteratorClassDef
 
     var pos = -1
     val entries: List<Pair<String, SkValue>> = ArrayList<Pair<String, SkValue>>().apply {
-        map.props.forEach { key, value ->
+        map.elements.forEach { (key, value) ->
             add(key to value)
         }
     }
@@ -27,4 +27,4 @@ class SkMapIterator(val map: SkMap) : SkObject(), SkIterator {
     }
 }
 
-object SkMapIteratorClassDef : SkClassDef("MapIterator", SkObjectClassDef)
+object SkMapIteratorClassDef : SkClassDef("MapIterator", SkIteratorClassDef)

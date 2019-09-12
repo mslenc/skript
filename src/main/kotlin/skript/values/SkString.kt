@@ -3,40 +3,44 @@ package skript.values
 import skript.*
 import skript.exec.RuntimeState
 import skript.io.SkriptEnv
+import skript.io.toSkript
+import skript.opcodes.SkIterator
 import skript.util.*
-import java.lang.UnsupportedOperationException
 
 class SkString(val value: String) : SkScalar() {
     override fun asObject(): SkObject {
         return SkStringObject(this)
     }
 
-    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
-        if (key.isString("length"))
-            return SkNumber.valueOf(value.length)
-
-        return super.findMember(key, state)
+    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+        return when (key) {
+            "length" -> SkNumber.valueOf(value.length)
+            else -> SkUndefined
+        }
     }
 
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
-        if (key.isString("length"))
-            return true
-
-        return super.hasOwnMember(key, state)
+    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+        when (key) {
+            "length" -> typeError("Can't set string length - strings are immutable")
+            else -> typeError("Can't set properties on strings")
+        }
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
-        if (key.isString("length"))
-            throw UnsupportedOperationException("Can't set string length - strings are immutable")
+    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
+        val string = when (key) {
+            is SkString -> key.value
+            is SkNumber -> key.asString().value
+            is SkBoolean -> key.asString().value
+            is SkNull -> return true
+            is SkUndefined -> return false
+            else -> return false
+        }
 
-        return super.setMember(key, value, state)
+        return value.contains(string)
     }
 
-    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
-        if (key.isString("length"))
-            throw UnsupportedOperationException("Can't delete string length - strings are immutable")
-
-        return super.deleteMember(key, state)
+    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+        typeError("Can't set elements on strings")
     }
 
     override fun getKind(): SkValueKind {
@@ -67,7 +71,7 @@ class SkString(val value: String) : SkScalar() {
         return this
     }
 
-    override suspend fun makeIterator(): SkValue {
+    override suspend fun makeIterator(): SkIterator {
         return SkStringIterator(this)
     }
 
@@ -100,99 +104,58 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
     override fun asString(): SkString {
         return value
     }
-
-    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
-        if (key.isString("length"))
-            return SkNumber.valueOf(value.value.length)
-
-        return super.findMember(key, state)
-    }
-
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
-        if (key.isString("length"))
-            return true
-
-        return super.hasOwnMember(key, state)
-    }
-
-    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
-        if (key.isString("length"))
-            throw UnsupportedOperationException("Can't set string length - strings are immutable")
-
-        return super.setMember(key, value, state)
-    }
-
-    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
-        if (key.isString("length"))
-            throw UnsupportedOperationException("Can't delete string length - strings are immutable")
-
-        return super.deleteMember(key, state)
-    }
 }
 
-object SkStringClassDef : SkClassDef("String", SkObjectClassDef) {
-    init {
-        defineInstanceMethod(String_trim)
-        defineInstanceMethod(String_substring)
-    }
-
+object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val str = args.expectString("value", ifUndefined = "")
         return SkStringObject(SkString(str))
     }
-}
 
-object String_trim : SkMethod("trim", listOf("chars", "start", "end")) {
-    override val expectedClass: SkClassDef
-        get() = SkStringClassDef
+    init {
+        defineReadOnlyProperty("length") {
+            it.value.length.toSkript()
+        }
 
-    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkString {
-        val chars = args.expectString("chars", ifUndefined = "")
-        val trimStart = args.expectBoolean("start", ifUndefined = true)
-        val trimEnd = args.expectBoolean("end", ifUndefined = true)
-        args.expectNothingElse()
+        defineMethod("trim").
+            withStringParam("chars", defaultValue = "").
+            withBooleanParam("start", defaultValue = true).
+            withBooleanParam("end", defaultValue = true).
+            withImpl { str, chars, start, end, _ ->
+                val trimmed = if (chars == "") {
+                    when {
+                        start && end -> str.value.trim()
+                        start -> str.value.trimStart()
+                        end -> str.value.trimEnd()
+                        else -> str.value
+                    }
+                } else {
+                    when {
+                        start && end -> str.value.trim(*chars.toCharArray())
+                        start -> str.value.trimStart(*chars.toCharArray())
+                        end -> str.value.trimEnd(*chars.toCharArray())
+                        else -> str.value
+                    }
+                }
 
-        val str = thiz.asString()
-
-        val trimmed = if (chars == "") {
-            when {
-                trimStart && trimEnd -> str.value.trim()
-                trimStart -> str.value.trimStart()
-                trimEnd -> str.value.trimEnd()
-                else -> str.value
+                when (trimmed) {
+                    str.value -> str
+                    else -> SkString(trimmed)
+                }
             }
-        } else {
-            when {
-                trimStart && trimEnd -> str.value.trim(*chars.toCharArray())
-                trimStart -> str.value.trimStart(*chars.toCharArray())
-                trimEnd -> str.value.trimEnd(*chars.toCharArray())
-                else -> str.value
+
+        defineMethod("substring").
+            withOptNumberParam("start").
+            withOptNumberParam("end").
+            withImpl { string, start, end, _ ->
+                val startIdx = start?.let { it.toIntOrNull()?.rangeParam(string.value.length) ?: typeError("Expected an integer value for parameter start") } ?: 0
+                val endIdx = end?.let { it.toIntOrNull()?.rangeParam(string.value.length) ?: typeError("Expected an integer value for parameter start") } ?: string.value.length
+
+                when {
+                    startIdx == endIdx -> SkString.EMPTY
+                    startIdx == 0 && endIdx == string.value.length -> string
+                    else -> SkString(string.value.substring(startIdx, endIdx))
+                }
             }
-        }
-
-        return when (trimmed) {
-            str.value -> str
-            else -> SkString(trimmed)
-        }
-    }
-}
-
-object String_substring : SkMethod("substring", listOf("start", "end")) {
-    override val expectedClass: SkClassDef
-        get() = SkStringClassDef
-
-    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkString {
-        val strVal = thiz.asString()
-        val string = strVal.value
-
-        val start = args.expectInt("start", ifUndefined = 0).rangeParam(string.length)
-        val end = args.expectInt("end", ifUndefined = string.length).rangeParam(string.length)
-        args.expectNothingElse()
-
-        return when {
-            start == end -> SkString.EMPTY
-            start == 0 && end == string.length -> strVal
-            else -> SkString(string.substring(start, end))
-        }
     }
 }

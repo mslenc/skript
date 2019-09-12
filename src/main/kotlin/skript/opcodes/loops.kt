@@ -1,27 +1,34 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
+import skript.io.toSkript
 import skript.parser.Pos
 import skript.typeError
 import skript.values.*
 
-interface SkIterator {
-    fun moveToNext(): Boolean
-    fun getCurrentKey(): SkValue
-    fun getCurrentValue(): SkValue
+abstract class SkIterator : SkObject() {
+    abstract fun moveToNext(): Boolean
+    abstract fun getCurrentKey(): SkValue
+    abstract fun getCurrentValue(): SkValue
+}
+
+object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator", null) {
+    init {
+        defineMethod("moveToNext").withImpl {
+            it.moveToNext().toSkript()
+        }
+
+        defineReadOnlyProperty("currentKey") { it.getCurrentKey() }
+        defineReadOnlyProperty("currentValue") { it.getCurrentValue() }
+    }
 }
 
 object MakeIterator: SuspendOpCode() {
     override suspend fun executeSuspend(state: RuntimeState) {
         state.topFrame.stack.apply {
             val container = pop()
-            val iterator = container.makeIterator()
-
-            if (iterator is SkIterator) {
-                push(iterator)
-            } else {
-                typeError("Can't iterate over " + container.asString().value, Pos(0, 0, "TODO"))
-            }
+            val iterator = container.makeIterator() ?: typeError("Can't iterate over " + container.asString().value, Pos(0, 0, "TODO"))
+            push(iterator)
         }
     }
 }

@@ -25,7 +25,7 @@ class MapDupSetKnownKey(private val key: String) : FastOpCode() {
         state.topFrame.apply {
             val value = stack.pop()
             val map = stack.top() as SkMap
-            map.setMapMember(key, value)
+            map.elements[key] = value
         }
     }
 }
@@ -36,7 +36,7 @@ object MapDupSetKey : FastOpCode() {
             val value = stack.pop()
             val key = stack.pop()
             val map = stack.top() as SkMap
-            map.setMemberInternal(key, value)
+            map.elements[key.asString().value] = value
         }
     }
 }
@@ -72,7 +72,7 @@ object ListDupAppend : FastOpCode() {
         state.topFrame.apply {
             val value = stack.pop()
             val list = stack.top() as SkList
-            list.push(value)
+            list.add(value)
         }
     }
 }
@@ -81,7 +81,7 @@ class ListDupAppendLiteral(private val literal: SkValue) : FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
             val list = stack.top() as SkList
-            list.setSlot(list.getLength(), literal)
+            list.setSlot(list.getSize(), literal)
         }
     }
 }
@@ -93,7 +93,7 @@ object ListDupAppendSpread : FastOpCode() {
             val list = stack.top() as SkList
 
             if (newElements is SkList) {
-                list.pushAll(newElements)
+                list.addAll(newElements.listEls)
             } else {
                 throw notSupported("Can't spread a non-list into a list")
             }

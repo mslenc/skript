@@ -292,16 +292,16 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             is Variable -> {
                 builder += expr.varInfo.loadOpCode
             }
-            is FieldAccess -> {
+            is PropertyAccess -> {
                 expr.obj.accept(this)
                 builder += Dup
-                builder += GetKnownMember(expr.fieldName)
+                builder += GetPropertyOp(expr.propName)
             }
-            is ArrayAccess -> {
+            is ElementAccess -> {
                 expr.arr.accept(this)
                 expr.index.accept(this)
                 builder += Dup2
-                builder += GetMember
+                builder += GetElementOp
             }
         }
     }
@@ -312,11 +312,11 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
                 // [ VAL ] -> [ VAL VAL ]
                 builder += Dup
             }
-            is FieldAccess -> {
+            is PropertyAccess -> {
                 // [ OBJ VAL ] -> [ VAL OBJ VAL ]
                 builder += CopyTopTwoDown
             }
-            is ArrayAccess -> {
+            is ElementAccess -> {
                 // [ ARR IDX VAL ] -> [ VAL ARR IDX VAL ]
                 builder += CopyTopThreeDown
             }
@@ -331,18 +331,18 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
                 }
                 builder += expr.varInfo.storeOpCode
             }
-            is FieldAccess -> {
+            is PropertyAccess -> {
                 if (keepValue) {
-                    builder += SetKnownMemberKeepValue(expr.fieldName)
+                    builder += SetPropertyKeepValueOp(expr.propName)
                 } else {
-                    builder += SetKnownMember(expr.fieldName)
+                    builder += SetPropertyOp(expr.propName)
                 }
             }
-            is ArrayAccess -> {
+            is ElementAccess -> {
                 if (keepValue) {
-                    builder += SetMemberKeepValue
+                    builder += SetElementKeepValueOp
                 } else {
-                    builder += SetMember
+                    builder += SetElementOp
                 }
             }
         }
@@ -396,10 +396,10 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             is Variable -> {
                 // nothing yet
             }
-            is FieldAccess -> {
+            is PropertyAccess -> {
                 expr.left.obj.accept(this)
             }
-            is ArrayAccess -> {
+            is ElementAccess -> {
                 expr.left.arr.accept(this)
                 expr.left.index.accept(this)
             }
@@ -412,11 +412,11 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
                 builder += Dup
                 builder += expr.left.varInfo.storeOpCode
             }
-            is FieldAccess -> {
-                builder += SetKnownMemberKeepValue(expr.left.fieldName)
+            is PropertyAccess -> {
+                builder += SetPropertyKeepValueOp(expr.left.propName)
             }
-            is ArrayAccess -> {
-                builder += SetMemberKeepValue
+            is ElementAccess -> {
+                builder += SetElementKeepValueOp
             }
         }
     }
@@ -524,15 +524,15 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         builder += expr.varInfo.loadOpCode
     }
 
-    override fun visitFieldAccess(expr: FieldAccess) {
+    override fun visitPropertyAccess(expr: PropertyAccess) {
         expr.obj.accept(this)
-        builder += GetKnownMember(expr.fieldName)
+        builder += GetPropertyOp(expr.propName)
     }
 
-    override fun visitArrayAccess(expr: ArrayAccess) {
+    override fun visitElementAccess(expr: ElementAccess) {
         expr.arr.accept(this)
         expr.index.accept(this)
-        builder += GetMember
+        builder += GetElementOp
     }
 
     override fun visitMethodCall(expr: MethodCall) {

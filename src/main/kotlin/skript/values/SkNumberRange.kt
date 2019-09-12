@@ -4,6 +4,7 @@ import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
+import skript.opcodes.SkIteratorClassDef
 import skript.toStrictNumberOrNull
 import skript.util.SkArguments
 import skript.util.expectBoolean
@@ -14,7 +15,7 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
     override val klass: SkClassDef
         get() = SkNumberRangeClassDef
 
-    override suspend fun makeIterator(): SkValue {
+    override suspend fun makeIterator(): SkIterator {
         return if (start is SkDecimal && end is SkDecimal) {
             SkDecimalRangeIterator(start, end, endInclusive)
         } else {
@@ -22,7 +23,7 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
         }
     }
 
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
         return hasOwnMemberInternal(key.toStrictNumberOrNull() ?: return false)
     }
 
@@ -47,7 +48,7 @@ object SkNumberRangeClassDef : SkClassDef("NumberRange", SkObjectClassDef) {
     }
 }
 
-class SkDoubleRangeIterator(start: Double, val end: Double, val endInclusive: Boolean) : SkObject(), SkIterator {
+class SkDoubleRangeIterator(start: Double, val end: Double, val endInclusive: Boolean) : SkIterator() {
     override val klass: SkClassDef
         get() = SkNumberRangeIteratorClassDef
 
@@ -74,9 +75,9 @@ class SkDoubleRangeIterator(start: Double, val end: Double, val endInclusive: Bo
     }
 }
 
-object SkNumberRangeIteratorClassDef : SkClassDef("NumberRangeIterator", SkObjectClassDef)
+object SkNumberRangeIteratorClassDef : SkClassDef("NumberRangeIterator", SkIteratorClassDef)
 
-class SkDecimalRangeIterator(start: SkDecimal, val end: SkDecimal, val endInclusive: Boolean) : SkObject(), SkIterator {
+class SkDecimalRangeIterator(start: SkDecimal, val end: SkDecimal, val endInclusive: Boolean) : SkIterator() {
     override val klass: SkClassDef
         get() = SkDecimalRangeIteratorClassDef
 

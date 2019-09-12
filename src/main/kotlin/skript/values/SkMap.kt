@@ -1,7 +1,10 @@
 package skript.values
 
+import skript.exec.RuntimeState
 import skript.io.SkriptEnv
+import skript.io.toSkript
 import skript.notSupported
+import skript.opcodes.SkIterator
 import skript.typeError
 import skript.util.SkArguments
 
@@ -12,21 +15,35 @@ class SkMap : SkObject {
     constructor() : super()
 
     constructor(initialValues: Map<String, SkValue>) : this() {
-        for ((key, value) in initialValues) {
-            defaultSetMember(key, value)
+        elements.putAll(initialValues)
+    }
+
+    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+        klass.findInstanceProperty(key)?.let { prop ->
+            if (prop.readOnly)
+                typeError("Can't set property $key, because it is read-only")
+
+            prop.setValue(this, value, state.env)
+            return
         }
+
+        klass.findInstanceMethod(key)?.let {
+            typeError("Can't override methods")
+        }
+
+        elementSet(key.toSkript(), value, state)
     }
 
-    internal fun setMemberInternal(key: SkValue, value: SkValue) {
-        defaultSetMember(key.asString().value, value)
-    }
+    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+        klass.findInstanceProperty(key)?.let { prop ->
+            return prop.getValue(this, state.env)
+        }
 
-    fun setMapMember(key: String, value: SkValue) {
-        props = props.withAdded(key, value)
-    }
+        klass.findInstanceMethod(key)?.let { method ->
+            return BoundMethod(method, this, SkArguments())
+        }
 
-    fun getMapMember(key: String): SkValue? {
-        return props.get(key)
+        return elementGet(key.toSkript(), state)
     }
 
     override fun getKind(): SkValueKind {
@@ -34,7 +51,7 @@ class SkMap : SkObject {
     }
 
     override fun asBoolean(): SkBoolean {
-        return SkBoolean.valueOf(props != EmptyProps)
+        return SkBoolean.valueOf(elements.isNotEmpty())
     }
 
     override fun asNumber(): SkNumber {
@@ -49,12 +66,10 @@ class SkMap : SkObject {
         if (values == this)
             return // ???
 
-        values.props.forEach { key, value ->
-            defaultSetMember(key, value)
-        }
+        elements.putAll(values.elements)
     }
 
-    override suspend fun makeIterator(): SkValue {
+    override suspend fun makeIterator(): SkIterator {
         return SkMapIterator(this)
     }
 }
@@ -62,19 +77,16 @@ class SkMap : SkObject {
 object SkMapClassDef : SkClassDef("Map", SkObjectClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val result = SkMap()
+
         for (el in args.getRemainingPosArgs()) {
             if (el is SkMap) {
-                el.props.forEach { key, value ->
-                    result.setMapMember(key, value)
-                }
+                result.elements.putAll(el.elements)
             } else {
                 typeError("Map constructor only accepts other Maps as positional arguments")
             }
         }
 
-        for ((key, value) in args.getRemainingKwArgs()) {
-            result.setMapMember(key, value)
-        }
+        result.elements.putAll(args.getRemainingKwArgs())
 
         return result
     }

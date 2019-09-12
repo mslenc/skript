@@ -1,9 +1,9 @@
 package skript.values
 
 import skript.opcodes.SkIterator
+import skript.opcodes.SkIteratorClassDef
 
-// this type should only ever appear on the stack, used for implementing for-in loops
-class SkStringIterator(value: SkString) : SkObject(), SkIterator {
+class SkStringIterator(value: SkString) : SkIterator() {
     override val klass: SkClassDef
         get() = SkStringIteratorClassDef
 
@@ -23,4 +23,4 @@ class SkStringIterator(value: SkString) : SkObject(), SkIterator {
     }
 }
 
-object SkStringIteratorClassDef : SkClassDef("StringIterator", SkObjectClassDef)
+object SkStringIteratorClassDef : SkClassDef("StringIterator", SkIteratorClassDef)

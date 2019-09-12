@@ -24,7 +24,7 @@ data class TestObj(
 class InteropTest {
     @Test
     fun testManuallyConstructedClass() = runBlocking {
-        val TestObjClass = SkNativeClassDef<TestObj>("TestObj", TestObj::class, null)
+        val TestObjClass = SkNativeClassDef("TestObj", TestObj::class, null)
 
         TestObjClass.defineInstanceMethod(
             SkNativeMethod(
@@ -37,8 +37,8 @@ class InteropTest {
                 TestObj::fooBar, TestObjClass)
         )
 
-        TestObjClass.defineProperty(SkNativeMutableProperty(TestObj::foo, SkCodecString))
-        TestObjClass.defineProperty(SkNativeReadOnlyProperty(TestObj::bar, SkCodecInt))
+        TestObjClass.defineNativeProperty(SkNativeMutableProperty(TestObj::foo, SkCodecString))
+        TestObjClass.defineNativeProperty(SkNativeReadOnlyProperty(TestObj::bar, SkCodecInt))
 
         TestObjClass.constructor = SkNativeConstructor("TestObj::constructor", listOf(
             ParamInfo("foo", TestObj::class.primaryConstructor!!.findParameterByName("foo")!!, ParamType.NORMAL, SkCodecString),

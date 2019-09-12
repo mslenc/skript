@@ -5,24 +5,16 @@ import skript.typeError
 import skript.util.SkArguments
 
 object SkNull : SkScalar() {
-    override suspend fun findMember(key: SkValue, state: RuntimeState): SkValue {
-        return SkUndefined
-    }
-
-    override suspend fun hasOwnMember(key: SkValue, state: RuntimeState): Boolean {
-        return false
-    }
-
-    override suspend fun deleteMember(key: SkValue, state: RuntimeState) {
-        // ignore
-    }
-
     override fun asObject(): SkObject {
         typeError("Can't convert null into an object")
     }
 
-    override suspend fun setMember(key: SkValue, value: SkValue, state: RuntimeState) {
-        typeError("Can't set members on null")
+    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+        typeError("Can't set properties on null")
+    }
+
+    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+        typeError("Can't set elements on null")
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
