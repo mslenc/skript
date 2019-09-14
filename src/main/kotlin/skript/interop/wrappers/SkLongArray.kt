@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkLongArray(val array: LongArray) : SkAbstractNativeArray() {
+class SkLongArray(override val nativeObj: LongArray) : SkAbstractNativeArray<LongArray>() {
     override val klass: SkClassDef
         get() = SkLongArrayClassDef
 
+    override val elementCodec: SkCodec<*>
+        get() = SkCodecLong
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecLong.toKotlin(value)
+        nativeObj[index] = SkCodecLong.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkLongArrayIterator(array)
+        return SkLongArrayIterator(nativeObj)
     }
 }
 
 object SkLongArrayClassDef : SkClassDef("LongArray", SkAbstractListClassDef)
 
-object SkCodecLongArray : SkCodec<LongArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is LongArray
-    override fun toSkript(value: LongArray, env: SkriptEnv) = SkLongArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): LongArray {
-        if (value is SkLongArray)
-            return value.array
+object SkCodecLongArray : SkCodecTypedArray<LongArray, Long>() {
+    override val elementCodec: SkCodec<Long>
+        get() = SkCodecLong
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = LongArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecLong.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a LongArray")
+    override fun createArray(size: Int): LongArray {
+        return LongArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is LongArray
+    }
+
+    override fun setElement(array: LongArray, index: Int, value: Long) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: LongArray, env: SkriptEnv) = SkLongArray(value)
 }
 
 class SkLongArrayIterator(val array: LongArray) : SkIterator() {

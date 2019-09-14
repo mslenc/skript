@@ -207,7 +207,7 @@ fun makeParamInfos(function: KFunction<*>, engine: SkriptEngine, vararg extraPar
         val paramCodec = engine.getNativeCodec(param.type) ?: return null
 
         if (param.isVararg) {
-            result += SkNativeParamRestArgs(param, SkCodecNativeArray(paramCodec))
+            result += SkNativeParamRestArgs(param, paramCodec)
         } else {
             result += SkNativeParamNormal(paramName, param, paramCodec)
         }

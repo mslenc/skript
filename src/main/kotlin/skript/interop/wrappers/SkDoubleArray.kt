@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkDoubleArray(val array: DoubleArray) : SkAbstractNativeArray() {
+class SkDoubleArray(override val nativeObj: DoubleArray) : SkAbstractNativeArray<DoubleArray>() {
     override val klass: SkClassDef
         get() = SkDoubleArrayClassDef
 
+    override val elementCodec: SkCodec<*>
+        get() = SkCodecDouble
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecDouble.toKotlin(value)
+        nativeObj[index] = SkCodecDouble.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkDoubleArrayIterator(array)
+        return SkDoubleArrayIterator(nativeObj)
     }
 }
 
 object SkDoubleArrayClassDef : SkClassDef("DoubleArray", SkAbstractListClassDef)
 
-object SkCodecDoubleArray : SkCodec<DoubleArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is DoubleArray
-    override fun toSkript(value: DoubleArray, env: SkriptEnv) = SkDoubleArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): DoubleArray {
-        if (value is SkDoubleArray)
-            return value.array
+object SkCodecDoubleArray : SkCodecTypedArray<DoubleArray, Double>() {
+    override val elementCodec: SkCodec<Double>
+        get() = SkCodecDouble
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = DoubleArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecDouble.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a DoubleArray")
+    override fun createArray(size: Int): DoubleArray {
+        return DoubleArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is DoubleArray
+    }
+
+    override fun setElement(array: DoubleArray, index: Int, value: Double) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: DoubleArray, env: SkriptEnv) = SkDoubleArray(value)
 }
 
 class SkDoubleArrayIterator(val array: DoubleArray) : SkIterator() {

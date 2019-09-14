@@ -5,10 +5,19 @@ import skript.typeError
 import skript.util.SkArguments
 
 class SkList : SkAbstractList {
-    constructor() : super()
+    constructor()
 
-    constructor(elements: List<SkValue>) : super() {
+    constructor(elements: List<SkValue>) {
         this.listEls.addAll(elements)
+    }
+
+    constructor(elements: SkAbstractList) {
+        if (elements is SkList) {
+            listEls.addAll(elements.listEls)
+        } else {
+            for (i in 0 until elements.getSize())
+                add(elements.getSlot(i))
+        }
     }
 
     override val klass: SkClassDef

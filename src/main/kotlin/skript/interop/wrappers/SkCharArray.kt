@@ -8,45 +8,47 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkCharArray(val array: CharArray) : SkAbstractNativeArray() {
+class SkCharArray(override val nativeObj: CharArray) : SkAbstractNativeArray<CharArray>() {
     override val klass: SkClassDef
         get() = SkCharArrayClassDef
 
-    override fun getSize() = array.size
+    override val elementCodec: SkCodec<*>
+        get() = SkCodecChar
+
+    override fun getSize() = nativeObj.size
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecChar.toKotlin(value)
+        nativeObj[index] = SkCodecChar.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkCharArrayIterator(array)
+        return SkCharArrayIterator(nativeObj)
     }
 }
 
 object SkCharArrayClassDef : SkClassDef("CharArray", SkAbstractListClassDef)
 
-object SkCodecCharArray : SkCodec<CharArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is CharArray
-    override fun toSkript(value: CharArray, env: SkriptEnv) = SkCharArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): CharArray {
-        if (value is SkCharArray)
-            return value.array
+object SkCodecCharArray : SkCodecTypedArray<CharArray, Char>() {
+    override val elementCodec: SkCodec<Char>
+        get() = SkCodecChar
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = CharArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecChar.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a CharArray")
+    override fun createArray(size: Int): CharArray {
+        return CharArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is CharArray
+    }
+
+    override fun setElement(array: CharArray, index: Int, value: Char) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: CharArray, env: SkriptEnv) = SkCharArray(value)
 }
 
 class SkCharArrayIterator(val array: CharArray) : SkIterator() {

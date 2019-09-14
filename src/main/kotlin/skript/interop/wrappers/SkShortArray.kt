@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkShortArray(val array: ShortArray) : SkAbstractNativeArray() {
+class SkShortArray(override val nativeObj: ShortArray) : SkAbstractNativeArray<ShortArray>() {
     override val klass: SkClassDef
         get() = SkShortArrayClassDef
 
+    override val elementCodec: SkCodecShort
+        get() = SkCodecShort
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecShort.toKotlin(value)
+        nativeObj[index] = SkCodecShort.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkShortArrayIterator(array)
+        return SkShortArrayIterator(nativeObj)
     }
 }
 
 object SkShortArrayClassDef : SkClassDef("ShortArray", SkAbstractListClassDef)
 
-object SkCodecShortArray : SkCodec<ShortArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is ShortArray
-    override fun toSkript(value: ShortArray, env: SkriptEnv) = SkShortArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): ShortArray {
-        if (value is SkShortArray)
-            return value.array
+object SkCodecShortArray : SkCodecTypedArray<ShortArray, Short>() {
+    override val elementCodec: SkCodec<Short>
+        get() = SkCodecShort
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = ShortArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecShort.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a ShortArray")
+    override fun createArray(size: Int): ShortArray {
+        return ShortArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is ShortArray
+    }
+
+    override fun setElement(array: ShortArray, index: Int, value: Short) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: ShortArray, env: SkriptEnv) = SkShortArray(value)
 }
 
 class SkShortArrayIterator(val array: ShortArray) : SkIterator() {

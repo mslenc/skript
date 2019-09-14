@@ -1,5 +1,7 @@
 package skript.interop.wrappers
 
+import skript.interop.ConversionType
+import skript.interop.HoldsNative
 import skript.interop.SkCodec
 import skript.io.SkriptEnv
 import skript.io.toSkript
@@ -7,13 +9,15 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.typeError
 import skript.values.*
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSuperclassOf
 
-class SkCollectionWrapper<T>(val collection: Collection<T>, val elementCodec: SkCodec<T>, val env: SkriptEnv) : SkAbstractList() {
+class SkCollectionWrapper<T>(override val nativeObj: Collection<T>, val elementCodec: SkCodec<T>, val env: SkriptEnv) : SkAbstractList(), HoldsNative<Collection<T>> {
     override val klass: SkClassDef
         get() = SkCollectionWrapperClassDef
 
     override fun getSize(): Int {
-        return collection.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
@@ -21,7 +25,7 @@ class SkCollectionWrapper<T>(val collection: Collection<T>, val elementCodec: Sk
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkCollectionIterator(collection.iterator(), elementCodec, env)
+        return SkCollectionIterator(nativeObj.iterator(), elementCodec, env)
     }
 }
 
@@ -55,18 +59,50 @@ class SkCollectionIterator<T>(val iterator: Iterator<T>, val elementCodec: SkCod
 
 object SkCollectionIteratorClassDef : SkClassDef("CollectionIterator", SkIteratorClassDef)
 
-class SkCodecNativeCollection<T>(val elementCodec: SkCodec<T>) : SkCodec<Collection<T>> {
-    override fun isMatch(kotlinVal: Any): Boolean {
-        return kotlinVal is Collection<*> // TODO: check sub type somehow?
+class SkCodecNativeCollection<T>(val collectionClass: KClass<*>, val elementCodec: SkCodec<T>) : SkCodec<Collection<T>> {
+    override fun canConvert(value: SkValue): ConversionType {
+        if (value is SkCollectionWrapper<*> && value.elementCodec == elementCodec)
+            if (collectionClass.isInstance(value.nativeObj))
+                return ConversionType.EXACT
+
+        if (value is SkAbstractList) {
+            return when {
+                collectionClass.isSuperclassOf(ArrayList::class) ||
+                collectionClass.isSuperclassOf(LinkedHashSet::class) -> {
+                    for (i in 0 until value.getSize()) {
+                        if (elementCodec.canConvert(value.getSlot(i)) == ConversionType.NOT_POSSIBLE)
+                            return ConversionType.NOT_POSSIBLE
+                    }
+                    ConversionType.COERCE
+                }
+                else ->
+                    ConversionType.NOT_POSSIBLE
+            }
+        }
+
+        return ConversionType.NOT_POSSIBLE
     }
 
     override fun toKotlin(value: SkValue, env: SkriptEnv): Collection<T> {
-        if (value is SkCollectionWrapper<*>) {
-            // TODO: do innards? for now we'll just assume it's right
-            return value.collection as Collection<T>
-        } else {
-            TODO("Can't convert to native collections yet")
+        if (value is SkCollectionWrapper<*> && value.elementCodec == elementCodec)
+            if (collectionClass.isInstance(value.nativeObj))
+                return value.nativeObj as Collection<T>
+
+        if (value is SkAbstractList) {
+            val container: MutableCollection<T> = when {
+                collectionClass.isSuperclassOf(ArrayList::class) -> ArrayList()
+                collectionClass.isSuperclassOf(LinkedHashSet::class) -> LinkedHashSet()
+                else -> typeError("Can't convert $value to $collectionClass")
+            }
+
+            for (i in 0 until value.getSize()) {
+                container.add(elementCodec.toKotlin(value.getSlot(i), env))
+            }
+
+            return container
         }
+
+        typeError("Can't convert $value to $collectionClass")
     }
 
     override fun toSkript(value: Collection<T>, env: SkriptEnv): SkValue {

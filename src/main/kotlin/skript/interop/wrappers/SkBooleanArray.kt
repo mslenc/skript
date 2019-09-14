@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkBooleanArray(val array: BooleanArray) : SkAbstractNativeArray() {
+class SkBooleanArray(override val nativeObj: BooleanArray) : SkAbstractNativeArray<BooleanArray>() {
     override val klass: SkClassDef
         get() = SkBooleanArrayClassDef
 
+    override val elementCodec: SkCodecBoolean
+        get() = SkCodecBoolean
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecBoolean.toKotlin(value)
+        nativeObj[index] = SkCodecBoolean.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkBooleanArrayIterator(array)
+        return SkBooleanArrayIterator(nativeObj)
     }
 }
 
 object SkBooleanArrayClassDef : SkClassDef("BooleanArray", SkAbstractListClassDef)
 
-object SkCodecBooleanArray : SkCodec<BooleanArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is BooleanArray
-    override fun toSkript(value: BooleanArray, env: SkriptEnv) = SkBooleanArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): BooleanArray {
-        if (value is SkBooleanArray)
-            return value.array
+object SkCodecBooleanArray : SkCodecTypedArray<BooleanArray, Boolean>() {
+    override val elementCodec: SkCodec<Boolean>
+        get() = SkCodecBoolean
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = BooleanArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecBoolean.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a BooleanArray")
+    override fun createArray(size: Int): BooleanArray {
+        return BooleanArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is BooleanArray
+    }
+
+    override fun setElement(array: BooleanArray, index: Int, value: Boolean) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: BooleanArray, env: SkriptEnv) = SkBooleanArray(value)
 }
 
 class SkBooleanArrayIterator(val array: BooleanArray) : SkIterator() {

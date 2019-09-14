@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkByteArray(val array: ByteArray) : SkAbstractNativeArray() {
+class SkByteArray(override val nativeObj: ByteArray) : SkAbstractNativeArray<ByteArray>() {
     override val klass: SkClassDef
         get() = SkByteArrayClassDef
 
+    override val elementCodec: SkCodec<*>
+        get() = SkCodecByte
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecByte.toKotlin(value)
+        nativeObj[index] = SkCodecByte.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkByteArrayIterator(array)
+        return SkByteArrayIterator(nativeObj)
     }
 }
 
 object SkByteArrayClassDef : SkClassDef("ByteArray", SkAbstractListClassDef)
 
-object SkCodecByteArray : SkCodec<ByteArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is ByteArray
-    override fun toSkript(value: ByteArray, env: SkriptEnv) = SkByteArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): ByteArray {
-        if (value is SkByteArray)
-            return value.array
+object SkCodecByteArray : SkCodecTypedArray<ByteArray, Byte>() {
+    override val elementCodec: SkCodec<Byte>
+        get() = SkCodecByte
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = ByteArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecByte.toKotlin(value)
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a ByteArray")
+    override fun createArray(size: Int): ByteArray {
+        return ByteArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is ByteArray
+    }
+
+    override fun setElement(array: ByteArray, index: Int, value: Byte) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: ByteArray, env: SkriptEnv) = SkByteArray(value)
 }
 
 class SkByteArrayIterator(val array: ByteArray) : SkIterator() {

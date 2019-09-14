@@ -55,17 +55,17 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
 
                 when {
                     container.java.isArray -> {
-                        // Array<X>
+                        // Array<X>, because we pre-register all primitive array types
                         val innerType = getNativeCodec(type.arguments[0].type ?: return null) ?: return null
-                        SkCodecNativeArray(innerType)
+                        SkCodecNativeArray(container, container.java.componentType, innerType)
                     }
                     container.isSubclassOf(List::class) -> {
                         val innerType = getNativeCodec(type.arguments[0].type ?: return null) ?: return null
-                        SkCodecNativeList(innerType)
+                        SkCodecNativeList(container, innerType)
                     }
                     container.isSubclassOf(Collection::class) -> {
                         val innerType = getNativeCodec(type.arguments[0].type ?: return null) ?: return null
-                        SkCodecNativeCollection(innerType)
+                        SkCodecNativeCollection(container, innerType)
                     }
 //                    TODO: support gqlktx's Maybe somehow
 //                    container.isSubclassOf(Maybe::class) -> {

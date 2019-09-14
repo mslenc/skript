@@ -1,11 +1,15 @@
 package skript.interop.wrappers
 
 import skript.exec.RuntimeState
+import skript.interop.HoldsNative
+import skript.interop.SkCodec
 import skript.notSupported
 import skript.typeError
 import skript.values.*
 
-abstract class SkAbstractNativeArray : SkAbstractList() {
+abstract class SkAbstractNativeArray<ARR: Any> : SkAbstractList(), HoldsNative<ARR> {
+    abstract val elementCodec: SkCodec<*>
+
     protected abstract fun setValidSlot(index: Int, value: SkValue)
 
     final override fun setSlot(index: Int, value: SkValue) {

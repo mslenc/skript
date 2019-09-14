@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkFloatArray(val array: FloatArray) : SkAbstractNativeArray() {
+class SkFloatArray(override val nativeObj: FloatArray) : SkAbstractNativeArray<FloatArray>() {
     override val klass: SkClassDef
         get() = SkFloatArrayClassDef
 
+    override val elementCodec: SkCodec<*>
+        get() = SkCodecFloat
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecFloat.toKotlin(value)
+        nativeObj[index] = SkCodecFloat.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkFloatArrayIterator(array)
+        return SkFloatArrayIterator(nativeObj)
     }
 }
 
 object SkFloatArrayClassDef : SkClassDef("FloatArray", SkAbstractListClassDef)
 
-object SkCodecFloatArray : SkCodec<FloatArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is FloatArray
-    override fun toSkript(value: FloatArray, env: SkriptEnv) = SkFloatArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): FloatArray {
-        if (value is SkFloatArray)
-            return value.array
+object SkCodecFloatArray : SkCodecTypedArray<FloatArray, Float>() {
+    override val elementCodec: SkCodec<Float>
+        get() = SkCodecFloat
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = FloatArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecFloat.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a FloatArray")
+    override fun createArray(size: Int): FloatArray {
+        return FloatArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is FloatArray
+    }
+
+    override fun setElement(array: FloatArray, index: Int, value: Float) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: FloatArray, env: SkriptEnv) = SkFloatArray(value)
 }
 
 class SkFloatArrayIterator(val array: FloatArray) : SkIterator() {

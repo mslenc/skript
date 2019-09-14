@@ -8,47 +8,49 @@ import skript.opcodes.SkIterator
 import skript.opcodes.SkIteratorClassDef
 import skript.values.*
 
-class SkIntArray(val array: IntArray) : SkAbstractNativeArray() {
+class SkIntArray(override val nativeObj: IntArray) : SkAbstractNativeArray<IntArray>() {
     override val klass: SkClassDef
         get() = SkIntArrayClassDef
 
+    override val elementCodec: SkCodec<*>
+        get() = SkCodecInt
+
     override fun getSize(): Int {
-        return array.size
+        return nativeObj.size
     }
 
     override fun getValidSlot(index: Int): SkValue {
-        return array[index].toSkript()
+        return nativeObj[index].toSkript()
     }
 
     override fun setValidSlot(index: Int, value: SkValue) {
-        array[index] = SkCodecInt.toKotlin(value)
+        nativeObj[index] = SkCodecInt.toKotlin(value)
     }
 
     override suspend fun makeIterator(): SkIterator {
-        return SkIntArrayIterator(array)
+        return SkIntArrayIterator(nativeObj)
     }
 }
 
 object SkIntArrayClassDef : SkClassDef("IntArray", SkAbstractListClassDef)
 
-object SkCodecIntArray : SkCodec<IntArray> {
-    override fun isMatch(kotlinVal: Any) = kotlinVal is IntArray
-    override fun toSkript(value: IntArray, env: SkriptEnv) = SkIntArray(value)
-    override fun toKotlin(value: SkValue, env: SkriptEnv): IntArray {
-        if (value is SkIntArray)
-            return value.array
+object SkCodecIntArray : SkCodecTypedArray<IntArray, Int>() {
+    override val elementCodec: SkCodec<Int>
+        get() = SkCodecInt
 
-        if (value is SkAbstractList) {
-            val len = value.getSize()
-            val result = IntArray(len)
-            for (i in 0 until len) {
-                result[i] = SkCodecInt.toKotlin(value.getSlot(i))
-            }
-            return result
-        }
-
-        throw IllegalStateException("The value can't be converted into a IntArray")
+    override fun createArray(size: Int): IntArray {
+        return IntArray(size)
     }
+
+    override fun isArrayInstance(obj: Any): Boolean {
+        return obj is IntArray
+    }
+
+    override fun setElement(array: IntArray, index: Int, value: Int) {
+        array[index] = value
+    }
+
+    override fun toSkript(value: IntArray, env: SkriptEnv) = SkIntArray(value)
 }
 
 class SkIntArrayIterator(val array: IntArray) : SkIterator() {
