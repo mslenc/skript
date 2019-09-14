@@ -2,61 +2,64 @@ package skript.interop
 
 import skript.io.SkriptEnv
 import skript.typeError
-import skript.values.SkNull
-import skript.values.SkValue
-import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty1
+import skript.values.*
+import kotlin.reflect.KClass
 
-sealed class SkNativeProperty<RCVR, T> {
-    abstract val name: String
-    abstract val property: KProperty1<RCVR, T>
+sealed class SkNativeProperty<RCVR: Any, T> : SkObjectProperty() {
+    abstract val getter: (RCVR)->T
     abstract val codec: SkCodec<T>
-    abstract val nullable: Boolean
-    abstract val readOnly: Boolean
+    abstract val nativeClass: KClass<RCVR>
 
-    suspend fun getValue(nativeObject: RCVR, env: SkriptEnv): SkValue {
-        return when (val nativeVal = property.get(nativeObject)) {
+    protected fun getNativeObj(obj: SkObject): RCVR {
+        obj as? HoldsNative<*> ?: typeError("Accessing property $name on wrong class object")
+        val nativeObj = obj.nativeObj
+        @Suppress("UNCHECKED_CAST")
+        if (nativeClass.isInstance(nativeObj)) {
+            return nativeObj as RCVR
+        } else {
+            typeError("Accessing property $name on wrong class object")
+        }
+    }
+
+    override suspend fun getValue(obj: SkObject, env: SkriptEnv): SkValue {
+        val nativeObj = getNativeObj(obj)
+        return when (val nativeVal = getter.invoke(nativeObj)) {
             null -> SkNull
             else -> codec.toSkript(nativeVal, env)
         }
     }
-
-    abstract suspend fun setValue(nativeObject: RCVR, value: SkValue, env: SkriptEnv)
 }
 
-class SkNativeMutableProperty<RCVR, T>(
-    override val property: KMutableProperty1<RCVR, T>,
-    override val codec: SkCodec<T>
+class SkNativeMutableProperty<RCVR: Any, T>(
+    override val name: String,
+    override val nullable: Boolean,
+    override val expectedClass: SkClassDef,
+    override val nativeClass: KClass<RCVR>,
+    override val codec: SkCodec<T>,
+    override val getter: (RCVR) -> T,
+    val setter: (RCVR,T)->Unit
 ) : SkNativeProperty<RCVR, T>() {
-    override val name: String
-        get() = property.name
+    override val readOnly: Boolean get() = false
 
-    override val readOnly: Boolean
-        get() = false
-
-    override val nullable: Boolean
-        get() = property.returnType.isMarkedNullable
-
-    override suspend fun setValue(nativeObject: RCVR, value: SkValue, env: SkriptEnv) {
+    override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
+        val nativeObj = getNativeObj(obj)
         val nativeValue = codec.toKotlin(value, env)
-        property.set(nativeObject, nativeValue)
+        setter.invoke(nativeObj, nativeValue)
     }
 }
 
-class SkNativeReadOnlyProperty<RCVR, T>(
-    override val property: KProperty1<RCVR, T>,
-    override val codec: SkCodec<T>
+class SkNativeReadOnlyProperty<RCVR: Any, T>(
+    override val name: String,
+    override val nullable: Boolean,
+    override val expectedClass: SkClassDef,
+    override val nativeClass: KClass<RCVR>,
+    override val codec: SkCodec<T>,
+    override val getter: (RCVR) -> T
 ) : SkNativeProperty<RCVR, T>() {
-    override val name: String
-        get() = property.name
-
     override val readOnly: Boolean
         get() = true
 
-    override val nullable: Boolean
-        get() = property.returnType.isMarkedNullable
-
-    override suspend fun setValue(nativeObject: RCVR, value: SkValue, env: SkriptEnv) {
+    override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
         typeError("Can't set read-only property $name")
     }
 }

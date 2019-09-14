@@ -1,6 +1,8 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.interop.SkClassInstanceMember
+import skript.interop.SkClassStaticMember
 import skript.notSupported
 import skript.util.SkArguments
 
@@ -14,7 +16,7 @@ sealed class SkCallable(val name: String) : SkObject() {
     }
 }
 
-abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable(name) {
+abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable(name), SkClassStaticMember {
     override val klass: SkClassDef
         get() = SkFunctionClassDef
 
@@ -29,7 +31,7 @@ abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallab
     }
 }
 
-abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable(name) {
+abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable(name), SkClassInstanceMember {
     override val klass: SkClassDef
         get() = SkMethodClassDef
 

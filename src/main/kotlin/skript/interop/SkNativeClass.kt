@@ -16,39 +16,12 @@ class SkNativeClassDef<T : Any>(name: String, val nativeClass: KClass<T>, superC
 
         typeError("Can't construct instances of $className")
     }
+}
 
-    fun defineNativeProperty(property: SkNativeProperty<T, *>) {
-        defineInstanceProperty(object : SkObjectProperty() {
-            override val expectedClass: SkClassDef
-                get() = this@SkNativeClassDef
+interface SkClassStaticMember {
+    val name: String
+}
 
-            override val name: String
-                get() = property.name
-
-            override val nullable: Boolean
-                get() = property.nullable
-
-            override val readOnly: Boolean
-                get() = property.readOnly
-
-            private fun getNativeObj(obj: SkObject): T {
-                obj as? SkNativeObject<*> ?: typeError("Accessing property $name on wrong class object")
-                val nativeObj = obj.nativeObj
-                @Suppress("UNCHECKED_CAST")
-                if (nativeClass.isInstance(nativeObj)) {
-                    return nativeObj as T
-                } else {
-                    typeError("Accessing property $name on wrong class object")
-                }
-            }
-
-            override suspend fun getValue(obj: SkObject, env: SkriptEnv): SkValue {
-                return property.getValue(getNativeObj(obj), env)
-            }
-
-            override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
-                property.setValue(getNativeObj(obj), value, env)
-            }
-        })
-    }
+interface SkClassInstanceMember {
+    val name: String
 }

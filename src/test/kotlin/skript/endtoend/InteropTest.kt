@@ -3,7 +3,6 @@ package skript.endtoend
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
-import skript.exec.ParamType
 import skript.interop.*
 import skript.io.toSkript
 import skript.runScriptWithEmit
@@ -19,6 +18,11 @@ data class TestObj(
     fun fooBar(suffix: String): String {
         return foo + bar + suffix
     }
+
+    companion object {
+        @JvmStatic
+        val bibi = "Bibi!!!"
+    }
 }
 
 class InteropTest {
@@ -30,20 +34,20 @@ class InteropTest {
             SkNativeMethod(
                 "fooBar",
                 TestObj::fooBar.instanceParameter!!,
-                listOf(
-                    ParamInfo("suffix", TestObj::fooBar.findParameterByName("suffix") ?: typeError("Couldn't find suffix"), ParamType.NORMAL, SkCodecString)
-                ),
+                SkNativeParams(listOf(
+                    SkNativeParamNormal("suffix", TestObj::fooBar.findParameterByName("suffix") ?: typeError("Couldn't find suffix"), SkCodecString)
+                )),
                 SkCodecString,
                 TestObj::fooBar, TestObjClass)
         )
 
-        TestObjClass.defineNativeProperty(SkNativeMutableProperty(TestObj::foo, SkCodecString))
-        TestObjClass.defineNativeProperty(SkNativeReadOnlyProperty(TestObj::bar, SkCodecInt))
+        TestObjClass.defineInstanceProperty(SkNativeMutableProperty("foo", false, TestObjClass, TestObj::class, SkCodecString, TestObj::foo.getter, TestObj::foo.setter))
+        TestObjClass.defineInstanceProperty(SkNativeReadOnlyProperty("bar", false, TestObjClass, TestObj::class, SkCodecInt, TestObj::bar.getter))
 
-        TestObjClass.constructor = SkNativeConstructor("TestObj::constructor", listOf(
-            ParamInfo("foo", TestObj::class.primaryConstructor!!.findParameterByName("foo")!!, ParamType.NORMAL, SkCodecString),
-            ParamInfo("bar", TestObj::class.primaryConstructor!!.findParameterByName("bar")!!, ParamType.NORMAL, SkCodecInt)
-        ), TestObj::class.primaryConstructor!!, TestObjClass)
+        TestObjClass.constructor = SkNativeConstructor("TestObj::constructor", SkNativeParams(listOf(
+            SkNativeParamNormal("foo", TestObj::class.primaryConstructor!!.findParameterByName("foo")!!, SkCodecString),
+            SkNativeParamNormal("bar", TestObj::class.primaryConstructor!!.findParameterByName("bar")!!, SkCodecInt)
+        )), TestObj::class.primaryConstructor!!, TestObjClass)
 
         val result = runScriptWithEmit({ env ->
             env.setGlobal("TestObj", env.getClassObject(TestObjClass))
@@ -79,7 +83,7 @@ class InteropTest {
     @Test
     fun testReflectedClass() = runBlocking {
         val result = runScriptWithEmit({ env ->
-            env.setClassAsGlobal(TestObj::class) // now isn't this much easier than the 1kb/20 lines of code above? :)
+            env.setClassAsGlobal(TestObj::class) // now isn't this much easier than the 1.2kb/19 lines of code above? :)
         }, """
             
             emit(TestObj("abc", 123).fooBar(" km"));
@@ -93,6 +97,8 @@ class InteropTest {
             var bibi = TestObj(bar=432);
             bibi.foo = "daFoo";
             emit(bibi.fooBar(" Mm"));
+                        
+            emit(TestObj.bibi);
         """.trimIndent())
 
         val expect = listOf(
@@ -103,7 +109,8 @@ class InteropTest {
             "jkl1000 um".toSkript(),
             "deffoo666 nm".toSkript(),
             "deffoo1000 pm".toSkript(),
-            "daFoo432 Mm".toSkript()
+            "daFoo432 Mm".toSkript(),
+            "Bibi!!!".toSkript()
         )
 
         assertEmittedEquals(expect, result)

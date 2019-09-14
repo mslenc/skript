@@ -2,6 +2,8 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.illegalArg
+import skript.interop.SkClassInstanceMember
+import skript.interop.SkClassStaticMember
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.*
@@ -10,24 +12,30 @@ open class SkClassDef(val className: String, val superClass: SkClassDef? = SkObj
     internal val instanceMethods = HashMap<String, SkMethod>()
     internal val instanceProps = HashMap<String, SkObjectProperty>()
     internal val staticFunctions = HashMap<String, SkFunction>()
+    internal val staticProps = HashMap<String, SkStaticProperty>()
 
     open suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         typeError("Can't construct new instances of $className")
     }
 
-    open fun checkNameAvailable(name: String) {
+    fun checkNameAvailable(name: String) {
         check(!instanceMethods.containsKey(name)) { "This class already has a method named $name" }
         check(!instanceProps.containsKey(name)) { "This class already has a property named $name" }
     }
 
-    open fun defineInstanceMethod(method: SkMethod) {
+    fun checkStaticNameAvailable(name: String) {
+        check(!staticFunctions.containsKey(name)) { "This class already has a static function named $name" }
+        check(!staticProps.containsKey(name)) { "This class already has a static property named $name" }
+    }
+
+    fun defineInstanceMethod(method: SkMethod) {
         checkNameAvailable(method.name)
         check(method.expectedClass.isSameOrSuperClassOf(this)) { "The method doesn't accept this class" }
 
         instanceMethods[method.name] = method
     }
 
-    open fun defineInstanceProperty(property: SkObjectProperty) {
+    fun defineInstanceProperty(property: SkObjectProperty) {
         checkNameAvailable(property.name)
         check(property.expectedClass.isSameOrSuperClassOf(this)) { "The property doesn't accept this class" }
 
@@ -35,9 +43,13 @@ open class SkClassDef(val className: String, val superClass: SkClassDef? = SkObj
     }
 
     fun defineStaticFunction(function: SkFunction) {
-        check(!staticFunctions.containsKey(function.name)) { "This class already has a static function named ${function.name}" }
-
+        checkStaticNameAvailable(function.name)
         staticFunctions[function.name] = function
+    }
+
+    fun defineStaticProperty(property: SkStaticProperty) {
+        checkStaticNameAvailable(property.name)
+        staticProps[property.name] = property
     }
 
     fun findInstanceMethod(key: String): SkMethod? {
@@ -52,6 +64,10 @@ open class SkClassDef(val className: String, val superClass: SkClassDef? = SkObj
         return staticFunctions[key] ?: superClass?.findStaticFunction(key)
     }
 
+    fun findStaticProperty(key: String): SkStaticProperty? {
+        return staticProps[key] ?: superClass?.findStaticProperty(key)
+    }
+
     fun isInstance(value: SkValue): Boolean {
         if (value !is SkObject)
             return false
@@ -64,14 +80,21 @@ open class SkClassDef(val className: String, val superClass: SkClassDef? = SkObj
     }
 }
 
-abstract class SkObjectProperty {
+abstract class SkObjectProperty : SkClassInstanceMember {
     abstract val expectedClass: SkClassDef
-    abstract val name: String
     abstract val nullable: Boolean
     abstract val readOnly: Boolean
 
     abstract suspend fun getValue(obj: SkObject, env: SkriptEnv): SkValue
     abstract suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv)
+}
+
+abstract class SkStaticProperty : SkClassStaticMember {
+    abstract val nullable: Boolean
+    abstract val readOnly: Boolean
+
+    abstract suspend fun getValue(env: SkriptEnv): SkValue
+    abstract suspend fun setValue(value: SkValue, env: SkriptEnv)
 }
 
 abstract class ExtractArg<T>(val name: String) {

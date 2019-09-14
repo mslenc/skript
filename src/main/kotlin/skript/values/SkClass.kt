@@ -28,11 +28,25 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
     }
 
     override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
-        klass.findStaticFunction(methodName)?.let { function ->
+        def.findStaticFunction(methodName)?.let { function ->
             return function.call(args, state)
         }
 
-        throw UnsupportedOperationException("$exprDebug has no static function $methodName")
+        throw UnsupportedOperationException("$exprDebug is class ${def.className}, which has no static function $methodName")
+    }
+
+    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+        def.findStaticProperty(key)?.let { prop ->
+            return prop.getValue(state.env)
+        }
+
+        throw UnsupportedOperationException("Class ${def.className} has no static property $key")
+    }
+
+    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+        def.findStaticProperty(key)?.let { prop ->
+            prop.setValue(value, state.env)
+        }
     }
 
     fun isInstance(value: SkValue): Boolean {
