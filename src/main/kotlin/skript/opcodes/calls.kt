@@ -55,7 +55,7 @@ object SpreadPosArgs : FastOpCode() {
         state.topFrame.apply {
             val arr = stack.pop()
 
-            if (arr is SkList) {
+            if (arr is SkAbstractList) {
                 argsStack.top().spreadPosArgs(arr)
             } else {
                 notSupported("Only lists can be used for spreading arguments")

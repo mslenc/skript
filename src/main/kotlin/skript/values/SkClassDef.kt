@@ -101,18 +101,18 @@ abstract class ExtractArg<T>(val name: String) {
     abstract fun extract(args: SkArguments): T
 }
 
-class NoCoerce(name: String): ExtractArg<SkValue>(name) {
-    override fun extract(args: SkArguments) = args.getParam(name)
+class NoCoerce(name: String, val kwOnly: Boolean): ExtractArg<SkValue>(name) {
+    override fun extract(args: SkArguments) = args.extractArg(name, kwOnly = kwOnly)
 }
 
 
-class ExtractBoolean(name: String, val ifUndefined: Boolean?): ExtractArg<Boolean>(name) {
-    override fun extract(args: SkArguments) = args.expectBoolean(name, ifUndefined = ifUndefined)
+class ExtractBoolean(name: String, val ifUndefined: Boolean?, val kwOnly: Boolean): ExtractArg<Boolean>(name) {
+    override fun extract(args: SkArguments) = args.expectBoolean(name, ifUndefined = ifUndefined, kwOnly = kwOnly)
 }
 
-class ExtractBooleanOpt(name: String): ExtractArg<Boolean?>(name) {
+class ExtractBooleanOpt(name: String, val kwOnly: Boolean): ExtractArg<Boolean?>(name) {
     override fun extract(args: SkArguments): Boolean? {
-        return when (val param = args.getParam(name)) {
+        return when (val param = args.extractArg(name, kwOnly = kwOnly)) {
             SkUndefined -> null
             else -> param.asBoolean().value
         }
@@ -120,13 +120,13 @@ class ExtractBooleanOpt(name: String): ExtractArg<Boolean?>(name) {
 }
 
 
-class ExtractString(name: String, val ifUndefined: String?): ExtractArg<String>(name) {
-    override fun extract(args: SkArguments) = args.expectString(name, ifUndefined = ifUndefined)
+class ExtractString(name: String, val ifUndefined: String?, val kwOnly: Boolean): ExtractArg<String>(name) {
+    override fun extract(args: SkArguments) = args.expectString(name, ifUndefined = ifUndefined, kwOnly = kwOnly)
 }
 
-class ExtractStringOpt(name: String): ExtractArg<String?>(name) {
+class ExtractStringOpt(name: String, val kwOnly: Boolean): ExtractArg<String?>(name) {
     override fun extract(args: SkArguments): String? {
-        return when (val param = args.getParam(name)) {
+        return when (val param = args.extractArg(name, kwOnly = kwOnly)) {
             SkUndefined -> null
             else -> param.asString().value
         }
@@ -134,13 +134,13 @@ class ExtractStringOpt(name: String): ExtractArg<String?>(name) {
 }
 
 
-class ExtractNumber(name: String, val ifUndefined: SkNumber?): ExtractArg<SkNumber>(name) {
-    override fun extract(args: SkArguments) = args.expectNumber(name, ifUndefined = ifUndefined)
+class ExtractNumber(name: String, val ifUndefined: SkNumber?, val kwOnly: Boolean): ExtractArg<SkNumber>(name) {
+    override fun extract(args: SkArguments) = args.expectNumber(name, ifUndefined = ifUndefined, kwOnly = kwOnly)
 }
 
-class ExtractNumberOpt(name: String): ExtractArg<SkNumber?>(name) {
+class ExtractNumberOpt(name: String, val kwOnly: Boolean): ExtractArg<SkNumber?>(name) {
     override fun extract(args: SkArguments): SkNumber? {
-        return when (val param = args.getParam(name)) {
+        return when (val param = args.extractArg(name, kwOnly = kwOnly)) {
             SkUndefined -> null
             else -> param.asNumber()
         }
@@ -148,22 +148,22 @@ class ExtractNumberOpt(name: String): ExtractArg<SkNumber?>(name) {
 }
 
 
-class ExtractInt(name: String, val ifUndefined: Int?): ExtractArg<Int>(name) {
-    override fun extract(args: SkArguments) = args.expectInt(name, ifUndefined = ifUndefined)
+class ExtractInt(name: String, val ifUndefined: Int?, val kwOnly: Boolean): ExtractArg<Int>(name) {
+    override fun extract(args: SkArguments) = args.expectInt(name, ifUndefined = ifUndefined, kwOnly = kwOnly)
 }
 
-class ExtractIntOpt(name: String): ExtractArg<Int?>(name) {
+class ExtractIntOpt(name: String, val kwOnly: Boolean): ExtractArg<Int?>(name) {
     override fun extract(args: SkArguments): Int? {
-        return when (val value = args.getParam(name)) {
+        return when (val value = args.extractArg(name, kwOnly)) {
             SkUndefined -> null
             else -> value.toIntOrNull() ?: illegalArg("Expected an integer value for parameter $name")
         }
     }
 }
 
-class ExtractNonNegativeInt(name: String, val ifUndefined: Int?): ExtractArg<Int>(name) {
+class ExtractNonNegativeInt(name: String, val ifUndefined: Int?, val kwOnly: Boolean): ExtractArg<Int>(name) {
     override fun extract(args: SkArguments): Int {
-        val i = args.expectInt(name, ifUndefined = ifUndefined)
+        val i = args.expectInt(name, ifUndefined = ifUndefined, kwOnly = kwOnly)
         return when {
             i >= 0 -> i
             else -> illegalArg("Expected an non-negative integer value for parameter $name")
@@ -171,26 +171,26 @@ class ExtractNonNegativeInt(name: String, val ifUndefined: Int?): ExtractArg<Int
     }
 }
 
-class ExtractNonNegativeIntOpt(name: String): ExtractArg<Int?>(name) {
+class ExtractNonNegativeIntOpt(name: String, val kwOnly: Boolean): ExtractArg<Int?>(name) {
     override fun extract(args: SkArguments): Int? {
-        return when (val value = args.getParam(name)) {
+        return when (val value = args.extractArg(name, kwOnly = kwOnly)) {
             SkUndefined -> null
             else -> value.toNonNegativeIntOrNull() ?: illegalArg("Expected an non-negative integer value for parameter $name")
         }
     }
 }
 
-class ExtractFunction(name: String): ExtractArg<SkFunction>(name) {
-    override fun extract(args: SkArguments) = args.expectFunction(name)
+class ExtractFunction(name: String, val kwOnly: Boolean): ExtractArg<SkFunction>(name) {
+    override fun extract(args: SkArguments) = args.expectFunction(name, kwOnly = kwOnly)
 }
 
 
 class ExtractRestPosArgs(name: String) : ExtractArg<List<SkValue>>(name) {
-    override fun extract(args: SkArguments) = args.getRemainingPosArgs()
+    override fun extract(args: SkArguments) = args.extractAllPosArgs()
 }
 
 class ExtractRestKwArgs(name: String) : ExtractArg<Map<String, SkValue>>(name) {
-    override fun extract(args: SkArguments) = args.getRemainingKwArgs()
+    override fun extract(args: SkArguments) = args.extractAllKwArgs()
 }
 
 
@@ -262,18 +262,18 @@ class MethodBuilder0<OBJ>(val holderClass: SkCustomClass<OBJ>, val methodName: S
         return MethodBuilder1(holderClass, methodName, param)
     }
 
-    fun withParam(paramName: String) = withParam(NoCoerce(paramName))
-    fun withBooleanParam(paramName: String, defaultValue: Boolean? = null) = withParam(ExtractBoolean(paramName, defaultValue))
-    fun withStringParam(paramName: String, defaultValue: String? = null) = withParam(ExtractString(paramName, defaultValue))
-    fun withNumberParam(paramName: String, defaultValue: SkNumber? = null) = withParam(ExtractNumber(paramName, defaultValue))
-    fun withIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractInt(paramName, defaultValue))
-    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractNonNegativeInt(paramName, defaultValue))
-    fun withOptBooleanParam(paramName: String) = withParam(ExtractBooleanOpt(paramName))
-    fun withOptStringParam(paramName: String) = withParam(ExtractStringOpt(paramName))
-    fun withOptNumberParam(paramName: String) = withParam(ExtractNumberOpt(paramName))
-    fun withOptIntParam(paramName: String) = withParam(ExtractIntOpt(paramName))
-    fun withNonNegIntParam(paramName: String) = withParam(ExtractNonNegativeIntOpt(paramName))
-    fun withFunctionParam(paramName: String) = withParam(ExtractFunction(paramName))
+    fun withParam(paramName: String, kwOnly: Boolean = false) = withParam(NoCoerce(paramName, kwOnly))
+    fun withBooleanParam(paramName: String, defaultValue: Boolean? = null, kwOnly: Boolean = false) = withParam(ExtractBoolean(paramName, defaultValue, kwOnly))
+    fun withStringParam(paramName: String, defaultValue: String? = null, kwOnly: Boolean = false) = withParam(ExtractString(paramName, defaultValue, kwOnly))
+    fun withNumberParam(paramName: String, defaultValue: SkNumber? = null, kwOnly: Boolean = false) = withParam(ExtractNumber(paramName, defaultValue, kwOnly))
+    fun withIntParam(paramName: String, defaultValue: Int? = null, kwOnly: Boolean = false) = withParam(ExtractInt(paramName, defaultValue, kwOnly))
+    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null, kwOnly: Boolean = false) = withParam(ExtractNonNegativeInt(paramName, defaultValue, kwOnly))
+    fun withOptBooleanParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractBooleanOpt(paramName, kwOnly))
+    fun withOptStringParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractStringOpt(paramName, kwOnly))
+    fun withOptNumberParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractNumberOpt(paramName, kwOnly))
+    fun withOptIntParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractIntOpt(paramName, kwOnly))
+    fun withNonNegIntParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractNonNegativeIntOpt(paramName, kwOnly))
+    fun withFunctionParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractFunction(paramName, kwOnly))
     fun withRestPosArgs(paramName: String) = withParam(ExtractRestPosArgs(paramName))
     fun withRestKwArgs(paramName: String) = withParam(ExtractRestKwArgs(paramName))
 }
@@ -296,18 +296,18 @@ class MethodBuilder1<OBJ, T1>(val holderClass: SkCustomClass<OBJ>, val methodNam
         return MethodBuilder2(holderClass, methodName, param1, param)
     }
 
-    fun withParam(paramName: String) = withParam(NoCoerce(paramName))
-    fun withBooleanParam(paramName: String, defaultValue: Boolean? = null) = withParam(ExtractBoolean(paramName, defaultValue))
-    fun withStringParam(paramName: String, defaultValue: String? = null) = withParam(ExtractString(paramName, defaultValue))
-    fun withNumberParam(paramName: String, defaultValue: SkNumber? = null) = withParam(ExtractNumber(paramName, defaultValue))
-    fun withIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractInt(paramName, defaultValue))
-    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractNonNegativeInt(paramName, defaultValue))
-    fun withOptBooleanParam(paramName: String) = withParam(ExtractBooleanOpt(paramName))
-    fun withOptStringParam(paramName: String) = withParam(ExtractStringOpt(paramName))
-    fun withOptNumberParam(paramName: String) = withParam(ExtractNumberOpt(paramName))
-    fun withOptIntParam(paramName: String) = withParam(ExtractIntOpt(paramName))
-    fun withNonNegIntParam(paramName: String) = withParam(ExtractNonNegativeIntOpt(paramName))
-    fun withFunctionParam(paramName: String) = withParam(ExtractFunction(paramName))
+    fun withParam(paramName: String, kwOnly: Boolean = false) = withParam(NoCoerce(paramName, kwOnly))
+    fun withBooleanParam(paramName: String, defaultValue: Boolean? = null, kwOnly: Boolean = false) = withParam(ExtractBoolean(paramName, defaultValue, kwOnly))
+    fun withStringParam(paramName: String, defaultValue: String? = null, kwOnly: Boolean = false) = withParam(ExtractString(paramName, defaultValue, kwOnly))
+    fun withNumberParam(paramName: String, defaultValue: SkNumber? = null, kwOnly: Boolean = false) = withParam(ExtractNumber(paramName, defaultValue, kwOnly))
+    fun withIntParam(paramName: String, defaultValue: Int? = null, kwOnly: Boolean = false) = withParam(ExtractInt(paramName, defaultValue, kwOnly))
+    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null, kwOnly: Boolean = false) = withParam(ExtractNonNegativeInt(paramName, defaultValue, kwOnly))
+    fun withOptBooleanParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractBooleanOpt(paramName, kwOnly))
+    fun withOptStringParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractStringOpt(paramName, kwOnly))
+    fun withOptNumberParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractNumberOpt(paramName, kwOnly))
+    fun withOptIntParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractIntOpt(paramName, kwOnly))
+    fun withNonNegIntParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractNonNegativeIntOpt(paramName, kwOnly))
+    fun withFunctionParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractFunction(paramName, kwOnly))
     fun withRestPosArgs(paramName: String) = withParam(ExtractRestPosArgs(paramName))
     fun withRestKwArgs(paramName: String) = withParam(ExtractRestKwArgs(paramName))
 }
@@ -331,18 +331,18 @@ class MethodBuilder2<OBJ, T1, T2>(val holderClass: SkCustomClass<OBJ>, val metho
         return MethodBuilder3(holderClass, methodName, param1, param2, param)
     }
 
-    fun withParam(paramName: String) = withParam(NoCoerce(paramName))
-    fun withBooleanParam(paramName: String, defaultValue: Boolean? = null) = withParam(ExtractBoolean(paramName, defaultValue))
-    fun withStringParam(paramName: String, defaultValue: String? = null) = withParam(ExtractString(paramName, defaultValue))
-    fun withNumberParam(paramName: String, defaultValue: SkNumber? = null) = withParam(ExtractNumber(paramName, defaultValue))
-    fun withIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractInt(paramName, defaultValue))
-    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null) = withParam(ExtractNonNegativeInt(paramName, defaultValue))
-    fun withOptBooleanParam(paramName: String) = withParam(ExtractBooleanOpt(paramName))
-    fun withOptStringParam(paramName: String) = withParam(ExtractStringOpt(paramName))
-    fun withOptNumberParam(paramName: String) = withParam(ExtractNumberOpt(paramName))
-    fun withOptIntParam(paramName: String) = withParam(ExtractIntOpt(paramName))
-    fun withNonNegIntParam(paramName: String) = withParam(ExtractNonNegativeIntOpt(paramName))
-    fun withFunctionParam(paramName: String) = withParam(ExtractFunction(paramName))
+    fun withParam(paramName: String, kwOnly: Boolean = false) = withParam(NoCoerce(paramName, kwOnly))
+    fun withBooleanParam(paramName: String, defaultValue: Boolean? = null, kwOnly: Boolean = false) = withParam(ExtractBoolean(paramName, defaultValue, kwOnly))
+    fun withStringParam(paramName: String, defaultValue: String? = null, kwOnly: Boolean = false) = withParam(ExtractString(paramName, defaultValue, kwOnly))
+    fun withNumberParam(paramName: String, defaultValue: SkNumber? = null, kwOnly: Boolean = false) = withParam(ExtractNumber(paramName, defaultValue, kwOnly))
+    fun withIntParam(paramName: String, defaultValue: Int? = null, kwOnly: Boolean = false) = withParam(ExtractInt(paramName, defaultValue, kwOnly))
+    fun withNonNegIntParam(paramName: String, defaultValue: Int? = null, kwOnly: Boolean = false) = withParam(ExtractNonNegativeInt(paramName, defaultValue, kwOnly))
+    fun withOptBooleanParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractBooleanOpt(paramName, kwOnly))
+    fun withOptStringParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractStringOpt(paramName, kwOnly))
+    fun withOptNumberParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractNumberOpt(paramName, kwOnly))
+    fun withOptIntParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractIntOpt(paramName, kwOnly))
+    fun withNonNegIntParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractNonNegativeIntOpt(paramName, kwOnly))
+    fun withFunctionParam(paramName: String, kwOnly: Boolean = false) = withParam(ExtractFunction(paramName, kwOnly))
     fun withRestPosArgs(paramName: String) = withParam(ExtractRestPosArgs(paramName))
     fun withRestKwArgs(paramName: String) = withParam(ExtractRestKwArgs(paramName))
 }

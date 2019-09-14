@@ -1,13 +1,17 @@
 package skript.util
 
 import skript.illegalArg
+import skript.syntaxError
 import skript.values.*
 
 class SkArguments : SkObject() {
     override val klass: SkClassDef
         get() = SkArgumentsClassDef
 
-    private var state = 0
+    private var state = 0 // 0 -> initial, parameters are being added
+                          // 1 -> after regular args; all reading is allowed
+                          // 2 -> after *posArgs; kwOnly and **kwArgs are allowed
+                          // 3 -> after **kwArgs; nothing else is allowed
 
     private val posArgs = ArrayList<SkValue>()
     private val kwArgs = LinkedHashMap<String, SkValue>()
@@ -24,10 +28,15 @@ class SkArguments : SkObject() {
         kwArgs[key] = arg
     }
 
-    fun spreadPosArgs(args: SkList) {
+    fun spreadPosArgs(args: SkAbstractList) {
         check(state == 0) { "Can't add parameters after some have already been extracted" }
 
-        posArgs.addAll(args.listEls)
+        if (args is SkList) {
+            posArgs.addAll(args.listEls)
+        } else {
+            for (i in 0 until args.getSize())
+                posArgs.add(args.getSlot(i))
+        }
     }
 
     fun spreadPosArgs(args: List<SkValue>) {
@@ -48,8 +57,15 @@ class SkArguments : SkObject() {
         kwArgs.putAll(args)
     }
 
-    fun getParam(name: String): SkValue {
-        check(state <= 1) { "Can't call getParam after remainders have been extracted" }
+    fun extractArg(name: String, kwOnly: Boolean): SkValue = when {
+        kwOnly -> extractKwOnlyArg(name)
+        else -> extractArg(name)
+    }
+
+
+
+    fun extractArg(name: String): SkValue {
+        check(state <= 1) { "Can't extract regular arguments after *posArgs or **kwArgs" }
         state = 1
 
         kwArgs.remove(name)?.let { return it }
@@ -61,8 +77,8 @@ class SkArguments : SkObject() {
         return SkUndefined
     }
 
-    fun getRemainingPosArgs(): List<SkValue> {
-        check(state < 2) { "Can't call getRemainingPosArgs() twice, or after getRemainingKwArgs()"}
+    fun extractAllPosArgs(): List<SkValue> {
+        check(state < 2) { "Can't extract *posArgs anymore"}
         state = 2
 
         return when {
@@ -77,11 +93,52 @@ class SkArguments : SkObject() {
         }
     }
 
-    fun getRemainingKwArgs(): Map<String, SkValue> {
-        check(state < 3) { "getRemainingKwArgs() can only be called once after all other parameters have been extracted" }
+    fun extractPosVarArgs(name: String): SkList {
+        check(state < 2) { "Can't extract *posArgs anymore" }
+
+        if (kwArgs.containsKey(name)) {
+            syntaxError("$name is a *posArgs parameter and can't be set directly with $name = values - use spread operator *values instead")
+        }
+
+        state = 2
+
+        return when {
+            posReadIndex == 0 ->
+                SkList(posArgs)
+
+            posReadIndex < posArgs.size ->
+                SkList(posArgs.slice(posReadIndex until posArgs.size)) // TODO: don't copy twice
+
+            else ->
+                SkList()
+        }
+    }
+
+    fun extractKwOnlyArg(name: String): SkValue {
+        check(state < 3) { "Can't extract arguments anymore" }
+
+        kwArgs.remove(name)?.let { return it }
+
+        return SkUndefined
+    }
+
+    fun extractAllKwArgs(): Map<String, SkValue> {
+        check(state < 3) { "Can't extract arguments anymore" }
         state = 3
 
         return kwArgs
+    }
+
+    fun extractKwVarArgs(name: String): SkMap {
+        check(state < 3) { "Can't extract arguments anymore" }
+
+        if (kwArgs.containsKey(name)) {
+            syntaxError("$name is a **kwArgs parameter and can't be set directly with $name = values - use spread operator **values instead")
+        }
+
+        state = 3
+
+        return SkMap(kwArgs)
     }
 
     fun expectNothingElse() {
@@ -113,8 +170,8 @@ class SkArguments : SkObject() {
 
 object SkArgumentsClassDef : SkClassDef("Arguments")
 
-fun SkArguments.expectBoolean(name: String, coerce: Boolean = true, ifUndefined: Boolean? = null): Boolean {
-    val value = getParam(name)
+fun SkArguments.expectBoolean(name: String, coerce: Boolean = true, ifUndefined: Boolean? = null, kwOnly: Boolean = false): Boolean {
+    val value = extractArg(name, kwOnly)
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
@@ -129,8 +186,8 @@ fun SkArguments.expectBoolean(name: String, coerce: Boolean = true, ifUndefined:
     }
 }
 
-fun SkArguments.expectString(name: String, coerce: Boolean = true, ifUndefined: String? = null): String {
-    val value = getParam(name)
+fun SkArguments.expectString(name: String, coerce: Boolean = true, ifUndefined: String? = null, kwOnly: Boolean = false): String {
+    val value = extractArg(name, kwOnly)
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
@@ -145,8 +202,8 @@ fun SkArguments.expectString(name: String, coerce: Boolean = true, ifUndefined: 
     }
 }
 
-fun SkArguments.expectNumber(name: String, coerce: Boolean = true, ifUndefined: SkNumber? = null): SkNumber {
-    val value = getParam(name)
+fun SkArguments.expectNumber(name: String, coerce: Boolean = true, ifUndefined: SkNumber? = null, kwOnly: Boolean = false): SkNumber {
+    val value = extractArg(name, kwOnly)
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
@@ -161,8 +218,8 @@ fun SkArguments.expectNumber(name: String, coerce: Boolean = true, ifUndefined: 
     }
 }
 
-fun SkArguments.expectInt(name: String, coerce: Boolean = true, ifUndefined: Int? = null): Int {
-    val value = getParam(name)
+fun SkArguments.expectInt(name: String, coerce: Boolean = true, ifUndefined: Int? = null, kwOnly: Boolean = false): Int {
+    val value = extractArg(name, kwOnly)
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
@@ -182,8 +239,8 @@ fun SkArguments.expectInt(name: String, coerce: Boolean = true, ifUndefined: Int
     }
 }
 
-fun SkArguments.expectFunction(name: String): SkFunction {
-    val value = getParam(name)
+fun SkArguments.expectFunction(name: String, kwOnly: Boolean = false): SkFunction {
+    val value = extractArg(name, kwOnly)
 
     if (value is SkFunction) {
         return value

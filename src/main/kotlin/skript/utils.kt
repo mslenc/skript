@@ -7,7 +7,7 @@ import java.math.BigDecimal
 import kotlin.math.max
 import kotlin.math.min
 
-fun syntaxError(message: String, pos: Pos): Nothing {
+fun syntaxError(message: String, pos: Pos? = null): Nothing {
     throw IllegalArgumentException("$message @ $pos") // TODO - make an exception and/or support exceptions; also show pos
 }
 

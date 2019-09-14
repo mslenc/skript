@@ -50,8 +50,8 @@ abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable
 }
 
 class BoundMethod(private val method: SkMethod, private val thiz: SkValue, boundArgs: SkArguments) : SkFunction(method.name + "(bound)", method.paramNames) {
-    private val boundPosArgs = boundArgs.getRemainingPosArgs()
-    private val boundKwArgs = boundArgs.getRemainingKwArgs()
+    private val boundPosArgs = boundArgs.extractAllPosArgs()
+    private val boundKwArgs = boundArgs.extractAllKwArgs()
 
     override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
         val combinedArgs = if (boundPosArgs.isEmpty() && boundKwArgs.isEmpty()) {
@@ -60,8 +60,8 @@ class BoundMethod(private val method: SkMethod, private val thiz: SkValue, bound
             SkArguments().apply {
                 spreadPosArgs(boundPosArgs)
                 spreadKwArgs(boundKwArgs)
-                spreadPosArgs(args.getRemainingPosArgs())
-                spreadKwArgs(args.getRemainingKwArgs())
+                spreadPosArgs(args.extractAllPosArgs())
+                spreadKwArgs(args.extractAllKwArgs())
             }
         }
 

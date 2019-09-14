@@ -78,7 +78,7 @@ object SkMapClassDef : SkClassDef("Map") {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val result = SkMap()
 
-        for (el in args.getRemainingPosArgs()) {
+        for (el in args.extractAllPosArgs()) {
             if (el is SkMap) {
                 result.elements.putAll(el.elements)
             } else {
@@ -86,7 +86,7 @@ object SkMapClassDef : SkClassDef("Map") {
             }
         }
 
-        result.elements.putAll(args.getRemainingKwArgs())
+        result.elements.putAll(args.extractAllKwArgs())
 
         return result
     }

@@ -2,10 +2,12 @@ package skript.values
 
 import skript.*
 import skript.exec.RuntimeState
+import skript.interop.HoldsNative
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
 import skript.util.*
+import java.util.*
 
 class SkString(val value: String) : SkScalar() {
     override fun asObject(): SkObject {
@@ -109,6 +111,7 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
 object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val str = args.expectString("value", ifUndefined = "")
+        args.expectNothingElse()
         return SkStringObject(SkString(str))
     }
 
@@ -144,7 +147,7 @@ object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
                 }
             }
 
-        defineMethod("substring").
+        defineMethod("substring"). // TODO: accept ranges as well
             withOptNumberParam("start").
             withOptNumberParam("end").
             withImpl { string, start, end, _ ->
@@ -157,5 +160,41 @@ object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
                     else -> SkString(string.value.substring(startIdx, endIdx))
                 }
             }
+
+        defineMethod("toUpperCase").
+            withParam("locale").
+            withImpl { string, locale, _ ->
+                string.value.toUpperCase(resolveLocale(locale)).toSkript()
+            }
+
+        defineMethod("toLowerCase").
+            withParam("locale").
+            withImpl { string, locale, _ ->
+                string.value.toLowerCase(resolveLocale(locale)).toSkript()
+            }
+    }
+}
+
+
+
+fun resolveLocale(localeParam: SkValue): Locale {
+    return when {
+        localeParam == SkNull || localeParam == SkUndefined ->
+            Locale.getDefault()
+
+        localeParam is HoldsNative<*> -> {
+            localeParam.nativeObj as? Locale ?: typeError("${localeParam.nativeObj} is not a Locale object")
+        }
+
+        else -> {
+            val localeName = localeParam.asString().value
+            if (localeName == "")
+                return Locale.getDefault()
+
+            Locale.forLanguageTag(localeName).also {
+                if (it.language.isEmpty())
+                    typeError("Couldn't parse $localeName as a locale language tag")
+            }
+        }
     }
 }

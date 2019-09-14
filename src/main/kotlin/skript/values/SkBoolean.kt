@@ -67,7 +67,9 @@ class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
 
 object SkBooleanClassDef : SkClassDef("Boolean", SkObjectClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
-        val valArg = args.getParam("value")
+        val valArg = args.extractArg("value")
+        args.expectNothingElse()
+        
         return SkBooleanObject(valArg.asBoolean())
     }
 }

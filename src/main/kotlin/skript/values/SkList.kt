@@ -86,6 +86,6 @@ class SkList : SkAbstractList {
 object SkListClassDef : SkCustomClass<SkList>("List", SkAbstractListClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         check(args.noKwArgs()) { "List constructor doesn't support named arguments" }
-        return SkList(args.getRemainingPosArgs())
+        return args.extractPosVarArgs("")
     }
 }

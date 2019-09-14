@@ -3,9 +3,10 @@ package skript.exec
 import skript.opcodes.OpCode
 
 enum class ParamType {
-    NORMAL,
-    POS_ARGS,
-    KW_ARGS
+    NORMAL,   // regular parameters
+    POS_ARGS, // *posArgs
+    KW_ONLY,  // regular parameters after POS_ARGS, only settable via name
+    KW_ARGS   // **kwArgs
 }
 
 class ParamDef(val name: String, val localIndex: Int, val type: ParamType)
@@ -29,7 +30,7 @@ fun paramsWellBehaved(paramDefs: Array<ParamDef>, localsSize: Int): String? {
 
         when (param.type) {
             ParamType.NORMAL -> {
-                if (state != 0) return "Normal parameter after catch parameters"
+                if (state != 0) return "Normal parameter after catch-alls parameters"
             }
 
             ParamType.POS_ARGS -> {
@@ -37,6 +38,14 @@ fun paramsWellBehaved(paramDefs: Array<ParamDef>, localsSize: Int): String? {
                     0 -> { state = 1 }
                     1 -> return "*posArgs repeats more than once"
                     2 -> return "*posArgs after **kwArgs"
+                }
+            }
+
+            ParamType.KW_ONLY -> {
+                when (state) {
+                    0 -> return "Keyword-only parameter without *posArgs"
+                    1 -> { /* OK */ }
+                    2 -> return "Keyword-only parameter after **kwArgs"
                 }
             }
 

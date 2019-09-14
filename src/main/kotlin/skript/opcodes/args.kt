@@ -1,29 +1,35 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
-import skript.values.SkList
-import skript.values.SkMap
 
-class ArgsExtractNamed(val name: String, val localIndex: Int): FastOpCode() {
+class ArgsExtractRegular(val name: String, val localIndex: Int): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            locals[localIndex] = args.getParam(name)
+            locals[localIndex] = args.extractArg(name)
         }
     }
 }
 
-class ArgsExtractRemainingPos(val localIndex: Int): FastOpCode() {
+class ArgsExtractPosVarArgs(val name: String, val localIndex: Int): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            locals[localIndex] = SkList(args.getRemainingPosArgs())
+            locals[localIndex] = args.extractPosVarArgs(name)
         }
     }
 }
 
-class ArgsExtractRemainingKw(val localIndex: Int): FastOpCode() {
+class ArgsExtractKwOnly(val name: String, val localIndex: Int): FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.apply {
-            locals[localIndex] = SkMap(args.getRemainingKwArgs())
+            locals[localIndex] = args.extractKwOnlyArg(name)
+        }
+    }
+}
+
+class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): FastOpCode() {
+    override fun execute(state: RuntimeState) {
+        state.topFrame.apply {
+            locals[localIndex] = args.extractKwVarArgs(name)
         }
     }
 }

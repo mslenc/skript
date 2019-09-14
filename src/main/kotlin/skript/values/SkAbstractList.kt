@@ -1,7 +1,6 @@
 package skript.values
 
 import skript.exec.RuntimeState
-import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.notSupported
 import skript.opcodes.SkIterator
@@ -186,11 +185,6 @@ object SkAbstractListClassDef : SkCustomClass<SkAbstractList>("AbstractList", Sk
 
                 result
             }
-    }
-
-    override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
-        check(args.noKwArgs()) { "List constructor doesn't support named arguments" }
-        return SkList(args.getRemainingPosArgs())
     }
 }
 

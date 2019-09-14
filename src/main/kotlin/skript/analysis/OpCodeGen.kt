@@ -160,16 +160,23 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
 
         val funcScope = stmt.innerFunScope
 
-        val funcName = stmt.funcName ?: "<anonFun>" // TODO: improve this name
+        val funcName = stmt.funcName ?: "<anonFun>" // TODO: improve this name - e.g. if it is assigned somewhere, we could at least take that name as a hint?
         val funcBuilder = FunctionDefBuilder(funcName, paramDefs, funcScope.varsAllocated, funcScope.closureDepthNeeded)
         builders.withTop(funcBuilder) {
             for (param in paramDefs) {
                 builder += when (param.type) {
-                    ParamType.NORMAL -> ArgsExtractNamed(param.name, param.localIndex)
-                    ParamType.POS_ARGS -> ArgsExtractRemainingPos(param.localIndex)
-                    ParamType.KW_ARGS -> ArgsExtractRemainingKw(param.localIndex)
+                    ParamType.NORMAL -> ArgsExtractRegular(param.name, param.localIndex)
+                    ParamType.POS_ARGS -> ArgsExtractPosVarArgs(param.name, param.localIndex)
+                    ParamType.KW_ONLY -> ArgsExtractKwOnly(param.name, param.localIndex)
+                    ParamType.KW_ARGS -> ArgsExtractKwVarArgs(param.name, param.localIndex)
                 }
             }
+
+            // TODO: simply calling ArgsExpectNothingElse doesn't work well - for example, when using [].forEach(callback),
+            //       the callback is called with three parameters, but completely legit callbacks may only care about the
+            //       first one.. Still seems useful for preventing typos etc. in many other cases, so maybe it could be
+            //       a @strictArgs annotation or something like that?
+            // builder += ArgsExpectNothingElse
 
             for (param in stmt.params) {
                 if (param.defaultValue != null) {

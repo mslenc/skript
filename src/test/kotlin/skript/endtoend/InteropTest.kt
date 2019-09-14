@@ -20,7 +20,6 @@ data class TestObj(
     }
 
     companion object {
-        @JvmStatic
         val bibi = "Bibi!!!"
     }
 }
@@ -54,7 +53,7 @@ class InteropTest {
         }, """
             
             emit(TestObj("abc", 123).fooBar(" km"));
-            emit(TestObj(foo = "def", 234).fooBar(" m"));
+            emit(TestObj(234, foo = "def").fooBar(" m"));
             emit(TestObj("ghi", bar = 345).fooBar(" cm"));
             emit(TestObj(foo = "jkl", bar = 456).fooBar(" mm"));
             emit(TestObj(foo = "jkl").fooBar(" um"));
@@ -87,7 +86,7 @@ class InteropTest {
         }, """
             
             emit(TestObj("abc", 123).fooBar(" km"));
-            emit(TestObj(foo = "def", 234).fooBar(" m"));
+            emit(TestObj(234, foo = "def").fooBar(" m"));
             emit(TestObj("ghi", bar = 345).fooBar(" cm"));
             emit(TestObj(foo = "jkl", bar = 456).fooBar(" mm"));
             emit(TestObj(foo = "jkl").fooBar(" um"));

@@ -202,14 +202,21 @@ fun makeParamInfos(function: KFunction<*>, engine: SkriptEngine, vararg extraPar
 
     extraParams.forEach { result.add(it) }
 
+    var afterVarArg = false
+
     function.valueParameters.forEach { param ->
         val paramName = param.name ?: return null
         val paramCodec = engine.getNativeCodec(param.type) ?: return null
 
         if (param.isVararg) {
-            result += SkNativeParamRestArgs(param, paramCodec)
+            result += SkNativeParamRestArgs(paramName, param, paramCodec)
+            afterVarArg = true
         } else {
-            result += SkNativeParamNormal(paramName, param, paramCodec)
+            if (afterVarArg) {
+                result += SkNativeParamKwOnly(paramName, param, paramCodec)
+            } else {
+                result += SkNativeParamNormal(paramName, param, paramCodec)
+            }
         }
     }
 

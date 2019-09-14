@@ -297,19 +297,27 @@ fun Tokens.parseCallArgs(): List<CallArg> {
     val args = ArrayList<CallArg>()
     val namesSeen = HashSet<String>()
 
+    var kwOnly = false
+
     expect(LPAREN)
     while (true) {
-        when (peek().type) {
+        val peeked = peek()
+        when (peeked.type) {
             RPAREN -> {
                 next()
                 return args
             }
             STAR -> {
-                next()
-                args += SpreadPosArg(parseExpression())
+                if (kwOnly) {
+                    syntaxError("Positional arguments must come before keyword arguments", peeked.pos)
+                } else {
+                    next()
+                    args += SpreadPosArg(parseExpression())
+                }
             }
             STAR_STAR -> {
                 next()
+                kwOnly = true
                 args += SpreadKwArg(parseExpression())
             }
             else -> {
@@ -317,10 +325,14 @@ fun Tokens.parseCallArgs(): List<CallArg> {
                 if (arg is AssignExpression && arg.op == null && arg.left is Variable) {
                     if (namesSeen.add(arg.left.varName)) {
                         args += KwArg(arg.left.varName, arg.right)
+                        kwOnly = true
                     } else {
-                        syntaxError("This name is already present", arg.left.pos)
+                        syntaxError("Argument named ${ arg.left.varName } was already defined", arg.left.pos)
                     }
                 } else {
+                    if (kwOnly) {
+                        syntaxError("Positional arguments must come before keyword arguments", peeked.pos)
+                    }
                     args += PosArg(arg)
                 }
             }
