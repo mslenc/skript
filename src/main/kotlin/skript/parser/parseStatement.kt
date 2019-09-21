@@ -21,6 +21,27 @@ fun Tokens.parseStatements(endingToken: TokenType, allowFunctions: Boolean = fal
 }
 
 fun Tokens.parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowVars: Boolean): Statement {
+    val stmtLabel = if (peek().type == IDENTIFIER) {
+        val ident = next()
+        if (consume(AT) != null) {
+            ident.rawText
+        } else {
+            putBack(ident)
+            null
+        }
+    } else {
+        null
+    }
+
+    if (stmtLabel != null) {
+        return when (peek().type) {
+            WHILE -> parseWhileStatement(stmtLabel)
+            FOR -> parseForStatement(stmtLabel)
+            DO -> parseDoWhileStatement(stmtLabel)
+            else -> syntaxError("After a label@, expected a while, for or do loop")
+        }
+    }
+
     return when (peek().type) {
         VAR,
         VAL -> {
@@ -58,7 +79,7 @@ fun Tokens.parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowV
 
         else -> {
             val expr = parseExpression()
-            expect(SEMI)
+            expectEndOfStatement()
             ExpressionStatement(expr)
         }
     }
@@ -73,13 +94,13 @@ enum class AllowInit {
 internal fun Tokens.parseReturnStmt(): ReturnStatement {
     next().also { assert(it.type == RETURN) }
 
-    val value = if (peek().type != SEMI) {
-        parseExpression()
-    } else {
+    val value = if (atEndOfStatement()) {
         null
+    } else {
+        parseExpression()
     }
 
-    expect(SEMI)
+    expectEndOfStatement()
 
     return ReturnStatement(value)
 }
@@ -142,6 +163,8 @@ internal fun Tokens.parseFunctionDecl(funLiteral: Boolean): DeclareFunction {
     if (!funLiteral)
         next().also { assert(it.type == FUNCTION) }
 
+    val pos = peek().pos
+
     val name = when {
         !funLiteral -> expect(IDENTIFIER)
         peek().type == IDENTIFIER -> next()
@@ -153,30 +176,30 @@ internal fun Tokens.parseFunctionDecl(funLiteral: Boolean): DeclareFunction {
     expect(LCURLY)
     val body = parseStatements(RCURLY, allowFunctions = true, allowClasses = false, allowVars = true)
 
-    return DeclareFunction(name?.rawText, params, Statements(body))
+    return DeclareFunction(name?.rawText, params, Statements(body), pos)
 }
 
 internal fun Tokens.parseBreakStmt(): BreakStatement {
     val breakTok = next().also { assert(it.type == BREAK) }
-    val identOpt = consume(IDENTIFIER)
-    expect(SEMI)
+    val identOpt = if (consume(AT) != null) expect(IDENTIFIER) else null
+    expectEndOfStatement()
     return BreakStatement(identOpt?.rawText, identOpt?.pos ?: breakTok.pos)
 }
 
 internal fun Tokens.parseContinueStmt(): ContinueStatement {
     val contTok = next().also { assert(it.type == CONTINUE) }
-    val identOpt = consume(IDENTIFIER)
-    expect(SEMI)
+    val identOpt = if (consume(AT) != null) expect(IDENTIFIER) else null
+    expectEndOfStatement()
     return ContinueStatement(identOpt?.rawText, identOpt?.pos ?: contTok.pos)
 }
 
-internal fun Tokens.parseVarDecls(endingToken: TokenType, allowInit: AllowInit): List<VarDecl> {
+internal fun Tokens.parseVarDecls(allowInit: AllowInit, endingCondition: Tokens.()->Boolean): List<VarDecl> {
     val decls = ArrayList<VarDecl>()
 
     while (true) {
         decls += parseVarDecl(allowInit)
 
-        if (consume(endingToken) != null) {
+        if (endingCondition()) {
             break
         } else {
             expect(COMMA)
@@ -214,7 +237,8 @@ internal fun Tokens.parseVarStatement(): LetStatement {
     // TODO: relax this once we can determine the variable is initialized exactly once before being used?
     val allowInit = if (varTok.type == VAL) AllowInit.REQUIRED else AllowInit.OPTIONAL
 
-    val decls = parseVarDecls(SEMI, allowInit)
+    val decls = parseVarDecls(allowInit) { atEndOfStatement() }
+    expectEndOfStatement()
 
     return LetStatement(decls)
 }
@@ -237,7 +261,7 @@ internal fun Tokens.parseIfStatement(): IfStatement {
     return IfStatement(condition, ifTrue, ifFalse)
 }
 
-internal fun Tokens.parseWhileStatement(): WhileStatement {
+internal fun Tokens.parseWhileStatement(stmtLabel: String? = null): WhileStatement {
     next().also { assert(it.type == WHILE) }
 
     expect(LPAREN)
@@ -246,10 +270,10 @@ internal fun Tokens.parseWhileStatement(): WhileStatement {
 
     val body = parseStatementOrBlock(allowFunctions = true, allowClasses = false, allowVars = true)
 
-    return WhileStatement(condition, body)
+    return WhileStatement(condition, body, stmtLabel)
 }
 
-internal fun Tokens.parseDoWhileStatement(): DoWhileStatement {
+internal fun Tokens.parseDoWhileStatement(stmtLabel: String? = null): DoWhileStatement {
     next().also { assert(it.type == DO) }
 
     expect(LCURLY)
@@ -260,18 +284,19 @@ internal fun Tokens.parseDoWhileStatement(): DoWhileStatement {
     val condition = parseExpression()
     expect(RPAREN)
 
-    consume(SEMI)
+    expectEndOfStatement()
 
-    return DoWhileStatement(body, condition)
+    return DoWhileStatement(body, condition, stmtLabel)
 }
 
-internal fun Tokens.parseForStatement(): ForStatement {
+internal fun Tokens.parseForStatement(stmtLabel: String? = null): ForStatement {
     next().also { assert(it.type == FOR) }
 
     expect(LPAREN)
     val openTuple = consume(LPAREN)
     val decls = if (openTuple != null) {
-        parseVarDecls(RPAREN, AllowInit.FORBIDDEN).also {
+        parseVarDecls(AllowInit.FORBIDDEN) { peek().type == RPAREN }.also {
+            consume(RPAREN) ?: throw IllegalStateException()
             if (it.size !in 1..2) {
                 syntaxError("With a for loop, only one or two iteration variables can be used", openTuple.pos)
             }
@@ -286,7 +311,7 @@ internal fun Tokens.parseForStatement(): ForStatement {
 
     val body = parseStatementOrBlock(allowFunctions = true, allowClasses = false, allowVars = true)
 
-    return ForStatement(decls, container, body)
+    return ForStatement(decls, container, body, stmtLabel)
 }
 
 internal fun Tokens.parseStatementOrBlock(allowFunctions: Boolean, allowClasses: Boolean, allowVars: Boolean): Statement {

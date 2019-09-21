@@ -12,36 +12,36 @@ class ClosuresTest {
         val outputs = runScriptWithEmit("""
             fun makeIncMaker(initialStep) {
                 fun create(initialValue) {
-                    var value = initialValue;
-                    var step = initialStep;
+                    var value = initialValue
+                    var step = initialStep
                     
                     fun next() {
-                        var result = value;
-                        value += step;
-                        return result;
+                        var result = value
+                        value += step
+                        return result
                     }
                     
                     fun setStep(newStep) {
-                        step = newStep;
+                        step = newStep
                     }
                     
-                    return [ next, setStep ];
+                    return [ next, setStep ]
                 }
                 
-                return create;
+                return create
             }
  
-            var create = makeIncMaker(5);
-            var pack = create(12);
-            var next = pack[0];
-            var setStep = pack[1];
+            var create = makeIncMaker(5)
+            var pack = create(12)
+            var next = pack[0]
+            var setStep = pack[1]
             
             [ 3, 5, 2, 4, 1 ].forEach(fun(i) {
-                emit(next());
-                setStep(i);
+                emit(next())
+                setStep(i)
             });
-            emit(next());
-            emit(next());
+            emit(next())
+            emit(next())
 
         """.trimIndent())
 

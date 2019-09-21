@@ -9,6 +9,7 @@ class Jump(val target: JumpTarget) : FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.ip = target.value
     }
+    override fun toString() = "Jump to ${target.value}"
 }
 
 class JumpIfTruthy(val target: JumpTarget) : FastOpCode() {
@@ -20,6 +21,7 @@ class JumpIfTruthy(val target: JumpTarget) : FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpIfTruthy to ${target.value}"
 }
 
 class JumpIfFalsy(val target: JumpTarget) : FastOpCode() {
@@ -31,6 +33,7 @@ class JumpIfFalsy(val target: JumpTarget) : FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpIfFalsy to ${target.value}"
 }
 
 class JumpIfLocalDefined(val varIndex: Int, val target: JumpTarget) : FastOpCode() {
@@ -41,6 +44,7 @@ class JumpIfLocalDefined(val varIndex: Int, val target: JumpTarget) : FastOpCode
             }
         }
     }
+    override fun toString() = "JumpIfLocalDefined to ${target.value}"
 }
 
 class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
@@ -55,6 +59,7 @@ class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpIfTopDefinedElseDrop to ${target.value}"
 }
 
 class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
@@ -68,6 +73,7 @@ class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpForSafeMethodCall to ${target.value}"
 }
 
 class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
@@ -80,6 +86,7 @@ class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpIfTopTruthyElseDrop to ${target.value}"
 }
 
 class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
@@ -92,6 +99,7 @@ class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() 
             }
         }
     }
+    override fun toString() = "JumpIfTopTruthyElseDropAlsoMakeBool to ${target.value}"
 }
 
 class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
@@ -104,6 +112,7 @@ class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpIfTopFalsyElseDrop to ${target.value}"
 }
 
 class JumpIfTopFalsyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
@@ -116,4 +125,5 @@ class JumpIfTopFalsyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
             }
         }
     }
+    override fun toString() = "JumpIfTopFalsyElseDropAlsoMakeBool to ${target.value}"
 }

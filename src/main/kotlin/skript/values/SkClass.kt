@@ -2,6 +2,7 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.io.SkriptEnv
+import skript.typeError
 import skript.util.SkArguments
 
 class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
@@ -32,7 +33,7 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
             return function.call(args, state)
         }
 
-        throw UnsupportedOperationException("$exprDebug is class ${def.className}, which has no static function $methodName")
+        typeError("$exprDebug is class ${def.className}, which has no static function $methodName")
     }
 
     override suspend fun propGet(key: String, state: RuntimeState): SkValue {
@@ -40,7 +41,7 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
             return prop.getValue(state.env)
         }
 
-        throw UnsupportedOperationException("Class ${def.className} has no static property $key")
+        typeError("Class ${def.className} has no static property $key")
     }
 
     override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {

@@ -2,6 +2,7 @@ package skript.parser
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import skript.io.SkriptEngine.Companion.isValidIdentifier
 import skript.parser.TokenType.*
 import kotlin.math.min
 
@@ -275,5 +276,14 @@ class LexerTest {
 
         // speed also seems ok - 10_000_000 runs in 70 seconds, or about 7 us / run,
         // or about 140k runs / second.. good enough for intended purposes..
+    }
+
+    @Test
+    fun testIsValidIdentifier() {
+        assertTrue(isValidIdentifier("abc"))
+
+        assertFalse(isValidIdentifier(" abc"))
+        assertFalse(isValidIdentifier("abc "))
+        assertFalse(isValidIdentifier("fun"))
     }
 }

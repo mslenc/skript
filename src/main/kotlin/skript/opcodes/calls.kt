@@ -1,7 +1,6 @@
 package skript.opcodes
 
 import skript.exec.RuntimeState
-import skript.notSupported
 import skript.typeError
 import skript.util.SkArguments
 import skript.values.*
@@ -32,6 +31,7 @@ object BeginArgs : FastOpCode() {
             argsStack.push(SkArguments())
         }
     }
+    override fun toString() = "BeginArgs"
 }
 
 object AddPosArg : FastOpCode() {
@@ -40,6 +40,7 @@ object AddPosArg : FastOpCode() {
             argsStack.top().addPosArg(stack.pop())
         }
     }
+    override fun toString() = "AddPosArg"
 }
 
 class AddKwArg(private val name: String) : FastOpCode() {
@@ -48,6 +49,7 @@ class AddKwArg(private val name: String) : FastOpCode() {
             argsStack.top().addKwArg(name, stack.pop())
         }
     }
+    override fun toString() = "AddKwArg name=$name"
 }
 
 object SpreadPosArgs : FastOpCode() {
@@ -58,10 +60,11 @@ object SpreadPosArgs : FastOpCode() {
             if (arr is SkAbstractList) {
                 argsStack.top().spreadPosArgs(arr)
             } else {
-                notSupported("Only lists can be used for spreading arguments")
+                typeError("Only lists can be used for spreading arguments")
             }
         }
     }
+    override fun toString() = "SpreadPosArgs"
 }
 
 object SpreadKwArgs : FastOpCode() {
@@ -72,10 +75,11 @@ object SpreadKwArgs : FastOpCode() {
             if (kws is SkMap) {
                 argsStack.top().spreadKwArgs(kws)
             } else {
-                notSupported("Only maps can be used for spreading arguments")
+                typeError("Only maps can be used for spreading arguments")
             }
         }
     }
+    override fun toString() = "SpreadKwArgs"
 }
 
 class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
@@ -87,6 +91,7 @@ class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
             stack.push(result)
         }
     }
+    override fun toString() = "CallMethod name=$name expr=$exprDebug"
 }
 
 class CallFunction(val exprDebug: String) : SuspendOpCode() {
@@ -103,6 +108,7 @@ class CallFunction(val exprDebug: String) : SuspendOpCode() {
             }
         }
     }
+    override fun toString() = "CallFunction expr=$exprDebug"
 }
 
 object Return : FastOpCode() {
@@ -112,4 +118,5 @@ object Return : FastOpCode() {
             ip = ops.size
         }
     }
+    override fun toString() = "Return"
 }

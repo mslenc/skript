@@ -54,7 +54,7 @@ class SkString(val value: String) : SkScalar() {
     }
 
     override fun asNumber(): SkDecimal {
-        return asNumberOrNull() ?: throw IllegalStateException("Couldn't parse string (${value.atMostChars(20)}) as a number")
+        return asNumberOrNull() ?: typeError("Couldn't parse string (${value.atMostChars(20)}) as a number")
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {

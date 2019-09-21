@@ -17,4 +17,6 @@ object BinaryGreaterThanOp : FastOpCode() {
             push(res)
         }
     }
+
+    override fun toString() = "BinaryGreaterThanOp"
 }

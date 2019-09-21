@@ -50,15 +50,15 @@ class ExpressionStatement(val expression: Expression): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitExprStmt(this)
 }
 
-class WhileStatement(val condition: Expression, val body: Statement): Statement() {
+class WhileStatement(val condition: Expression, val body: Statement, val label: String?): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitWhile(this)
 }
 
-class DoWhileStatement(val body: Statement, val condition: Expression): Statement() {
+class DoWhileStatement(val body: Statement, val condition: Expression, val label: String?): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitDoWhile(this)
 }
 
-class ForStatement(val decls: List<VarDecl>, val container: Expression, val body: Statement): Statement() {
+class ForStatement(val decls: List<VarDecl>, val container: Expression, val body: Statement, val label: String?): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitForStatement(this)
 }
 
@@ -78,7 +78,7 @@ class ParamDecl(val paramName: String, val paramType: ParamType, val defaultValu
     lateinit var varInfo: LocalVarInfo
 }
 
-class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements) : Statement() {
+class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements, val pos: Pos) : Statement() {
     lateinit var hoistedVarInfo: VarInfo
     lateinit var innerFunScope: FunctionScope
     override fun accept(visitor: StatementVisitor) = visitor.visitDeclareFunctionStmt(this)

@@ -12,6 +12,7 @@ object SetElementOp : SuspendOpCode() {
             obj.elementSet(key, value, state)
         }
     }
+    override fun toString() = "SetElementOp"
 }
 
 object SetElementKeepValueOp : SuspendOpCode() {
@@ -26,6 +27,7 @@ object SetElementKeepValueOp : SuspendOpCode() {
             stack.push(value)
         }
     }
+    override fun toString() = "SetElementKeepValueOp"
 }
 
 class SetPropertyOp(val key: String) : SuspendOpCode() {
@@ -37,6 +39,7 @@ class SetPropertyOp(val key: String) : SuspendOpCode() {
             obj.propSet(key, value, state)
         }
     }
+    override fun toString() = "SetPropertyOp key=$key"
 }
 
 class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
@@ -50,6 +53,7 @@ class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
             stack.push(value)
         }
     }
+    override fun toString() = "SetPropertyKeepValueOp key=$key"
 }
 
 object GetElementOp : SuspendOpCode() {
@@ -61,6 +65,7 @@ object GetElementOp : SuspendOpCode() {
             stack.push(obj.elementGet(key, state))
         }
     }
+    override fun toString() = "GetElementOp"
 }
 
 class GetPropertyOp(val key: String) : SuspendOpCode() {
@@ -71,4 +76,5 @@ class GetPropertyOp(val key: String) : SuspendOpCode() {
             stack.push(obj.propGet(key, state))
         }
     }
+    override fun toString() = "GetPropertyOp"
 }

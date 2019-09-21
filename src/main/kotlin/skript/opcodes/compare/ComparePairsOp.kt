@@ -47,4 +47,6 @@ class ComparePairsOp(val ops: Array<BinaryOp>): FastOpCode() {
             return
         }
     }
+
+    override fun toString() = "ComparePairsOp ops=$ops"
 }

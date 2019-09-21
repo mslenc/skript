@@ -1,5 +1,7 @@
 package skript
 
+import skript.io.SkSyntaxError
+import skript.io.SkTypeError
 import skript.parser.Pos
 import skript.util.Stack
 import skript.values.*
@@ -7,20 +9,15 @@ import java.math.BigDecimal
 import kotlin.math.max
 import kotlin.math.min
 
-fun syntaxError(message: String, pos: Pos? = null): Nothing {
-    throw IllegalArgumentException("$message @ $pos") // TODO - make an exception and/or support exceptions; also show pos
+fun syntaxError(message: String, pos: Pos? = null, cause: Throwable? = null): Nothing {
+    throw when (pos) {
+        null -> SkSyntaxError(message, cause, pos)
+        else -> SkSyntaxError("$pos: $message", cause, pos)
+    }
 }
 
-fun typeError(message: String, pos: Pos? = null): Nothing {
-    throw IllegalStateException("Type error - $message") // TODO - make an exception and/or support exceptions; also show pos
-}
-
-fun notSupported(message: String = "Not supported"): Nothing {
-    throw UnsupportedOperationException(message)
-}
-
-fun illegalArg(message: String = "Illegal argument"): Nothing {
-    throw IllegalArgumentException(message)
+fun typeError(message: String, pos: Pos? = null, cause: Throwable? = null): Nothing {
+    throw SkTypeError(message, cause, pos)
 }
 
 fun String.atMostChars(maxLen: Int): String {
@@ -30,14 +27,14 @@ fun String.atMostChars(maxLen: Int): String {
     if (length <= maxLen)
         return this
 
-    return when (length) {
+    return when (maxLen) {
         1 -> "_"
         2 -> "[]"
         3 -> "[.]"
         4 -> "[..]"
         5 -> "[...]"
         else -> {
-            val showLen = length - 5
+            val showLen = maxLen - 5
             val onRight = showLen / 2
             val onLeft = showLen - onRight
             substring(0, onLeft) + "[...]" + substring(length - onRight, length)

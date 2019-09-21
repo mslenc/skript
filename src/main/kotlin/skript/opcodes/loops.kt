@@ -31,6 +31,7 @@ object MakeIterator: SuspendOpCode() {
             push(iterator)
         }
     }
+    override fun toString() = "MakeIterator"
 }
 
 class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTarget) : FastOpCode() {
@@ -49,6 +50,7 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
             }
         }
     }
+    override fun toString() = "IteratorNext end=${end.value} pushKey=${pushKey} pushValue=${pushValue}"
 }
 
 class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
@@ -59,6 +61,7 @@ class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
             push(from.makeRange(to, true, state, exprDebug))
         }
     }
+    override fun toString() = "MakeRangeEndInclusive expr=$exprDebug"
 }
 
 class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
@@ -69,4 +72,5 @@ class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
             push(from.makeRange(to, false, state, exprDebug))
         }
     }
+    override fun toString() = "MakeRangeEndExclusive expr=$exprDebug"
 }

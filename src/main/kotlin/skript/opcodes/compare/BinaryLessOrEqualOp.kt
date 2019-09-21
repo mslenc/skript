@@ -17,4 +17,6 @@ object BinaryLessOrEqualOp : FastOpCode() {
             push(res)
         }
     }
+
+    override fun toString() = "BinaryLessOrEqualOp"
 }

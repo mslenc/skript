@@ -5,7 +5,6 @@ import skript.ast.*
 import skript.exec.ParamType
 import skript.exec.RuntimeModule
 import skript.exec.RuntimeState
-import skript.illegalArg
 import skript.interop.SkCodec
 import skript.parser.*
 import skript.util.Globals
@@ -27,16 +26,20 @@ class SkriptEnv(val engine: SkriptEngine) {
         return classes.getOrPut(classDef) { SkClass(classDef, superClass) }
     }
 
-    fun <T: Any> setNativeGlobal(name: String, value: T, klass: KClass<T> = value::class as KClass<T>, protected: Boolean = true) {
+    fun <T: Any> createNativeWrapper(value: T, klass: KClass<T> = value::class as KClass<T>): SkValue {
         if (value is SkValue)
-            return setGlobal(name, value, protected)
+            return value
 
         val codec = engine.getNativeCodec(klass) ?: throw UnsupportedOperationException("Couldn't reflect class $klass")
-        val obj = codec.toSkript(value, this)
-        setGlobal(name, obj, protected)
+        return codec.toSkript(value, this)
     }
 
-    fun <T: Any> setClassAsGlobal(klass: KClass<T>, name: String = klass.simpleName ?: illegalArg("Need a class name"), protected: Boolean = true) {
+    fun <T: Any> setNativeGlobal(name: String, value: T, klass: KClass<T> = value::class as KClass<T>, protected: Boolean = true) {
+        val skValue = createNativeWrapper(value, klass)
+        setGlobal(name, skValue, protected)
+    }
+
+    fun <T: Any> setClassAsGlobal(klass: KClass<T>, name: String = klass.simpleName ?: throw IllegalArgumentException("Need a class name"), protected: Boolean = true) {
         val classDef = engine.getNativeClassDef(klass) ?: throw UnsupportedOperationException("Couldn't reflect class $klass")
         val classObj = getClassObject(classDef)
         setGlobal(name, classObj, protected = protected)
@@ -77,8 +80,8 @@ class SkriptEnv(val engine: SkriptEngine) {
 
         val tokens = CharStream(functionBody, funcName).lex()
         val funcBody = Tokens(tokens).parseStatements(TokenType.EOF, allowFunctions = true, allowClasses = false, allowVars = true)
-        val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody))
-        val returnFunc = ReturnStatement(Variable(funcName, Pos(0, 0, "generated")))
+        val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody), Pos(1, 1, "generated"))
+        val returnFunc = ReturnStatement(Variable(funcName, Pos(1, 1, "generated")))
         val module = Module(moduleName, listOf(funcDecl, returnFunc))
 
         analyze(module)

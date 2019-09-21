@@ -10,6 +10,8 @@ class GetLocal private constructor(private val varIndex: Int) : FastOpCode() {
         }
     }
 
+    override fun toString() = "GetLocal varIndex=$varIndex"
+
     companion object {
         private val cache = OpCache.createOpCache(20) { GetLocal(it) }
 
@@ -24,6 +26,8 @@ class SetLocal private constructor(private val varIndex: Int) : FastOpCode() {
         }
     }
 
+    override fun toString() = "SetLocal varIndex=$varIndex"
+
     companion object {
         private val cache = OpCache.createOpCache(20) { SetLocal(it) }
 
@@ -37,6 +41,8 @@ class GetClosureVar(private val closureIndex: Int, private val varIndex: Int) : 
             stack.push(closure[closureIndex].locals[varIndex])
         }
     }
+
+    override fun toString() = "GetClosureVar closureIndex=$closureIndex varIndex=$varIndex"
 }
 
 class SetClosureVar(private val closureIndex: Int, private val varIndex: Int) : FastOpCode() {
@@ -45,4 +51,6 @@ class SetClosureVar(private val closureIndex: Int, private val varIndex: Int) : 
             closure[closureIndex].locals[varIndex] = stack.pop()
         }
     }
+
+    override fun toString() = "SetClosureVar closureIndex=$closureIndex varIndex=$varIndex"
 }

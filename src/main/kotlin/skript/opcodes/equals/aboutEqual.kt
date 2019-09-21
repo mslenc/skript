@@ -15,6 +15,7 @@ import skript.values.*
  * * other objects, functions, classes and methods only equal themselves
  */
 // TODO: native objects should probably use equals()
+
 fun aboutEqual(aObj: SkValue, bObj: SkValue): Boolean {
     val a = if (aObj is SkScalarObject) aObj.value else aObj
     val b = if (bObj is SkScalarObject) bObj.value else bObj

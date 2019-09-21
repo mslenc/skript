@@ -26,6 +26,8 @@ class MakeFunction(val def: FunctionDef) : FastOpCode() {
             stack.push(SkScriptFunction(def, closure))
         }
     }
+
+    override fun toString() = "MakeFunction def=$def"
 }
 
 object ObjectIsOp : FastOpCode() {
@@ -43,6 +45,8 @@ object ObjectIsOp : FastOpCode() {
             push(result)
         }
     }
+
+    override fun toString() = "ObjectIsOp"
 }
 
 object ObjectIsntOp : FastOpCode() {
@@ -60,6 +64,8 @@ object ObjectIsntOp : FastOpCode() {
             push(result)
         }
     }
+
+    override fun toString() = "ObjectIsntOp"
 }
 
 object ValueInOp : SuspendOpCode() {
@@ -71,6 +77,8 @@ object ValueInOp : SuspendOpCode() {
             push(SkBoolean.valueOf(container.contains(value, state)))
         }
     }
+
+    override fun toString() = "ValueInOp"
 }
 
 object ValueNotInOp : SuspendOpCode() {
@@ -82,4 +90,6 @@ object ValueNotInOp : SuspendOpCode() {
             push(SkBoolean.valueOf(!container.contains(value, state)))
         }
     }
+
+    override fun toString() = "ValueNotInOp"
 }

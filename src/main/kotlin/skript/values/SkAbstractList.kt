@@ -2,7 +2,6 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.io.toSkript
-import skript.notSupported
 import skript.opcodes.SkIterator
 import skript.opcodes.equals.aboutEqual
 import skript.typeError
@@ -74,7 +73,7 @@ abstract class SkAbstractList : SkObject() {
     }
 
     override fun asNumber(): SkNumber {
-        notSupported("Can't convert a list into a number")
+        typeError("Can't convert a list into a number")
     }
 
     override fun asString(): SkString {

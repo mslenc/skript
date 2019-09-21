@@ -1,7 +1,7 @@
 package skript.analysis
 
 import skript.ast.*
-import skript.illegalArg
+import skript.syntaxError
 import skript.util.Stack
 import skript.util.isNotEmpty
 import skript.withTop
@@ -33,7 +33,7 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
                     val name = stmt.funcName ?: throw IllegalStateException("A stand-alone function declaration must have a name") // this shouldn't have parsed...
 
                     if (varsHere.containsKey(name))
-                        illegalArg("$name is already defined")
+                        syntaxError("$name is already defined", stmt.pos)
 
                     top.allocate(name).also {
                         varsHere[name] = it
@@ -45,7 +45,7 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
                     for (decl in stmt.decls) {
                         val name = decl.varName
                         if (varsHere.containsKey(name))
-                            illegalArg("$name is already defined")
+                            syntaxError("$name is already defined", decl.pos)
 
                         top.allocate(name).also {
                             varsHere[name] = it

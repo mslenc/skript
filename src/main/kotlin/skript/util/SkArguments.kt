@@ -1,7 +1,7 @@
 package skript.util
 
-import skript.illegalArg
 import skript.syntaxError
+import skript.typeError
 import skript.values.*
 
 class SkArguments : SkObject() {
@@ -142,8 +142,8 @@ class SkArguments : SkObject() {
     }
 
     fun expectNothingElse() {
-        if (state < 3 && kwArgs.isNotEmpty()) illegalArg("Unrecognized keyword parameter(s) - ${kwArgs.keys}")
-        if (state < 2 && posReadIndex < posArgs.size) illegalArg("Too many parameters")
+        if (state < 3 && kwArgs.isNotEmpty()) typeError("Unrecognized keyword parameter(s) - ${kwArgs.keys}")
+        if (state < 2 && posReadIndex < posArgs.size) typeError("Too many parameters")
         state = 3
     }
 
@@ -175,14 +175,14 @@ fun SkArguments.expectBoolean(name: String, coerce: Boolean = true, ifUndefined:
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
-        illegalArg("Expected a boolean value for parameter $name")
+        typeError("Expected a boolean value for parameter $name")
     }
 
     return when {
         coerce -> value.asBoolean().value
         value is SkBoolean -> value.value
         value is SkBooleanObject -> value.value.value
-        else -> illegalArg("Expected a boolean value for $name")
+        else -> typeError("Expected a boolean value for $name")
     }
 }
 
@@ -191,14 +191,14 @@ fun SkArguments.expectString(name: String, coerce: Boolean = true, ifUndefined: 
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
-        illegalArg("Expected a string value for parameter $name")
+        typeError("Expected a string value for parameter $name")
     }
 
     return when {
         coerce -> value.asString().value
         value is SkString -> value.value
         value is SkStringObject -> value.value.value
-        else -> illegalArg("Expected a string value for parameter $name")
+        else -> typeError("Expected a string value for parameter $name")
     }
 }
 
@@ -207,14 +207,14 @@ fun SkArguments.expectNumber(name: String, coerce: Boolean = true, ifUndefined: 
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
-        illegalArg("Expected a number value for parameter $name")
+        typeError("Expected a number value for parameter $name")
     }
 
     return when {
         coerce -> value.asNumber()
         value is SkNumber -> value
         value is SkNumberObject -> value.value
-        else -> illegalArg("Expected a number value for parameter $name")
+        else -> typeError("Expected a number value for parameter $name")
     }
 }
 
@@ -223,19 +223,19 @@ fun SkArguments.expectInt(name: String, coerce: Boolean = true, ifUndefined: Int
 
     if (value == SkUndefined) {
         ifUndefined?.let { return it }
-        illegalArg("Expected an integer value for parameter $name")
+        typeError("Expected an integer value for parameter $name")
     }
 
     val number = when {
         coerce -> value.asNumber()
         value is SkNumber -> value
         value is SkNumberObject -> value.value
-        else -> illegalArg("Expected an integer value for parameter $name")
+        else -> typeError("Expected an integer value for parameter $name")
     }
 
     return when {
         number.isInt() -> number.value.toInt()
-        else -> illegalArg("Expected an integer value for parameter $name")
+        else -> typeError("Expected an integer value for parameter $name")
     }
 }
 
@@ -245,6 +245,6 @@ fun SkArguments.expectFunction(name: String, kwOnly: Boolean = false): SkFunctio
     if (value is SkFunction) {
         return value
     } else {
-        illegalArg("Expected a function for parameter $name")
+        typeError("Expected a function for parameter $name")
     }
 }

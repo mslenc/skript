@@ -1,7 +1,6 @@
 package skript.values
 
 import skript.exec.RuntimeState
-import skript.illegalArg
 import skript.interop.SkClassInstanceMember
 import skript.interop.SkClassStaticMember
 import skript.io.SkriptEnv
@@ -156,7 +155,7 @@ class ExtractIntOpt(name: String, val kwOnly: Boolean): ExtractArg<Int?>(name) {
     override fun extract(args: SkArguments): Int? {
         return when (val value = args.extractArg(name, kwOnly)) {
             SkUndefined -> null
-            else -> value.toIntOrNull() ?: illegalArg("Expected an integer value for parameter $name")
+            else -> value.toIntOrNull() ?: typeError("Expected an integer value for parameter $name")
         }
     }
 }
@@ -166,7 +165,7 @@ class ExtractNonNegativeInt(name: String, val ifUndefined: Int?, val kwOnly: Boo
         val i = args.expectInt(name, ifUndefined = ifUndefined, kwOnly = kwOnly)
         return when {
             i >= 0 -> i
-            else -> illegalArg("Expected an non-negative integer value for parameter $name")
+            else -> typeError("Expected an non-negative integer value for parameter $name")
         }
     }
 }
@@ -175,7 +174,7 @@ class ExtractNonNegativeIntOpt(name: String, val kwOnly: Boolean): ExtractArg<In
     override fun extract(args: SkArguments): Int? {
         return when (val value = args.extractArg(name, kwOnly = kwOnly)) {
             SkUndefined -> null
-            else -> value.toNonNegativeIntOrNull() ?: illegalArg("Expected an non-negative integer value for parameter $name")
+            else -> value.toNonNegativeIntOrNull() ?: typeError("Expected an non-negative integer value for parameter $name")
         }
     }
 }

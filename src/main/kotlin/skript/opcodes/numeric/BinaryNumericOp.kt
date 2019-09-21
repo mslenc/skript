@@ -44,4 +44,6 @@ abstract class BinaryNumericOp : FastOpCode() {
             stack.push(compute(left, right))
         }
     }
+
+    override fun toString() = this::class.simpleName ?: "???"
 }

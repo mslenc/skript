@@ -17,4 +17,6 @@ object BinaryStarshipOp : FastOpCode() {
             push(res)
         }
     }
+
+    override fun toString() = "BinaryStarshipOp"
 }

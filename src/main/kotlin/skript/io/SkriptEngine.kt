@@ -1,13 +1,18 @@
 package skript.io
 
+import jdk.nashorn.internal.parser.Lexer
 import skript.interop.*
 import skript.interop.wrappers.SkCodecNativeArray
 import skript.interop.wrappers.SkCodecNativeCollection
 import skript.interop.wrappers.SkCodecNativeList
+import skript.parser.CharStream
+import skript.parser.TokenType
+import skript.parser.lex
 import skript.values.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.createType
+import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSubclassOf
 
 class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, val nativeAccessGranter: NativeAccessGranter = NoNativeAccess) {
@@ -89,6 +94,10 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
         // TODO: somehow distinguish nullable/non-nullable?
         // TODO: super classes
 
+        if (klass.findAnnotation<SkriptIgnore>() != null) {
+            return null
+        }
+
         val nonNullType = klass.createType(nullable = false)
         nativeCodecs[nonNullType]?.let { return it as SkCodec<T> }
 
@@ -116,5 +125,23 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
     fun <T: Any> getNativeClassDef(klass: KClass<T>): SkNativeClassDef<T>? {
         getNativeCodec(klass)
         return nativeClassDefs[klass] as SkNativeClassDef<T>?
+    }
+
+    fun <T: Any> requireNativeCodec(klass: KClass<T>): SkCodec<T> {
+        return getNativeCodec(klass) ?: throw IllegalStateException("Couldn't reflect $klass")
+    }
+
+    companion object {
+        fun isValidIdentifier(ident: String): Boolean {
+            val tokens = try {
+                CharStream(ident, "").lex(withEof = false, inTemplate = false)
+            } catch (e: SkSyntaxError) {
+                return false
+            }
+
+            val token = tokens.singleOrNull() ?: return false
+
+            return token.type == TokenType.IDENTIFIER && token.rawText == ident
+        }
     }
 }

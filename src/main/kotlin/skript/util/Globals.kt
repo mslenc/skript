@@ -1,6 +1,6 @@
 package skript.util
 
-import skript.notSupported
+import skript.typeError
 import skript.values.SkUndefined
 import skript.values.SkValue
 
@@ -16,7 +16,7 @@ class Globals {
     fun set(key: String, value: SkValue, protected: Boolean = false) {
         entries[key]?.let { existing ->
             if (existing.protected)
-                throw notSupported("Global $key is protected and can't be changed")
+                typeError("Global $key is protected and can't be changed")
 
             existing.value = value
             return

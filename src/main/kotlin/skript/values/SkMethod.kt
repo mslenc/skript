@@ -3,7 +3,7 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.interop.SkClassInstanceMember
 import skript.interop.SkClassStaticMember
-import skript.notSupported
+import skript.typeError
 import skript.util.SkArguments
 
 sealed class SkCallable(val name: String) : SkObject() {
@@ -12,7 +12,7 @@ sealed class SkCallable(val name: String) : SkObject() {
     }
 
     final override fun asNumber(): SkNumber {
-        notSupported("Can't convert functions into numbers")
+        typeError("Can't convert functions into numbers")
     }
 }
 

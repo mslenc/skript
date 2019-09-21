@@ -5,6 +5,8 @@ import skript.typeError
 import skript.util.SkArguments
 
 class SkList : SkAbstractList {
+    val listEls = ArrayList<SkValue>()
+
     constructor()
 
     constructor(elements: List<SkValue>) {
@@ -22,8 +24,6 @@ class SkList : SkAbstractList {
 
     override val klass: SkClassDef
         get() = SkListClassDef
-
-    val listEls = ArrayList<SkValue>()
 
     override fun getSize(): Int {
         return listEls.size
@@ -71,6 +71,10 @@ class SkList : SkAbstractList {
         listEls.addAll(values)
     }
 
+    fun addAll(values: SkAbstractList) {
+        values.forEach { listEls.add(it) }
+    }
+
     override fun removeLast(): SkValue {
         return when {
             listEls.isNotEmpty() -> listEls.removeAt(listEls.size - 1)
@@ -87,5 +91,11 @@ object SkListClassDef : SkCustomClass<SkList>("List", SkAbstractListClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         check(args.noKwArgs()) { "List constructor doesn't support named arguments" }
         return args.extractPosVarArgs("")
+    }
+}
+
+inline fun SkAbstractList.forEach(block: (SkValue)->Unit) {
+    for (i in 0 until getSize()) {
+        block(getSlot(i))
     }
 }

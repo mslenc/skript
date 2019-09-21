@@ -6,6 +6,7 @@ import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 import skript.assertEmittedEquals
+import skript.assertStrictlyEqual
 import skript.io.toSkript
 import skript.opcodes.compare.compare
 import skript.opcodes.equals.aboutEqual
@@ -597,16 +598,173 @@ class BinaryOpsTest {
 
         assertEmittedEquals(expect, outputs)
     }
+
+    @Test
+    fun testAndOr() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            emit(1 || 2 || 3)
+            emit(1 | 2 | 3)
+            emit("" || false || 4)
+            emit("" | false | 4)
+            
+            emit(1 && 2 && 3)
+            emit(1 & 2 & 3)
+            emit("" && true && 6)
+            emit("" & true & 6)
+        """.trimIndent())
+
+        val expect = listOf(
+            true.toSkript(),
+            1.toSkript(),
+            true.toSkript(),
+            4.toSkript(),
+
+            true.toSkript(),
+            3.toSkript(),
+            false.toSkript(),
+            "".toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
+
+    @Test
+    fun testContains() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            val list = [ 2, 3, 5, 7, 11 ]
+            val obj = { foo: "foo", bar: "BAR" };
+            
+            emit(false in list)
+            emit(true in list)
+            emit(2 in list)
+            emit(4 in list)
+            emit("size" in list)
+
+            emit(false !in list)
+            emit(true !in list)
+            emit(2 !in list)
+            emit(4 !in list)
+            emit("size" !in list)
+
+            emit(true in obj)
+            emit("size" in obj)
+            emit("foo" in obj)
+            emit("BAR" in obj)
+            
+            emit(true !in obj)
+            emit("size" !in obj)
+            emit("foo" !in obj)
+            emit("BAR" !in obj)
+        """.trimIndent())
+
+        val expect = listOf(
+            false.toSkript(),
+            false.toSkript(),
+            true.toSkript(),
+            false.toSkript(),
+            false.toSkript(),
+
+            true.toSkript(),
+            true.toSkript(),
+            false.toSkript(),
+            true.toSkript(),
+            true.toSkript(),
+
+            false.toSkript(),
+            false.toSkript(),
+            true.toSkript(),
+            false.toSkript(),
+
+            true.toSkript(),
+            true.toSkript(),
+            false.toSkript(),
+            true.toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
+
+    @Test
+    fun testElvis() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            emit(undefined ?: 1)
+            emit(null ?: 2)
+            emit(false ?: 3)
+            emit(true ?: 4)
+            emit(0 ?: 5)
+            emit(6 ?: 7)
+            emit("" ?: 8)
+            emit([] ?: 9)
+        """.trimIndent())
+
+        val expect = listOf(
+            1.toSkript(),
+            2.toSkript(),
+            false.toSkript(),
+            true.toSkript(),
+            0.toSkript(),
+            6.toSkript(),
+            "".toSkript(),
+            SkList()
+        )
+
+        for (i in 0 until 7)
+            assertStrictlyEqual(expect[i], outputs[i]) { "Element $i:\nExpected: ${expect[i]} (${expect[i].getKind()})\n  Actual: ${outputs[i]} (${outputs[i].getKind()})" }
+
+        assertTrue(outputs[7] is SkList)
+    }
+
+    @Test
+    fun testNumericRanges() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            for (i in 2..4)
+                emit(i)
+
+            for (i in 2..<4)
+                emit(i)
+
+            for (i in 1..3.5)
+                emit(i)
+                
+            for (i in 5..<7)
+                emit(i)
+
+            for (i in 6..<8.1)
+                emit(i)
+        """.trimIndent())
+
+        val expect = listOf(
+            2, 3, 4,
+            2, 3,
+            1, 2, 3,
+            5, 6,
+            6, 7, 8
+        ).map { it.toSkript() }
+
+        assertEmittedEquals(expect, outputs)
+    }
+
+    @Test
+    fun testTernary() = runBlocking { // yes, it's not binary, so what..
+        val outputs = runScriptWithEmit("""
+            emit(2 ? 3 : 4);
+            emit(0 ? 3 : 4);
+            
+            for (i in -1..1)
+                emit(i > 0 ? "positive" :
+                     i < 0 ? "negative" : 
+                             "zero")
+            
+        """.trimIndent())
+
+        val expect = listOf(
+            3.toSkript(),
+            4.toSkript(),
+            "negative".toSkript(),
+            "zero".toSkript(),
+            "positive".toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
 }
-
-/*
-
-    OR("|"),
-    AND("&"),
-    OR_OR("||"),
-    AND_AND("&&"),
-
-    ELVIS("?:"),
-
-    RANGE_TO(".."),
-    RANGE_TO_EXCL("..<")*/

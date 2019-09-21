@@ -33,6 +33,8 @@ class RuntimeState(val env: SkriptEnv) {
                 }
             }
 
+            check(topFrame.stack.size == 0)
+
             return frame.result
         } finally {
             topFrame = otherFrames.pop()

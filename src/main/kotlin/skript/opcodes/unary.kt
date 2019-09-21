@@ -9,6 +9,7 @@ object UnaryPlus : FastOpCode() {
             stack.push(stack.pop().asNumber())
         }
     }
+    override fun toString() = "UnaryPlus"
 }
 
 object UnaryMinus : FastOpCode() {
@@ -17,6 +18,7 @@ object UnaryMinus : FastOpCode() {
             stack.push(stack.pop().asNumber().negate())
         }
     }
+    override fun toString() = "UnaryMinus"
 }
 
 object UnaryNegate : FastOpCode() {
@@ -25,6 +27,7 @@ object UnaryNegate : FastOpCode() {
             push(SkBoolean.valueOf(!pop().asBoolean().value))
         }
     }
+    override fun toString() = "UnaryNegate"
 }
 
 object ConvertToBool : FastOpCode() {
@@ -33,6 +36,7 @@ object ConvertToBool : FastOpCode() {
             push(pop().asBoolean())
         }
     }
+    override fun toString() = "ConvertToBool"
 }
 
 object ConvertToString : FastOpCode() {
@@ -41,4 +45,5 @@ object ConvertToString : FastOpCode() {
             push(pop().asString())
         }
     }
+    override fun toString() = "ConvertToString"
 }

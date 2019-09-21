@@ -8,6 +8,7 @@ object Dup : FastOpCode() {
             push(top())
         }
     }
+    override fun toString() = "Dup"
 }
 
 object Dup2 : FastOpCode() {
@@ -17,12 +18,14 @@ object Dup2 : FastOpCode() {
             push(top(1))
         }
     }
+    override fun toString() = "Dup2"
 }
 
 object Pop : FastOpCode() {
     override fun execute(state: RuntimeState) {
         state.topFrame.stack.pop()
     }
+    override fun toString() = "Pop"
 }
 
 object CopyTopTwoDown : FastOpCode() {
@@ -36,6 +39,7 @@ object CopyTopTwoDown : FastOpCode() {
             push(value)
         }
     }
+    override fun toString() = "CopyTopTwoDown"
 }
 
 object CopyTopThreeDown : FastOpCode() {
@@ -51,4 +55,5 @@ object CopyTopThreeDown : FastOpCode() {
             push(value)
         }
     }
+    override fun toString() = "CopyTopThreeDown"
 }

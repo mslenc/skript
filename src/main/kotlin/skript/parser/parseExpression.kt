@@ -175,10 +175,9 @@ fun Tokens.parseElvis(): Expression {
 fun Tokens.parseInfixCall(): Expression {
     var result = parseRange()
     while (true) {
-        result = when (peek().type) {
-            IDENTIFIER -> MethodCall(result, next().rawText, listOf(PosArg(parseRange())), MethodCallType.INFIX)
-            else -> return result
-        }
+        if (peekOnNewLine() || peek().type != IDENTIFIER)
+            return result
+        result = MethodCall(result, next().rawText, listOf(PosArg(parseRange())), MethodCallType.INFIX)
     }
 }
 
@@ -252,6 +251,9 @@ fun Tokens.parsePostfixes(primary: Expression): Expression {
     var result = primary
 
     while (true) {
+        if (peekOnNewLine() && peek().type != SAFE_DOT && peek().type != DOT) // all others can start a new statement
+            return result
+
         result = when (peek().type) {
             PLUS_PLUS -> {
                 val tok = next()

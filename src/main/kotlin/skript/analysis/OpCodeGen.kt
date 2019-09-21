@@ -35,7 +35,8 @@ class FunctionDefBuilder(val name: String, val paramDefs: Array<ParamDef>, val l
 data class LoopInfo(
     val label: String?,
     private val continueTarget: JumpTarget?,
-    private val breakTarget: JumpTarget?
+    private val breakTarget: JumpTarget?,
+    val exitCleanUp: OpCode?
 ) {
     var breakUsed = false
 
@@ -114,8 +115,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         val start = JumpTarget()
         val end = JumpTarget()
 
-        // TODO: loop label
-        loops.withTop(LoopInfo(null, continueTarget = check, breakTarget = end)) {
+        loops.withTop(LoopInfo(stmt.label, continueTarget = check, breakTarget = end, exitCleanUp = null)) {
             builder += Jump(check)
             builder += start
             stmt.body.accept(this)
@@ -210,7 +210,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         val check = JumpTarget()
         val end = JumpTarget()
 
-        loops.withTop(LoopInfo(null, continueTarget = check, breakTarget = end)) {
+        loops.withTop(LoopInfo(stmt.label, continueTarget = check, breakTarget = end, exitCleanUp = null)) {
             builder += start
             stmt.body.accept(this)
             builder += check
@@ -233,7 +233,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         val keyDeclIndex = if (doKey) 0 else -1
         val valDeclIndex = if (doKey) 1 else 0
 
-        val loopInfo = LoopInfo(null, continueTarget = loopStart, breakTarget = breakTarget)
+        val loopInfo = LoopInfo(stmt.label, continueTarget = loopStart, breakTarget = breakTarget, exitCleanUp = Pop)
         loops.withTop(loopInfo) {
             stmt.container.accept(this)
             builder += MakeIterator
@@ -253,33 +253,42 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         }
     }
 
-    private fun findLoopInfo(label: String?): LoopInfo? {
+    private fun findLoopDepth(label: String?): Int? {
         for (i in 0 until loops.size) {
             val loopInfo = loops.top(i)
             if (label == null || label == loopInfo.label)
-                return loopInfo
+                return i
         }
         return null
     }
 
     override fun visitBreakStatement(stmt: BreakStatement) {
-        val loopInfo = findLoopInfo(stmt.label) ?: when {
+        val loopDepth = findLoopDepth(stmt.label) ?: when {
             stmt.label != null -> syntaxError("Couldn't find label ${stmt.label}", stmt.pos)
             else -> syntaxError("Nothing to break from here", stmt.pos)
         }
 
+        val loopInfo = loops.top(loopDepth)
+
         val target = loopInfo.getBreakTarget() ?: syntaxError("Can't break here", stmt.pos)
 
+        for (d in 0 until loopDepth)
+            loops.top(d).exitCleanUp?.let { builder += it }
         builder += Jump(target)
     }
 
     override fun visitContinueStatement(stmt: ContinueStatement) {
-        val loopInfo = findLoopInfo(stmt.label) ?: when {
+        val loopDepth = findLoopDepth(stmt.label) ?: when {
             stmt.label != null -> syntaxError("Couldn't find label ${stmt.label}", stmt.pos)
             else -> syntaxError("Nothing to continue in here", stmt.pos)
         }
 
+        val loopInfo = loops.top(loopDepth)
+
         val target = loopInfo.getContinueTarget() ?: syntaxError("Can't continue here", stmt.pos)
+
+        for (d in 0 until loopDepth)
+            loops.top(d).exitCleanUp?.let { builder += it }
 
         builder += Jump(target)
     }

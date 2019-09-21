@@ -13,6 +13,8 @@ object BinaryEqualsOp : FastOpCode() {
             push(SkBoolean.valueOf(aboutEqual(a, b)))
         }
     }
+
+    override fun toString() = "BinaryEqualsOp"
 }
 
 object BinaryNotEqualsOp : FastOpCode() {
@@ -24,5 +26,7 @@ object BinaryNotEqualsOp : FastOpCode() {
             push(SkBoolean.valueOf(!aboutEqual(a, b)))
         }
     }
+
+    override fun toString() = "BinaryNotEqualsOp"
 }
 

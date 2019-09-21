@@ -1,7 +1,6 @@
 package skript.values
 
 import skript.exec.RuntimeState
-import skript.notSupported
 import skript.opcodes.SkIterator
 import skript.typeError
 import skript.util.SkArguments
@@ -10,7 +9,7 @@ abstract class SkScalar : SkValue() {
     final override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
         val sb = StringBuilder("Can't call ")
         toString(sb)
-        notSupported(sb.toString())
+        typeError(sb.toString())
     }
 
     override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {

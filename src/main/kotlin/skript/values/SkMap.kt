@@ -3,7 +3,6 @@ package skript.values
 import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.io.toSkript
-import skript.notSupported
 import skript.opcodes.SkIterator
 import skript.typeError
 import skript.util.SkArguments
@@ -55,7 +54,7 @@ class SkMap : SkObject {
     }
 
     override fun asNumber(): SkNumber {
-        notSupported("Can't convert a map into a number")
+        typeError("Can't convert a map into a number")
     }
 
     override fun asString(): SkString {

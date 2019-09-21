@@ -1,6 +1,7 @@
 package skript.io
 
 @Target(
+    AnnotationTarget.CLASS,
     AnnotationTarget.FUNCTION,
     AnnotationTarget.PROPERTY,
     AnnotationTarget.VALUE_PARAMETER,

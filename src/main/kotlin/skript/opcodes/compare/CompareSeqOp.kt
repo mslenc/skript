@@ -49,4 +49,6 @@ class CompareSeqOp(val ops: Array<BinaryOp>): FastOpCode() {
             return
         }
     }
+
+    override fun toString() = "CompareSeqOp ops=$ops"
 }

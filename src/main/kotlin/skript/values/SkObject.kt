@@ -2,7 +2,6 @@ package skript.values
 
 import skript.exec.RuntimeState
 import skript.io.toSkript
-import skript.notSupported
 import skript.typeError
 import skript.util.SkArguments
 
@@ -23,7 +22,7 @@ abstract class SkObject : SkValue() {
     }
 
     override fun asNumber(): SkNumber {
-        throw UnsupportedOperationException("Objects can't be converted into numbers")
+        typeError("Objects can't be converted into numbers")
     }
 
     override fun asString(): SkString {
@@ -77,7 +76,7 @@ abstract class SkObject : SkValue() {
     }
 
     override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
-        notSupported("Can't call objects")
+        typeError("Can't call objects")
     }
 
     override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
@@ -89,8 +88,25 @@ abstract class SkObject : SkValue() {
             return method.call(this, args, state)
         }
 
-        throw UnsupportedOperationException("$exprDebug has no method $methodName")
+        typeError("$exprDebug has no method $methodName")
     }
 }
 
-object SkObjectClassDef : SkClassDef("Object", null)
+object SkObjectClassDef : SkClassDef("Object", null) {
+    init {
+        defineInstanceMethod(object : SkMethod("toString", emptyList()) {
+            override val expectedClass: SkClassDef get() = SkObjectClassDef
+            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState) = thiz.asString()
+        })
+
+        defineInstanceMethod(object : SkMethod("toBoolean", emptyList()) {
+            override val expectedClass: SkClassDef get() = SkObjectClassDef
+            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState) = thiz.asBoolean()
+        })
+
+        defineInstanceMethod(object : SkMethod("toNumber", emptyList()) {
+            override val expectedClass: SkClassDef get() = SkObjectClassDef
+            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState) = thiz.asNumber()
+        })
+    }
+}
