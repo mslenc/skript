@@ -43,8 +43,17 @@ class SkNativeMutableProperty<RCVR: Any, T>(
 
     override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
         val nativeObj = getNativeObj(obj)
-        val nativeValue = codec.toKotlin(value, env)
-        setter.invoke(nativeObj, nativeValue)
+        if (value == SkNull || value == SkUndefined) {
+            if (nullable) {
+                @Suppress("UNCHECKED_CAST")
+                setter.invoke(nativeObj, null as T)
+            } else {
+                typeError("$name can't be set to null/undefined")
+            }
+        } else {
+            val nativeValue = codec.toKotlin(value, env)
+            setter.invoke(nativeObj, nativeValue)
+        }
     }
 }
 

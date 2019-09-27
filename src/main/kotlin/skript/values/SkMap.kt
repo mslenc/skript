@@ -14,10 +14,10 @@ class SkMap : SkObject {
     constructor() : super()
 
     constructor(initialValues: Map<String, SkValue>) : this() {
-        elements.putAll(initialValues)
+        entries.putAll(initialValues)
     }
 
-    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
         klass.findInstanceProperty(key)?.let { prop ->
             if (prop.readOnly)
                 typeError("Can't set property $key, because it is read-only")
@@ -30,10 +30,10 @@ class SkMap : SkObject {
             typeError("Can't override methods")
         }
 
-        elementSet(key.toSkript(), value, state)
+        entrySet(key.toSkript(), value, state)
     }
 
-    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
         klass.findInstanceProperty(key)?.let { prop ->
             return prop.getValue(this, state.env)
         }
@@ -42,7 +42,7 @@ class SkMap : SkObject {
             return BoundMethod(method, this, SkArguments())
         }
 
-        return elementGet(key.toSkript(), state)
+        return entryGet(key.toSkript(), state)
     }
 
     override fun getKind(): SkValueKind {
@@ -50,7 +50,7 @@ class SkMap : SkObject {
     }
 
     override fun asBoolean(): SkBoolean {
-        return SkBoolean.valueOf(elements.isNotEmpty())
+        return SkBoolean.valueOf(entries.isNotEmpty())
     }
 
     override fun asNumber(): SkNumber {
@@ -65,11 +65,24 @@ class SkMap : SkObject {
         if (values == this)
             return // ???
 
-        elements.putAll(values.elements)
+        entries.putAll(values.entries)
     }
 
     override suspend fun makeIterator(): SkIterator {
         return SkMapIterator(this)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when {
+            other == null -> false
+            other === this -> true
+            other is SkMap -> entries == other.entries
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return entries.hashCode()
     }
 }
 
@@ -79,13 +92,13 @@ object SkMapClassDef : SkClassDef("Map") {
 
         for (el in args.extractAllPosArgs()) {
             if (el is SkMap) {
-                result.elements.putAll(el.elements)
+                result.entries.putAll(el.entries)
             } else {
                 typeError("Map constructor only accepts other Maps as positional arguments")
             }
         }
 
-        result.elements.putAll(args.extractAllKwArgs())
+        result.entries.putAll(args.extractAllKwArgs())
 
         return result
     }

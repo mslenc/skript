@@ -20,23 +20,23 @@ abstract class SkScalar : SkValue() {
         return false
     }
 
-    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
         typeError("Can't set properties on scalars")
     }
 
-    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
         return SkUndefined
     }
 
-    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
         typeError("Can't set elements on scalars")
     }
 
-    override suspend fun elementGet(key: SkValue, state: RuntimeState): SkValue {
+    override suspend fun entryGet(key: SkValue, state: RuntimeState): SkValue {
         return SkUndefined
     }
 
-    override suspend fun elementDelete(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun entryDelete(key: SkValue, state: RuntimeState): Boolean {
         return false
     }
 

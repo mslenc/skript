@@ -36,24 +36,24 @@ abstract class SkAbstractList : SkObject() {
         return false
     }
 
-    override suspend fun elementGet(key: SkValue, state: RuntimeState): SkValue {
+    override suspend fun entryGet(key: SkValue, state: RuntimeState): SkValue {
         key.toNonNegativeIntOrNull()?.let { index ->
             return getSlot(index)
         }
 
-        return super.elementGet(key, state)
+        return super.entryGet(key, state)
     }
 
-    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
         key.toNonNegativeIntOrNull()?.let { index ->
             setSlot(index, value)
             return
         }
 
-        super.elementSet(key, value, state)
+        super.entrySet(key, value, state)
     }
 
-    override suspend fun elementDelete(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun entryDelete(key: SkValue, state: RuntimeState): Boolean {
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < getSize()) {
                 setSlot(index, SkUndefined)
@@ -65,7 +65,7 @@ abstract class SkAbstractList : SkObject() {
             return false
         }
 
-        return super.elementDelete(key, state)
+        return super.entryDelete(key, state)
     }
 
     override fun asBoolean(): SkBoolean {

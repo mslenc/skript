@@ -67,12 +67,12 @@ fun aboutEqual(aObj: SkValue, bObj: SkValue): Boolean {
         }
 
         SkValueKind.LIST -> when (bKind) {
-            SkValueKind.LIST -> deepEquals(a, b, HashSet())
+            SkValueKind.LIST -> deepEquals(a, b, HashSet(), strictElementEqual = false)
             else -> false
         }
 
         SkValueKind.MAP -> when (bKind) {
-            SkValueKind.MAP -> deepEquals(a, b, HashSet())
+            SkValueKind.MAP -> deepEquals(a, b, HashSet(), strictElementEqual = false)
             else -> false
         }
 
@@ -97,7 +97,7 @@ class RefPair(val a: SkValue, val b: SkValue) {
     }
 }
 
-fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
+fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>, strictElementEqual: Boolean): Boolean {
     // (seen serves to detect cyclic structures)
 
     val aKind = a.getKind()
@@ -118,7 +118,7 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
             return false
 
         for (i in 0 until len)
-            if (!deepEquals(aList.getSlot(i), bList.getSlot(i), seen))
+            if (!deepEquals(aList.getSlot(i), bList.getSlot(i), seen, strictElementEqual))
                 return false
 
         return true
@@ -134,19 +134,19 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
         val aMap = a as SkMap
         val bMap = b as SkMap
 
-        if (aMap.elements.size != bMap.elements.size)
+        if (aMap.entries.size != bMap.entries.size)
             return false
 
         val aKeys = HashSet<String>()
         val bKeys = HashSet<String>()
-        aMap.elements.forEach { (key, _) -> aKeys.add(key) }
-        bMap.elements.forEach { (key, _) -> bKeys.add(key) }
+        aMap.entries.forEach { (key, _) -> aKeys.add(key) }
+        bMap.entries.forEach { (key, _) -> bKeys.add(key) }
 
         if (aKeys != bKeys)
             return false
 
         for (key in aKeys)
-            if (!deepEquals(aMap.elements[key]!!, bMap.elements[key]!!, seen))
+            if (!deepEquals(aMap.entries[key]!!, bMap.entries[key]!!, seen, strictElementEqual))
                 return false
 
         return true
@@ -155,5 +155,9 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>): Boolean {
     if (bKind == SkValueKind.LIST || bKind == SkValueKind.MAP)
         return false
 
-    return aboutEqual(a, b)
+    return if (strictElementEqual) {
+        strictlyEqual(a, b)
+    } else {
+        aboutEqual(a, b)
+    }
 }

@@ -48,7 +48,7 @@ class SkArguments : SkObject() {
     fun spreadKwArgs(args: SkMap) {
         check(state == 0) { "Can't add parameters after some have already been extracted" }
 
-        kwArgs.putAll(args.elements)
+        kwArgs.putAll(args.entries)
     }
 
     fun spreadKwArgs(args: Map<String, SkValue>) {

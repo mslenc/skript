@@ -8,22 +8,22 @@ class SkMapIterator(val map: SkMap) : SkIterator() {
         get() = SkMapIteratorClassDef
 
     var pos = -1
-    val entries: List<Pair<String, SkValue>> = ArrayList<Pair<String, SkValue>>().apply {
-        map.elements.forEach { (key, value) ->
+    val entriesCopy: List<Pair<String, SkValue>> = ArrayList<Pair<String, SkValue>>().apply {
+        map.entries.forEach { (key, value) ->
             add(key to value)
         }
     }
 
     override fun moveToNext(): Boolean {
-        return ++pos < entries.size
+        return ++pos < entriesCopy.size
     }
 
     override fun getCurrentKey(): SkValue {
-        return SkString(entries[pos].first)
+        return SkString(entriesCopy[pos].first)
     }
 
     override fun getCurrentValue(): SkValue {
-        return entries[pos].second
+        return entriesCopy[pos].second
     }
 }
 

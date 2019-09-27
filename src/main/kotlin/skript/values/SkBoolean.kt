@@ -35,6 +35,14 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
         sb.append(if (value) "true" else "false")
     }
 
+    override fun equals(other: Any?): Boolean {
+        return other === this
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+
     companion object {
         val TRUE = SkBoolean(true)
         val FALSE = SkBoolean(false)

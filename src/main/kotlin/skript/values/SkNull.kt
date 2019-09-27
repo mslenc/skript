@@ -9,11 +9,11 @@ object SkNull : SkScalar() {
         typeError("Can't convert null into an object")
     }
 
-    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
         typeError("Can't set properties on null")
     }
 
-    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
         typeError("Can't set elements on null")
     }
 

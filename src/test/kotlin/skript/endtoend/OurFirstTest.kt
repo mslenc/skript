@@ -48,4 +48,31 @@ class OurFirstTest {
 
         assertEmittedEquals(expect, outputs)
     }
+
+    @Test
+    fun testStringFunctions() = runBlocking {
+        val outputs = runScriptWithEmit("""
+
+            emit("abcDE".substring(1, -1))
+            emit("abcDE".toLowerCase())
+            emit("abcDE".toUpperCase())
+            emit("   abcDE   ".trim())
+            emit("   abcDE   ".trim(start = false))
+            emit("   abcDE   ".trim(end = false))
+            emit("   __abc__DE__   ".trim(chars= " _"))
+            
+        """.trimIndent())
+
+        val expect = listOf(
+            "bcD",
+            "abcde",
+            "ABCDE",
+            "abcDE",
+            "   abcDE",
+            "abcDE   ",
+            "abc__DE"
+        ).map { it.toSkript() }
+
+        assertEmittedEquals(expect, outputs)
+    }
 }

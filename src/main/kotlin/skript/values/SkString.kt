@@ -14,14 +14,14 @@ class SkString(val value: String) : SkScalar() {
         return SkStringObject(this)
     }
 
-    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
         return when (key) {
             "length" -> SkNumber.valueOf(value.length)
             else -> SkUndefined
         }
     }
 
-    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
         when (key) {
             "length" -> typeError("Can't set string length - strings are immutable")
             else -> typeError("Can't set properties on strings")
@@ -41,7 +41,7 @@ class SkString(val value: String) : SkScalar() {
         return value.contains(string)
     }
 
-    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
         typeError("Can't set elements on strings")
     }
 
@@ -81,6 +81,19 @@ class SkString(val value: String) : SkScalar() {
         sb.append('"').append(value).append('"')
     }
 
+    override fun equals(other: Any?): Boolean {
+        return when {
+            other == null -> false
+            other === this -> true
+            other is SkString -> value == other.value
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+
     companion object {
         val EMPTY = SkString("")
         val NULL = SkString("null")
@@ -108,7 +121,7 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
     }
 }
 
-object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
+object SkStringClassDef : SkCustomClass<SkStringObject>("String", SkObjectClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val str = args.expectString("value", ifUndefined = "")
         args.expectNothingElse()
@@ -117,7 +130,7 @@ object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
 
     init {
         defineReadOnlyProperty("length") {
-            it.value.length.toSkript()
+            it.value.value.length.toSkript()
         }
 
         defineMethod("trim").
@@ -127,22 +140,22 @@ object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
             withImpl { str, chars, start, end, _ ->
                 val trimmed = if (chars == "") {
                     when {
-                        start && end -> str.value.trim()
-                        start -> str.value.trimStart()
-                        end -> str.value.trimEnd()
-                        else -> str.value
+                        start && end -> str.value.value.trim()
+                        start -> str.value.value.trimStart()
+                        end -> str.value.value.trimEnd()
+                        else -> str.value.value
                     }
                 } else {
                     when {
-                        start && end -> str.value.trim(*chars.toCharArray())
-                        start -> str.value.trimStart(*chars.toCharArray())
-                        end -> str.value.trimEnd(*chars.toCharArray())
-                        else -> str.value
+                        start && end -> str.value.value.trim(*chars.toCharArray())
+                        start -> str.value.value.trimStart(*chars.toCharArray())
+                        end -> str.value.value.trimEnd(*chars.toCharArray())
+                        else -> str.value.value
                     }
                 }
 
                 when (trimmed) {
-                    str.value -> str
+                    str.value.value -> str
                     else -> SkString(trimmed)
                 }
             }
@@ -151,26 +164,26 @@ object SkStringClassDef : SkCustomClass<SkString>("String", SkObjectClassDef) {
             withOptNumberParam("start").
             withOptNumberParam("end").
             withImpl { string, start, end, _ ->
-                val startIdx = start?.let { it.toIntOrNull()?.rangeParam(string.value.length) ?: typeError("Expected an integer value for parameter start") } ?: 0
-                val endIdx = end?.let { it.toIntOrNull()?.rangeParam(string.value.length) ?: typeError("Expected an integer value for parameter start") } ?: string.value.length
+                val startIdx = start?.let { it.toIntOrNull()?.rangeParam(string.value.value.length) ?: typeError("Expected an integer value for parameter start") } ?: 0
+                val endIdx = end?.let { it.toIntOrNull()?.rangeParam(string.value.value.length) ?: typeError("Expected an integer value for parameter start") } ?: string.value.value.length
 
                 when {
                     startIdx == endIdx -> SkString.EMPTY
-                    startIdx == 0 && endIdx == string.value.length -> string
-                    else -> SkString(string.value.substring(startIdx, endIdx))
+                    startIdx == 0 && endIdx == string.value.value.length -> string
+                    else -> SkString(string.value.value.substring(startIdx, endIdx))
                 }
             }
 
         defineMethod("toUpperCase").
             withParam("locale").
             withImpl { string, locale, _ ->
-                string.value.toUpperCase(resolveLocale(locale)).toSkript()
+                string.value.value.toUpperCase(resolveLocale(locale)).toSkript()
             }
 
         defineMethod("toLowerCase").
             withParam("locale").
             withImpl { string, locale, _ ->
-                string.value.toLowerCase(resolveLocale(locale)).toSkript()
+                string.value.value.toLowerCase(resolveLocale(locale)).toSkript()
             }
     }
 }

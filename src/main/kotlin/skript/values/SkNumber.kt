@@ -83,7 +83,10 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
     }
 
     override fun asString(): SkString {
-        return SkString(value.toPlainString())
+        return SkString(when {
+            value.isInteger() -> value.toBigIntegerExact().toString()
+            else -> value.toPlainString()
+        })
     }
 
     override fun asObject(): SkObject {
@@ -145,6 +148,19 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
 
     override fun toString(sb: StringBuilder) {
         sb.append(value).append('d')
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return when {
+            other == null -> false
+            other === this -> true
+            other is SkDecimal -> value == other.value
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
     }
 
     companion object {
@@ -252,17 +268,48 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         sb.append(dvalue)
     }
 
+    override fun equals(other: Any?): Boolean {
+        return when {
+            other == null -> false
+            other === this -> true
+            other is SkDouble -> java.lang.Double.doubleToLongBits(dvalue) == java.lang.Double.doubleToLongBits(other.dvalue)
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return value.hashCode()
+    }
+
     companion object {
         val MINUS_ONE = SkDouble(-1.0)
         val ZERO = SkDouble(0.0)
         val ONE = SkDouble(1.0)
+        val TWO = SkDouble(2.0)
+        val THREE = SkDouble(3.0)
+        val FOUR = SkDouble(4.0)
+        val FIVE = SkDouble(5.0)
+        val SIX = SkDouble(6.0)
+        val SEVEN = SkDouble(7.0)
+        val EIGHT = SkDouble(8.0)
+        val NINE = SkDouble(9.0)
+        val TEN = SkDouble(10.0)
 
         // TODO - cache some others?
 
         fun valueOf(value: Int): SkDouble = when (value) {
+            -1 -> MINUS_ONE
             0 -> ZERO
             1 -> ONE
-            -1 -> MINUS_ONE
+            2 -> TWO
+            3 -> THREE
+            4 -> FOUR
+            5 -> FIVE
+            6 -> SIX
+            7 -> SEVEN
+            8 -> EIGHT
+            9 -> NINE
+            10 -> TEN
             else -> SkDouble(value.toDouble())
         }
 

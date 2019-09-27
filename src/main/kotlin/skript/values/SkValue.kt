@@ -28,12 +28,12 @@ abstract class SkValue {
 
     abstract suspend fun contains(key: SkValue, state: RuntimeState): Boolean
 
-    abstract suspend fun propSet(key: String, value: SkValue, state: RuntimeState)
-    abstract suspend fun propGet(key: String, state: RuntimeState): SkValue
+    abstract suspend fun propertySet(key: String, value: SkValue, state: RuntimeState)
+    abstract suspend fun propertyGet(key: String, state: RuntimeState): SkValue
 
-    abstract suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState)
-    abstract suspend fun elementGet(key: SkValue, state: RuntimeState): SkValue
-    abstract suspend fun elementDelete(key: SkValue, state: RuntimeState): Boolean
+    abstract suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState)
+    abstract suspend fun entryGet(key: SkValue, state: RuntimeState): SkValue
+    abstract suspend fun entryDelete(key: SkValue, state: RuntimeState): Boolean
 
     abstract fun getKind(): SkValueKind
 

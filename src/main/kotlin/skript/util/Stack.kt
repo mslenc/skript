@@ -33,6 +33,14 @@ class Stack<T> {
         top += oldSize
     }
 
+    fun containsRef(obj: T): Boolean {
+        for (i in top until elements.size)
+            if (elements[i] === obj)
+                return true
+
+        return false
+    }
+
     val size get() = elements.size - top
 }
 

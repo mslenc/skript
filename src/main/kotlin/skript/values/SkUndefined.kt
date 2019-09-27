@@ -9,11 +9,11 @@ object SkUndefined : SkScalar() {
         typeError("Can't convert undefined into an object")
     }
 
-    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
         typeError("Can't set properties on undefined")
     }
 
-    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
         typeError("Can't set elements on undefined")
     }
 

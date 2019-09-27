@@ -85,6 +85,19 @@ class SkList : SkAbstractList {
     override fun getKind(): SkValueKind {
         return SkValueKind.LIST
     }
+
+    override fun equals(other: Any?): Boolean {
+        return when {
+            other == null -> false
+            other === this -> true
+            other is SkList -> listEls == other.listEls && entries == other.entries
+            else -> false
+        }
+    }
+
+    override fun hashCode(): Int {
+        return listEls.hashCode() * 31 + entries.hashCode()
+    }
 }
 
 object SkListClassDef : SkCustomClass<SkList>("List", SkAbstractListClassDef) {

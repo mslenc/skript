@@ -9,7 +9,7 @@ object SetElementOp : SuspendOpCode() {
             val key = stack.pop()
             val obj = stack.pop()
 
-            obj.elementSet(key, value, state)
+            obj.entrySet(key, value, state)
         }
     }
     override fun toString() = "SetElementOp"
@@ -22,7 +22,7 @@ object SetElementKeepValueOp : SuspendOpCode() {
             val key = stack.pop()
             val obj = stack.pop()
 
-            obj.elementSet(key, value, state)
+            obj.entrySet(key, value, state)
 
             stack.push(value)
         }
@@ -36,7 +36,7 @@ class SetPropertyOp(val key: String) : SuspendOpCode() {
             val value = stack.pop()
             val obj = stack.pop()
 
-            obj.propSet(key, value, state)
+            obj.propertySet(key, value, state)
         }
     }
     override fun toString() = "SetPropertyOp key=$key"
@@ -48,7 +48,7 @@ class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
             val value = stack.pop()
             val obj = stack.pop()
 
-            obj.propSet(key, value, state)
+            obj.propertySet(key, value, state)
 
             stack.push(value)
         }
@@ -62,7 +62,7 @@ object GetElementOp : SuspendOpCode() {
             val key = stack.pop()
             val obj = stack.pop()
 
-            stack.push(obj.elementGet(key, state))
+            stack.push(obj.entryGet(key, state))
         }
     }
     override fun toString() = "GetElementOp"
@@ -73,7 +73,7 @@ class GetPropertyOp(val key: String) : SuspendOpCode() {
         state.topFrame.apply {
             val obj = stack.pop()
 
-            stack.push(obj.propGet(key, state))
+            stack.push(obj.propertyGet(key, state))
         }
     }
     override fun toString() = "GetPropertyOp"

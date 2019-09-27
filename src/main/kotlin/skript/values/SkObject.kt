@@ -6,7 +6,7 @@ import skript.typeError
 import skript.util.SkArguments
 
 abstract class SkObject : SkValue() {
-    internal val elements = LinkedHashMap<String, SkValue>()
+    internal val entries = LinkedHashMap<String, SkValue>()
     abstract val klass: SkClassDef
 
     override fun getKind(): SkValueKind {
@@ -29,19 +29,19 @@ abstract class SkObject : SkValue() {
         return SkString("[object ${klass.className}]")
     }
 
-    override suspend fun elementSet(key: SkValue, value: SkValue, state: RuntimeState) {
-        elements[key.asString().value] = value
+    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
+        entries[key.asString().value] = value
     }
 
-    override suspend fun elementGet(key: SkValue, state: RuntimeState): SkValue {
-        return elements[key.asString().value] ?: SkUndefined
+    override suspend fun entryGet(key: SkValue, state: RuntimeState): SkValue {
+        return entries[key.asString().value] ?: SkUndefined
     }
 
-    override suspend fun elementDelete(key: SkValue, state: RuntimeState): Boolean {
-        return elements.remove(key.asString().value) != null
+    override suspend fun entryDelete(key: SkValue, state: RuntimeState): Boolean {
+        return entries.remove(key.asString().value) != null
     }
 
-    override suspend fun propGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
         klass.findInstanceProperty(key)?.let { prop ->
             return prop.getValue(this, state.env)
         }
@@ -53,7 +53,7 @@ abstract class SkObject : SkValue() {
         return SkUndefined
     }
 
-    override suspend fun propSet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
         klass.findInstanceProperty(key)?.let { prop ->
             if (prop.readOnly)
                 typeError("Can't set property $key, because it is read-only")
@@ -72,7 +72,7 @@ abstract class SkObject : SkValue() {
     override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
         val keyStr = key.asString().value
 
-        return elements.containsKey(keyStr)
+        return entries.containsKey(keyStr)
     }
 
     override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
