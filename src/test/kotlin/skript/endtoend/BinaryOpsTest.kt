@@ -132,6 +132,11 @@ class BinaryOpsTest {
         test(""" true % true % false % true""", SkUndefined)
     )
 
+    @TestFactory
+    fun testPower(): List<DynamicTest> = listOf(
+        test(""" 2 ** 3 """, 8.toSkript())
+    )
+
     val equalLists = listOf(
         listOf(SkNull, SkUndefined),
         listOf(SkDecimal.MINUS_ONE, SkDouble.MINUS_ONE, SkString("-1"), SkNumberObject(SkDecimal.MINUS_ONE), SkNumberObject(SkDouble.MINUS_ONE), SkStringObject(SkString("-1"))),

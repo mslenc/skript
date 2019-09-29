@@ -2,6 +2,7 @@ package skript.opcodes.numeric
 
 import skript.exec.RuntimeState
 import skript.opcodes.FastOpCode
+import skript.opcodes.OpCodeResult
 import skript.values.*
 import java.math.BigDecimal
 
@@ -37,12 +38,13 @@ abstract class BinaryNumericOp : FastOpCode() {
         }
     }
 
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             val right = stack.pop()
             val left = stack.pop()
             stack.push(compute(left, right))
         }
+        return null
     }
 
     override fun toString() = this::class.simpleName ?: "???"

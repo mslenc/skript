@@ -4,10 +4,11 @@ import skript.exec.RuntimeState
 import skript.util.OpCache
 
 class GetLocal private constructor(private val varIndex: Int) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             stack.push(locals[varIndex])
         }
+        return null
     }
 
     override fun toString() = "GetLocal varIndex=$varIndex"
@@ -20,10 +21,11 @@ class GetLocal private constructor(private val varIndex: Int) : FastOpCode() {
 }
 
 class SetLocal private constructor(private val varIndex: Int) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             locals[varIndex] = stack.pop()
         }
+        return null
     }
 
     override fun toString() = "SetLocal varIndex=$varIndex"
@@ -36,20 +38,22 @@ class SetLocal private constructor(private val varIndex: Int) : FastOpCode() {
 }
 
 class GetClosureVar(private val closureIndex: Int, private val varIndex: Int) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
-            stack.push(closure[closureIndex].locals[varIndex])
+            stack.push(closure[closureIndex][varIndex])
         }
+        return null
     }
 
     override fun toString() = "GetClosureVar closureIndex=$closureIndex varIndex=$varIndex"
 }
 
 class SetClosureVar(private val closureIndex: Int, private val varIndex: Int) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
-            closure[closureIndex].locals[varIndex] = stack.pop()
+            closure[closureIndex][varIndex] = stack.pop()
         }
+        return null
     }
 
     override fun toString() = "SetClosureVar closureIndex=$closureIndex varIndex=$varIndex"

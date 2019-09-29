@@ -1,6 +1,5 @@
 package skript.opcodes
 
-import skript.exec.Frame
 import skript.exec.FunctionDef
 import skript.exec.RuntimeState
 import skript.parser.Pos
@@ -10,28 +9,19 @@ import skript.values.SkClass
 import skript.values.SkScriptFunction
 
 class MakeFunction(val def: FunctionDef) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
-            val closure: Array<Frame> = when (def.framesCaptured) {
-                0 -> Frame.EMPTY_ARRAY
-                1 -> arrayOf(this)
-                else -> Array(def.framesCaptured) {
-                    when (it) {
-                        0 -> this
-                        else -> this.closure[it - 1]
-                    }
-                }
-            }
-
+            val closure = makeClosure(def.framesCaptured)
             stack.push(SkScriptFunction(def, closure))
         }
+        return null
     }
 
     override fun toString() = "MakeFunction def=$def"
 }
 
 object ObjectIsOp : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val klass = pop()
             val value = pop()
@@ -44,13 +34,14 @@ object ObjectIsOp : FastOpCode() {
 
             push(result)
         }
+        return null
     }
 
     override fun toString() = "ObjectIsOp"
 }
 
 object ObjectIsntOp : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val klass = pop()
             val value = pop()
@@ -63,32 +54,35 @@ object ObjectIsntOp : FastOpCode() {
 
             push(result)
         }
+        return null
     }
 
     override fun toString() = "ObjectIsntOp"
 }
 
 object ValueInOp : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val container = pop()
             val value = pop()
 
             push(SkBoolean.valueOf(container.contains(value, state)))
         }
+        return null
     }
 
     override fun toString() = "ValueInOp"
 }
 
 object ValueNotInOp : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val container = pop()
             val value = pop()
 
             push(SkBoolean.valueOf(!container.contains(value, state)))
         }
+        return null
     }
 
     override fun toString() = "ValueNotInOp"

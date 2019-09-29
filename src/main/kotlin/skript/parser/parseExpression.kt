@@ -204,13 +204,23 @@ fun Tokens.parseAdd(): Expression {
 }
 
 fun Tokens.parseMul(): Expression {
+    var result = parsePower()
+    while (true) {
+        result = when (peek().type) {
+            STAR ->        BinaryExpression(next().pos, result, BinaryOp.MULTIPLY,   parsePower())
+            SLASH ->       BinaryExpression(next().pos, result, BinaryOp.DIVIDE,     parsePower())
+            SLASH_SLASH -> BinaryExpression(next().pos, result, BinaryOp.DIVIDE_INT, parsePower())
+            PERCENT ->     BinaryExpression(next().pos, result, BinaryOp.REMAINDER,  parsePower())
+            else -> return result
+        }
+    }
+}
+
+fun Tokens.parsePower(): Expression {
     var result = parsePrefixUnary()
     while (true) {
         result = when (peek().type) {
-            STAR ->        BinaryExpression(next().pos, result, BinaryOp.MULTIPLY,   parsePrefixUnary())
-            SLASH ->       BinaryExpression(next().pos, result, BinaryOp.DIVIDE,     parsePrefixUnary())
-            SLASH_SLASH -> BinaryExpression(next().pos, result, BinaryOp.DIVIDE_INT, parsePrefixUnary())
-            PERCENT ->     BinaryExpression(next().pos, result, BinaryOp.REMAINDER,  parsePrefixUnary())
+            STAR_STAR -> BinaryExpression(next().pos, result, BinaryOp.POWER, parsePower())
             else -> return result
         }
     }

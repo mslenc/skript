@@ -200,11 +200,9 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
     }
 
     override fun asString(): SkString {
-        val str = dvalue.toString()
-        return if (str.endsWith(".0")) {
-            SkString(str.substring(0, str.length - 2))
-        } else {
-            SkString(str)
+        return when (val value = dvalue) {
+            value.toLong().toDouble() -> SkString(value.toLong().toString())
+            else -> SkString(value.toString())
         }
     }
 

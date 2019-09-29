@@ -24,18 +24,19 @@ object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator") {
 }
 
 object MakeIterator: SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val container = pop()
             val iterator = container.makeIterator() ?: typeError("Can't iterate over " + container.asString().value, Pos(0, 0, "TODO"))
             push(iterator)
         }
+        return null
     }
     override fun toString() = "MakeIterator"
 }
 
 class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             val iterator = stack.top() as SkIterator
 
@@ -49,28 +50,31 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
                 ip = end.value
             }
         }
+        return null
     }
     override fun toString() = "IteratorNext end=${end.value} pushKey=${pushKey} pushValue=${pushValue}"
 }
 
 class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val to = pop()
             val from = pop()
             push(from.makeRange(to, true, state, exprDebug))
         }
+        return null
     }
     override fun toString() = "MakeRangeEndInclusive expr=$exprDebug"
 }
 
 class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val to = pop()
             val from = pop()
             push(from.makeRange(to, false, state, exprDebug))
         }
+        return null
     }
     override fun toString() = "MakeRangeEndExclusive expr=$exprDebug"
 }

@@ -26,34 +26,37 @@ To call a function:
 
 
 object BeginArgs : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             argsStack.push(SkArguments())
         }
+        return null
     }
     override fun toString() = "BeginArgs"
 }
 
 object AddPosArg : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             argsStack.top().addPosArg(stack.pop())
         }
+        return null
     }
     override fun toString() = "AddPosArg"
 }
 
 class AddKwArg(private val name: String) : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             argsStack.top().addKwArg(name, stack.pop())
         }
+        return null
     }
     override fun toString() = "AddKwArg name=$name"
 }
 
 object SpreadPosArgs : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             val arr = stack.pop()
 
@@ -63,12 +66,13 @@ object SpreadPosArgs : FastOpCode() {
                 typeError("Only lists can be used for spreading arguments")
             }
         }
+        return null
     }
     override fun toString() = "SpreadPosArgs"
 }
 
 object SpreadKwArgs : FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             val kws = stack.pop()
 
@@ -78,24 +82,26 @@ object SpreadKwArgs : FastOpCode() {
                 typeError("Only maps can be used for spreading arguments")
             }
         }
+        return null
     }
     override fun toString() = "SpreadKwArgs"
 }
 
 class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             val thiz = stack.pop()
             val args = argsStack.pop()
             val result = thiz.callMethod(name, args, state, exprDebug)
             stack.push(result)
         }
+        return null
     }
     override fun toString() = "CallMethod name=$name expr=$exprDebug"
 }
 
 class CallFunction(val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState) {
+    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
         state.topFrame.apply {
             val func = stack.pop()
             val args = argsStack.pop()
@@ -107,16 +113,14 @@ class CallFunction(val exprDebug: String) : SuspendOpCode() {
                 typeError("$exprDebug is not a function or a class")
             }
         }
+        return null
     }
     override fun toString() = "CallFunction expr=$exprDebug"
 }
 
 object Return : FastOpCode() {
-    override fun execute(state: RuntimeState) {
-        state.topFrame.apply {
-            result = stack.pop()
-            ip = ops.size
-        }
+    override fun execute(state: RuntimeState): OpCodeResult {
+        return ReturnValue(state.topFrame.stack.pop())
     }
     override fun toString() = "Return"
 }

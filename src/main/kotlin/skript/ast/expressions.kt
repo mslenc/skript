@@ -149,6 +149,8 @@ enum class BinaryOp(val strRep: String) {
     DIVIDE_INT("//"),
     REMAINDER("%"),
 
+    POWER("**"),
+
     EQUALS("=="),
     NOT_EQUALS("!="),
 

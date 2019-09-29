@@ -3,6 +3,7 @@ package skript.opcodes.compare
 import skript.ast.BinaryOp
 import skript.exec.RuntimeState
 import skript.opcodes.FastOpCode
+import skript.opcodes.OpCodeResult
 import skript.opcodes.equals.aboutEqual
 import skript.opcodes.equals.strictlyEqual
 import skript.values.SkBoolean
@@ -10,7 +11,7 @@ import skript.values.SkUndefined
 import skript.values.SkValue
 
 class ComparePairsOp(val ops: Array<BinaryOp>): FastOpCode() {
-    override fun execute(state: RuntimeState) {
+    override fun execute(state: RuntimeState): OpCodeResult? {
         state.topFrame.stack.apply {
             val values = Array<SkValue>(ops.size + 1) { SkUndefined }
             for (i in ops.size downTo 0)
@@ -30,11 +31,11 @@ class ComparePairsOp(val ops: Array<BinaryOp>): FastOpCode() {
                     when (result) {
                         null -> {
                             push(SkUndefined)
-                            return
+                            return null
                         }
                         false -> {
                             push(SkBoolean.FALSE)
-                            return
+                            return null
                         }
                         else -> {
                             // continue..
@@ -44,7 +45,7 @@ class ComparePairsOp(val ops: Array<BinaryOp>): FastOpCode() {
             }
 
             push(SkBoolean.TRUE)
-            return
+            return null
         }
     }
 

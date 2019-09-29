@@ -445,6 +445,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             BinaryOp.DIVIDE -> BinaryDivideOp
             BinaryOp.DIVIDE_INT -> BinaryDivideIntOp
             BinaryOp.REMAINDER -> BinaryRemainderOp
+            BinaryOp.POWER -> BinaryPowerOp
 
             BinaryOp.EQUALS -> BinaryEqualsOp
             BinaryOp.NOT_EQUALS -> BinaryNotEqualsOp
