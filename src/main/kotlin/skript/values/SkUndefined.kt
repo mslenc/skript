@@ -1,6 +1,7 @@
 package skript.values
 
 import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
 
@@ -9,15 +10,15 @@ object SkUndefined : SkScalar() {
         typeError("Can't convert undefined into an object")
     }
 
-    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         typeError("Can't set properties on undefined")
     }
 
-    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, env: SkriptEnv) {
         typeError("Can't set elements on undefined")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("$exprDebug evaluated to undefined, so range can't be created")
     }
 
@@ -41,7 +42,7 @@ object SkUndefined : SkScalar() {
         sb.append("undefined")
     }
 
-    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun callMethod(methodName: String, args: SkArguments, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("$exprDebug is undefined, so can't call methods on it")
     }
 }

@@ -1,7 +1,6 @@
 package skript.values
 
 import skript.*
-import skript.exec.RuntimeState
 import skript.interop.HoldsNative
 import skript.io.SkriptEnv
 import skript.io.toSkript
@@ -14,21 +13,21 @@ class SkString(val value: String) : SkScalar() {
         return SkStringObject(this)
     }
 
-    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, env: SkriptEnv): SkValue {
         return when (key) {
             "length" -> SkNumber.valueOf(value.length)
             else -> SkUndefined
         }
     }
 
-    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         when (key) {
             "length" -> typeError("Can't set string length - strings are immutable")
             else -> typeError("Can't set properties on strings")
         }
     }
 
-    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         val string = when (key) {
             is SkString -> key.value
             is SkNumber -> key.asString().value
@@ -41,7 +40,7 @@ class SkString(val value: String) : SkScalar() {
         return value.contains(string)
     }
 
-    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, env: SkriptEnv) {
         typeError("Can't set elements on strings")
     }
 
@@ -57,7 +56,7 @@ class SkString(val value: String) : SkScalar() {
         return asNumberOrNull() ?: typeError("Couldn't parse string (${value.atMostChars(20)}) as a number")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         val endStr = end.asString()
 
         return SkStringRange(this.value, endStr.value, endInclusive)

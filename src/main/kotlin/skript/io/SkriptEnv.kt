@@ -2,10 +2,12 @@ package skript.io
 
 import skript.analysis.*
 import skript.ast.*
-import skript.exec.ParamType
-import skript.exec.RuntimeModule
-import skript.exec.RuntimeState
+import skript.exec.*
 import skript.interop.SkCodec
+import skript.opcodes.ExecuteSuspend
+import skript.opcodes.JumpTarget
+import skript.opcodes.ReturnValue
+import skript.opcodes.ThrowException
 import skript.parser.*
 import skript.util.Globals
 import skript.util.SkArguments
@@ -68,7 +70,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val runtimeModule = RuntimeModule(module)
         modules[module.name] = runtimeModule
         try {
-            return RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), SkArguments())
+            return executeFunction(module.moduleInit, emptyArray(), SkArguments())
         } finally {
             modules.remove(module.name)
         }
@@ -90,7 +92,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val theFunction: SkScriptFunction
         modules[module.name] = runtimeModule
         try {
-            theFunction = RuntimeState(this).executeFunction(module.moduleInit, emptyArray(), SkArguments()) as SkScriptFunction
+            theFunction = executeFunction(module.moduleInit, emptyArray(), SkArguments()) as SkScriptFunction
         } finally {
             modules.remove(module.name)
         }
@@ -101,6 +103,31 @@ class SkriptEnv(val engine: SkriptEngine) {
     suspend fun <T> createCallable(params: List<Pair<String, SkCodec<*>>>, returnType: SkCodec<T>, functionBody: String): SuspendFun<T> {
         val function = createFunction(params.map { it.first }, functionBody)
         return SuspendFunImpl(params, returnType, function, this)
+    }
+
+    suspend fun executeFunction(func: FunctionDef, closure: Array<Array<SkValue>>, args: SkArguments): SkValue {
+        val ops = func.ops
+        val opsSize = ops.size
+
+        val frame = Frame(func.localsSize, args, closure, this)
+        var ip = 0
+
+        nextOp@
+        while (ip < opsSize) {
+            val op = ops[ip++]
+            var result = op.execute(frame)
+            if (result === ExecuteSuspend)
+                result = op.executeSuspend(frame)
+
+            when (result) {
+                null -> continue@nextOp
+                is JumpTarget -> ip = result.value
+                is ReturnValue -> return result.result
+                is ThrowException -> throw result.ex
+            }
+        }
+
+        return SkUndefined
     }
 }
 
@@ -122,8 +149,7 @@ internal class SuspendFunImpl<T>(val params: List<Pair<String, SkCodec<*>>>, val
             }
         }
 
-        val runtimeState = RuntimeState(env)
-        val skResult = function.call(skArgs, runtimeState)
+        val skResult = function.call(skArgs, env)
         return retCodec.toKotlin(skResult, env)
     }
 

@@ -57,7 +57,7 @@ class SkCodecNativeObject<T: Any>(val klass: SkNativeClassDef<T>): SkCodec<T> {
 
         if (value is SkMap) {
             klass.constructor?.let { constructor ->
-                return constructor.call(value.asArgs(), env).nativeObj
+                return constructor.fastCall(value.asArgs(), env).nativeObj
             }
             typeError("Can't construct ${klass.nativeClass} from a Map because the constructor is not defined")
         }

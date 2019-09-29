@@ -1,6 +1,6 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.typeError
 import skript.util.SkArguments
 import skript.values.*
@@ -26,8 +26,8 @@ To call a function:
 
 
 object BeginArgs : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             argsStack.push(SkArguments())
         }
         return null
@@ -36,8 +36,8 @@ object BeginArgs : FastOpCode() {
 }
 
 object AddPosArg : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             argsStack.top().addPosArg(stack.pop())
         }
         return null
@@ -46,8 +46,8 @@ object AddPosArg : FastOpCode() {
 }
 
 class AddKwArg(private val name: String) : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             argsStack.top().addKwArg(name, stack.pop())
         }
         return null
@@ -56,8 +56,8 @@ class AddKwArg(private val name: String) : FastOpCode() {
 }
 
 object SpreadPosArgs : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val arr = stack.pop()
 
             if (arr is SkAbstractList) {
@@ -72,8 +72,8 @@ object SpreadPosArgs : FastOpCode() {
 }
 
 object SpreadKwArgs : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val kws = stack.pop()
 
             if (kws is SkMap) {
@@ -88,11 +88,11 @@ object SpreadKwArgs : FastOpCode() {
 }
 
 class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val thiz = stack.pop()
             val args = argsStack.pop()
-            val result = thiz.callMethod(name, args, state, exprDebug)
+            val result = thiz.callMethod(name, args, frame.env, exprDebug)
             stack.push(result)
         }
         return null
@@ -101,13 +101,13 @@ class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
 }
 
 class CallFunction(val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val func = stack.pop()
             val args = argsStack.pop()
 
             if (func is SkFunction || func is SkClass) {
-                val result = func.call(args, state)
+                val result = func.call(args, frame.env)
                 stack.push(result)
             } else {
                 typeError("$exprDebug is not a function or a class")
@@ -119,8 +119,8 @@ class CallFunction(val exprDebug: String) : SuspendOpCode() {
 }
 
 object Return : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult {
-        return ReturnValue(state.topFrame.stack.pop())
+    override fun execute(frame: Frame): OpCodeResult {
+        return ReturnValue(frame.stack.pop())
     }
     override fun toString() = "Return"
 }

@@ -1,21 +1,21 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.values.SkBoolean
 import skript.values.SkNull
 import skript.values.SkUndefined
 
 class Jump(val target: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget {
+    override fun execute(frame: Frame): JumpTarget {
         return target
     }
     override fun toString() = "Jump to ${target.value}"
 }
 
 class JumpIfTruthy(val target: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
+    override fun execute(frame: Frame): JumpTarget? {
         return when {
-            state.topFrame.stack.pop().asBoolean().value -> target
+            frame.stack.pop().asBoolean().value -> target
             else -> null
         }
     }
@@ -23,9 +23,9 @@ class JumpIfTruthy(val target: JumpTarget) : FastOpCode() {
 }
 
 class JumpIfFalsy(val target: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
+    override fun execute(frame: Frame): JumpTarget? {
         return when {
-            state.topFrame.stack.pop().asBoolean().value -> null
+            frame.stack.pop().asBoolean().value -> null
             else -> target
         }
     }
@@ -33,9 +33,9 @@ class JumpIfFalsy(val target: JumpTarget) : FastOpCode() {
 }
 
 class JumpIfLocalDefined(val varIndex: Int, val target: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
+    override fun execute(frame: Frame): JumpTarget? {
         return when {
-            state.topFrame.locals[varIndex] != SkUndefined -> target
+            frame.locals[varIndex] != SkUndefined -> target
             else -> null
         }
     }
@@ -43,8 +43,8 @@ class JumpIfLocalDefined(val varIndex: Int, val target: JumpTarget) : FastOpCode
 }
 
 class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): JumpTarget? {
+        frame.apply {
             val value = stack.top()
 
             if (value == SkUndefined || value == SkNull) {
@@ -59,8 +59,8 @@ class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
 }
 
 class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): JumpTarget? {
+        frame.apply {
             return when (stack.top()) {
                 SkUndefined -> target
                 SkNull -> { stack.pop(); stack.push(SkUndefined); target }
@@ -72,8 +72,8 @@ class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
 }
 
 class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): JumpTarget? {
+        frame.apply {
             return when {
                 stack.top().asBoolean().value -> target
                 else -> { stack.pop(); null }
@@ -84,8 +84,8 @@ class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
 }
 
 class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): JumpTarget? {
+        frame.apply {
             val value = stack.pop()
             if (value.asBoolean().value) {
                 stack.push(SkBoolean.TRUE)
@@ -98,8 +98,8 @@ class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() 
 }
 
 class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): JumpTarget? {
+        frame.apply {
             if (stack.top().asBoolean().value) {
                 stack.pop()
             } else {
@@ -112,8 +112,8 @@ class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
 }
 
 class JumpIfTopFalsyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
-    override fun execute(state: RuntimeState): JumpTarget? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): JumpTarget? {
+        frame.apply {
             val value = stack.pop()
             if (!value.asBoolean().value) {
                 stack.push(SkBoolean.FALSE)

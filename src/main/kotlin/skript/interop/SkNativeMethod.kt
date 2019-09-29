@@ -1,6 +1,6 @@
 package skript.interop
 
-import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.util.SkArguments
 import skript.values.SkClassDef
 import skript.values.SkMethod
@@ -11,11 +11,11 @@ import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
 
 class SkNativeMethod<T>(name: String, val thisParam: KParameter, val params: SkNativeParams, val resultCodec: SkCodec<T>, val impl: KFunction<*>, override val expectedClass: SkClassDef) : SkMethod(name, params.mapNotNull { it.name }) {
-    override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
+    override suspend fun call(thiz: SkValue, args: SkArguments, env: SkriptEnv): SkValue {
         val kotlinThis = (thiz as SkNativeObject<*>).nativeObj
 
         val nativeArgs = HashMap<KParameter, Any?>()
-        params.forEach { it.doImportInto(nativeArgs, args, state.env) }
+        params.forEach { it.doImportInto(nativeArgs, args, env) }
         nativeArgs[thisParam] = kotlinThis
 
         val result = if (impl.isSuspend) {
@@ -27,6 +27,6 @@ class SkNativeMethod<T>(name: String, val thisParam: KParameter, val params: SkN
         if (result == null)
             return SkNull
 
-        return resultCodec.toSkript(result, state.env)
+        return resultCodec.toSkript(result, env)
     }
 }

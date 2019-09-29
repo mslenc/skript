@@ -1,21 +1,21 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.values.SkValue
 
 sealed class OpCode {
-    abstract fun execute(state: RuntimeState): OpCodeResult?
-    abstract suspend fun executeSuspend(state: RuntimeState): OpCodeResult?
+    abstract fun execute(frame: Frame): OpCodeResult?
+    abstract suspend fun executeSuspend(frame: Frame): OpCodeResult?
 }
 
 abstract class FastOpCode : OpCode() {
-    final override suspend fun executeSuspend(state: RuntimeState): OpCodeResult {
+    final override suspend fun executeSuspend(frame: Frame): OpCodeResult {
         throw IllegalStateException("executeSuspend() should never be called on FastOpCodes")
     }
 }
 
 abstract class SuspendOpCode : OpCode()  {
-    final override fun execute(state: RuntimeState) = ExecuteSuspend
+    final override fun execute(frame: Frame) = ExecuteSuspend
 }
 
 sealed class OpCodeResult

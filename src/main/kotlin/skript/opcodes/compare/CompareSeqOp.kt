@@ -1,7 +1,7 @@
 package skript.opcodes.compare
 
 import skript.ast.BinaryOp
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.opcodes.FastOpCode
 import skript.opcodes.OpCodeResult
 import skript.opcodes.equals.aboutEqual
@@ -11,8 +11,8 @@ import skript.values.SkUndefined
 import skript.values.SkValue
 
 class CompareSeqOp(val ops: Array<BinaryOp>): FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val values = Array<SkValue>(ops.size + 1) { SkUndefined }
             for (i in ops.size downTo 0)
                 values[i] = pop()

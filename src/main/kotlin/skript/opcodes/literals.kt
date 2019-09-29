@@ -1,12 +1,12 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.typeError
 import skript.values.*
 
 class PushLiteral(val literal: SkValue) : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             stack.push(literal)
         }
         return null
@@ -15,8 +15,8 @@ class PushLiteral(val literal: SkValue) : FastOpCode() {
 }
 
 object MapNew : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             stack.push(SkMap())
         }
         return null
@@ -25,8 +25,8 @@ object MapNew : FastOpCode() {
 }
 
 class MapDupSetKnownKey(private val key: String) : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val map = stack.top() as SkMap
             map.entries[key] = value
@@ -37,8 +37,8 @@ class MapDupSetKnownKey(private val key: String) : FastOpCode() {
 }
 
 object MapDupSetKey : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val key = stack.pop()
             val map = stack.top() as SkMap
@@ -50,8 +50,8 @@ object MapDupSetKey : FastOpCode() {
 }
 
 object MapDupSpreadValues : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val values = stack.pop()
 
             if (values == SkNull || values == SkUndefined)
@@ -70,8 +70,8 @@ object MapDupSpreadValues : FastOpCode() {
 }
 
 object ListNew : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             stack.push(SkList())
         }
         return null
@@ -80,8 +80,8 @@ object ListNew : FastOpCode() {
 }
 
 object ListDupAppend : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val list = stack.top() as SkList
             list.add(value)
@@ -92,8 +92,8 @@ object ListDupAppend : FastOpCode() {
 }
 
 class ListDupAppendLiteral(private val literal: SkValue) : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val list = stack.top() as SkList
             list.setSlot(list.getSize(), literal)
         }
@@ -103,8 +103,8 @@ class ListDupAppendLiteral(private val literal: SkValue) : FastOpCode() {
 }
 
 object ListDupAppendSpread : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val newElements = stack.pop()
             val list = stack.top() as SkList
 
@@ -120,8 +120,8 @@ object ListDupAppendSpread : FastOpCode() {
 }
 
 object StringTemplateStart : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.push(SkStringBuilder())
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.push(SkStringBuilder())
         return null
     }
     override fun toString() = "StringTemplateStart"
@@ -130,8 +130,8 @@ object StringTemplateStart : FastOpCode() {
 val StringTemplateEnd = ConvertToString
 
 class StringTemplateAppendRaw(val text: String) : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        val sb = state.topFrame.stack.top() as SkStringBuilder
+    override fun execute(frame: Frame): OpCodeResult? {
+        val sb = frame.stack.top() as SkStringBuilder
         sb.appendRawText(text)
         return null
     }
@@ -139,8 +139,8 @@ class StringTemplateAppendRaw(val text: String) : FastOpCode() {
 }
 
 object StringTemplateAppend : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val value = pop()
             val sb = top() as SkStringBuilder
             sb.append(value)

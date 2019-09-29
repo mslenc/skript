@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.util.SkArguments
 import skript.util.expectBoolean
@@ -10,7 +9,7 @@ class SkStringRange(val start: String, val end: String, val endInclusive: Boolea
     override val klass: SkClassDef
         get() = SkStringRangeClassDef
 
-    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         val str = key.asString()
 
         return when {

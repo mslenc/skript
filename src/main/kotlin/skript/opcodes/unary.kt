@@ -1,11 +1,11 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.values.SkBoolean
 
 object UnaryPlus : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             stack.push(stack.pop().asNumber())
         }
         return null
@@ -14,8 +14,8 @@ object UnaryPlus : FastOpCode() {
 }
 
 object UnaryMinus : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             stack.push(stack.pop().asNumber().negate())
         }
         return null
@@ -24,8 +24,8 @@ object UnaryMinus : FastOpCode() {
 }
 
 object UnaryNegate : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             push(SkBoolean.valueOf(!pop().asBoolean().value))
         }
         return null
@@ -34,8 +34,8 @@ object UnaryNegate : FastOpCode() {
 }
 
 object ConvertToBool : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             push(pop().asBoolean())
         }
         return null
@@ -44,8 +44,8 @@ object ConvertToBool : FastOpCode() {
 }
 
 object ConvertToString : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             push(pop().asString())
         }
         return null

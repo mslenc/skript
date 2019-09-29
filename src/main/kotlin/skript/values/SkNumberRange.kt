@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
@@ -23,7 +22,7 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
         }
     }
 
-    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         return hasOwnMemberInternal(key.toStrictNumberOrNull() ?: return false)
     }
 

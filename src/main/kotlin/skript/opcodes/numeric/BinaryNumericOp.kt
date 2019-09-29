@@ -1,6 +1,6 @@
 package skript.opcodes.numeric
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.opcodes.FastOpCode
 import skript.opcodes.OpCodeResult
 import skript.values.*
@@ -38,8 +38,8 @@ abstract class BinaryNumericOp : FastOpCode() {
         }
     }
 
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val right = stack.pop()
             val left = stack.pop()
             stack.push(compute(left, right))

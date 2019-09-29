@@ -1,7 +1,6 @@
 package skript.values
 
 import skript.doubleCompare
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isInteger
@@ -37,7 +36,7 @@ sealed class SkNumber : SkScalar(), Comparable<SkNumber> {
 
     abstract fun negate(): SkNumber
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a ${getKind()} and a ${end.getKind()}")
 
         return SkNumberRange(this, endNum, endInclusive)
@@ -140,7 +139,7 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
         return this
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a NUMBER and a ${end.getKind()}")
 
         return SkNumberRange(this, endNum, endInclusive)
@@ -256,7 +255,7 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         return doubleCompare(dvalue, other.toDouble())
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         val endNum = end.toStrictNumberOrNull() ?: typeError("Can't make range between a NUMBER and a ${end.getKind()}")
 
         return SkNumberRange(this, endNum, endInclusive)

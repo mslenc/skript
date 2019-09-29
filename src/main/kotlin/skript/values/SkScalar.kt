@@ -1,42 +1,42 @@
 package skript.values
 
-import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.opcodes.SkIterator
 import skript.typeError
 import skript.util.SkArguments
 
 abstract class SkScalar : SkValue() {
-    final override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+    final override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
         val sb = StringBuilder("Can't call ")
         toString(sb)
         typeError(sb.toString())
     }
 
-    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
-        return asObject().callMethod(methodName, args, state, exprDebug)
+    override suspend fun callMethod(methodName: String, args: SkArguments, env: SkriptEnv, exprDebug: String): SkValue {
+        return asObject().callMethod(methodName, args, env, exprDebug)
     }
 
-    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         return false
     }
 
-    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         typeError("Can't set properties on scalars")
     }
 
-    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, env: SkriptEnv): SkValue {
         return SkUndefined
     }
 
-    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, env: SkriptEnv) {
         typeError("Can't set elements on scalars")
     }
 
-    override suspend fun entryGet(key: SkValue, state: RuntimeState): SkValue {
+    override suspend fun entryGet(key: SkValue, env: SkriptEnv): SkValue {
         return SkUndefined
     }
 
-    override suspend fun entryDelete(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun entryDelete(key: SkValue, env: SkriptEnv): Boolean {
         return false
     }
 
@@ -56,7 +56,7 @@ abstract class SkScalarObject : SkObject() {
         return value.makeIterator()
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
-        return value.makeRange(end, endInclusive, state, exprDebug)
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
+        return value.makeRange(end, endInclusive, env, exprDebug)
     }
 }

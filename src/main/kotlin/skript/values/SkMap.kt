@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
@@ -17,12 +16,12 @@ class SkMap : SkObject {
         entries.putAll(initialValues)
     }
 
-    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         klass.findInstanceProperty(key)?.let { prop ->
             if (prop.readOnly)
                 typeError("Can't set property $key, because it is read-only")
 
-            prop.setValue(this, value, state.env)
+            prop.setValue(this, value, env)
             return
         }
 
@@ -30,19 +29,19 @@ class SkMap : SkObject {
             typeError("Can't override methods")
         }
 
-        entrySet(key.toSkript(), value, state)
+        entrySet(key.toSkript(), value, env)
     }
 
-    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, env: SkriptEnv): SkValue {
         klass.findInstanceProperty(key)?.let { prop ->
-            return prop.getValue(this, state.env)
+            return prop.getValue(this, env)
         }
 
         klass.findInstanceMethod(key)?.let { method ->
             return BoundMethod(method, this, SkArguments())
         }
 
-        return entryGet(key.toSkript(), state)
+        return entryGet(key.toSkript(), env)
     }
 
     override fun getKind(): SkValueKind {

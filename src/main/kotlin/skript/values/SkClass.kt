@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -24,30 +23,32 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
         return SkBoolean.TRUE
     }
 
-    override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
-        return construct(args, state.env)
+    override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
+        return construct(args, env)
     }
 
-    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun callMethod(methodName: String, args: SkArguments, env: SkriptEnv, exprDebug: String): SkValue {
         def.findStaticFunction(methodName)?.let { function ->
-            return function.call(args, state)
+            return function.call(args, env)
         }
 
         typeError("$exprDebug is class ${def.className}, which has no static function $methodName")
     }
 
-    override suspend fun propertyGet(key: String, state: RuntimeState): SkValue {
+    override suspend fun propertyGet(key: String, env: SkriptEnv): SkValue {
         def.findStaticProperty(key)?.let { prop ->
-            return prop.getValue(state.env)
+            return prop.getValue(env)
         }
 
         typeError("Class ${def.className} has no static property $key")
     }
 
-    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         def.findStaticProperty(key)?.let { prop ->
-            prop.setValue(value, state.env)
+            return prop.setValue(value, env)
         }
+
+        typeError("Class ${def.className} has no static property $key")
     }
 
     fun isInstance(value: SkValue): Boolean {

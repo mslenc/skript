@@ -1,15 +1,15 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 
 object SetElementOp : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val key = stack.pop()
             val obj = stack.pop()
 
-            obj.entrySet(key, value, state)
+            obj.entrySet(key, value, frame.env)
         }
         return null
     }
@@ -17,13 +17,13 @@ object SetElementOp : SuspendOpCode() {
 }
 
 object SetElementKeepValueOp : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val key = stack.pop()
             val obj = stack.pop()
 
-            obj.entrySet(key, value, state)
+            obj.entrySet(key, value, frame.env)
 
             stack.push(value)
         }
@@ -33,12 +33,12 @@ object SetElementKeepValueOp : SuspendOpCode() {
 }
 
 class SetPropertyOp(val key: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val obj = stack.pop()
 
-            obj.propertySet(key, value, state)
+            obj.propertySet(key, value, frame.env)
         }
         return null
     }
@@ -46,12 +46,12 @@ class SetPropertyOp(val key: String) : SuspendOpCode() {
 }
 
 class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val value = stack.pop()
             val obj = stack.pop()
 
-            obj.propertySet(key, value, state)
+            obj.propertySet(key, value, frame.env)
 
             stack.push(value)
         }
@@ -61,12 +61,12 @@ class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
 }
 
 object GetElementOp : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val key = stack.pop()
             val obj = stack.pop()
 
-            stack.push(obj.entryGet(key, state))
+            stack.push(obj.entryGet(key, frame.env))
         }
         return null
     }
@@ -74,11 +74,11 @@ object GetElementOp : SuspendOpCode() {
 }
 
 class GetPropertyOp(val key: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.apply {
             val obj = stack.pop()
 
-            stack.push(obj.propertyGet(key, state))
+            stack.push(obj.propertyGet(key, frame.env))
         }
         return null
     }

@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -27,7 +26,7 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
         return if (value) SkBooleanObject.TRUE else SkBooleanObject.FALSE
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("$exprDebug evaluated to a boolean, so range can't be created")
     }
 

@@ -1,8 +1,8 @@
 package skript.interop.wrappers
 
-import skript.exec.RuntimeState
 import skript.interop.HoldsNative
 import skript.interop.SkCodec
+import skript.io.SkriptEnv
 import skript.typeError
 import skript.values.*
 
@@ -38,7 +38,7 @@ abstract class SkAbstractNativeArray<ARR: Any> : SkAbstractList(), HoldsNative<A
         typeError("Can't convert native arrays into numbers")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("Native arrays can't be used to make ranges")
     }
 }

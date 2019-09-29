@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.interop.SkClassInstanceMember
 import skript.interop.SkClassStaticMember
 import skript.io.SkriptEnv
@@ -250,7 +249,7 @@ class MethodBuilder0<OBJ>(val holderClass: SkCustomClass<OBJ>, val methodName: S
             override val expectedClass: SkClassDef
                 get() = holderClass
 
-            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(thiz: SkValue, args: SkArguments, env: SkriptEnv): SkValue {
                 args.expectNothingElse()
                 return impl(thiz as OBJ)
             }
@@ -278,15 +277,15 @@ class MethodBuilder0<OBJ>(val holderClass: SkCustomClass<OBJ>, val methodName: S
 }
 
 class MethodBuilder1<OBJ, T1>(val holderClass: SkCustomClass<OBJ>, val methodName: String, val param1: ExtractArg<T1>) {
-    fun withImpl(impl: suspend (OBJ, T1, RuntimeState)->SkValue) {
+    fun withImpl(impl: suspend (OBJ, T1, SkriptEnv)->SkValue) {
         holderClass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name)) {
             override val expectedClass: SkClassDef
                 get() = holderClass
 
-            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(thiz: SkValue, args: SkArguments, env: SkriptEnv): SkValue {
                 val arg1 = param1.extract(args)
                 args.expectNothingElse()
-                return impl(thiz as OBJ, arg1, state)
+                return impl(thiz as OBJ, arg1, env)
             }
         })
     }
@@ -312,16 +311,16 @@ class MethodBuilder1<OBJ, T1>(val holderClass: SkCustomClass<OBJ>, val methodNam
 }
 
 class MethodBuilder2<OBJ, T1, T2>(val holderClass: SkCustomClass<OBJ>, val methodName: String, val param1: ExtractArg<T1>, val param2: ExtractArg<T2>) {
-    fun withImpl(impl: suspend (OBJ, T1, T2, RuntimeState)->SkValue) {
+    fun withImpl(impl: suspend (OBJ, T1, T2, SkriptEnv)->SkValue) {
         holderClass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name, param2.name)) {
             override val expectedClass: SkClassDef
                 get() = holderClass
 
-            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(thiz: SkValue, args: SkArguments, env: SkriptEnv): SkValue {
                 val arg1 = param1.extract(args)
                 val arg2 = param2.extract(args)
                 args.expectNothingElse()
-                return impl(thiz as OBJ, arg1, arg2, state)
+                return impl(thiz as OBJ, arg1, arg2, env)
             }
         })
     }
@@ -352,18 +351,18 @@ class MethodBuilder3<OBJ, T1, T2, T3>(
     val param2: ExtractArg<T2>,
     val param3: ExtractArg<T3>) {
 
-    fun withImpl(impl: suspend (OBJ, T1, T2, T3, RuntimeState)->SkValue) {
+    fun withImpl(impl: suspend (OBJ, T1, T2, T3, SkriptEnv)->SkValue) {
         holderClass.defineInstanceMethod(object : SkMethod(methodName, listOf(param1.name, param2.name, param3.name)) {
             override val expectedClass: SkClassDef
                 get() = holderClass
 
-            override suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(thiz: SkValue, args: SkArguments, env: SkriptEnv): SkValue {
                 val arg1 = param1.extract(args)
                 val arg2 = param2.extract(args)
                 val arg3 = param3.extract(args)
                 args.expectNothingElse()
 
-                return impl(thiz as OBJ, arg1, arg2, arg3, state)
+                return impl(thiz as OBJ, arg1, arg2, arg3, env)
             }
         })
     }

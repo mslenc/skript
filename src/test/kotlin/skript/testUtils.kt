@@ -2,7 +2,6 @@ package skript
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import skript.exec.RuntimeState
 import skript.io.ModuleSourceProvider
 import skript.io.ParsedModuleProvider
 import skript.io.SkriptEngine
@@ -16,7 +15,7 @@ import kotlin.math.min
 
 fun emitInto(outputs: MutableList<SkValue>): SkFunction {
     return object : SkFunction("emit", listOf("value")) {
-        override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+        override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
             val value = args.extractArg("value")
             args.expectNothingElse()
             outputs += value

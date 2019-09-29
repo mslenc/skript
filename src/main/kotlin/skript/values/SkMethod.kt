@@ -1,8 +1,8 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.interop.SkClassInstanceMember
 import skript.interop.SkClassStaticMember
+import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
 
@@ -20,7 +20,7 @@ abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallab
     override val klass: SkClassDef
         get() = SkFunctionClassDef
 
-    abstract override suspend fun call(args: SkArguments, state: RuntimeState): SkValue
+    abstract override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue
 
     final override fun getKind(): SkValueKind {
         return SkValueKind.FUNCTION
@@ -46,14 +46,14 @@ abstract class SkMethod(name: String, val paramNames: List<String>) : SkCallable
         return nameString
     }
 
-    abstract suspend fun call(thiz: SkValue, args: SkArguments, state: RuntimeState): SkValue
+    abstract suspend fun call(thiz: SkValue, args: SkArguments, env: SkriptEnv): SkValue
 }
 
 class BoundMethod(private val method: SkMethod, private val thiz: SkValue, boundArgs: SkArguments) : SkFunction(method.name + "(bound)", method.paramNames) {
     private val boundPosArgs = boundArgs.extractAllPosArgs()
     private val boundKwArgs = boundArgs.extractAllKwArgs()
 
-    override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+    override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
         val combinedArgs = if (boundPosArgs.isEmpty() && boundKwArgs.isEmpty()) {
             args
         } else {
@@ -65,7 +65,7 @@ class BoundMethod(private val method: SkMethod, private val thiz: SkValue, bound
             }
         }
 
-        return method.call(thiz, combinedArgs, state)
+        return method.call(thiz, combinedArgs, env)
     }
 }
 

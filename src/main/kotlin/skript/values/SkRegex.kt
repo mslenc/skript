@@ -112,7 +112,7 @@ object SkRegexClassDef : SkCustomClass<SkRegex>("Regex") {
             }
 
         defineStaticFunction(object : SkFunction("escape", listOf("literal")) {
-            override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
                 val literal = args.expectString("literal")
                 args.expectNothingElse()
 
@@ -121,7 +121,7 @@ object SkRegexClassDef : SkCustomClass<SkRegex>("Regex") {
         })
 
         defineStaticFunction(object : SkFunction("escapeReplacement", listOf("literal")) {
-            override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
                 val literal = args.expectString("literal")
                 args.expectNothingElse()
 
@@ -130,7 +130,7 @@ object SkRegexClassDef : SkCustomClass<SkRegex>("Regex") {
         })
 
         defineStaticFunction(object : SkFunction("fromLiteral", listOf("literal")) {
-            override suspend fun call(args: SkArguments, state: RuntimeState): SkValue {
+            override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
                 val literal = args.expectString("literal")
                 args.expectNothingElse()
 

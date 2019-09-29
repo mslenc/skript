@@ -1,6 +1,6 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 import skript.io.toSkript
 import skript.parser.Pos
 import skript.typeError
@@ -24,8 +24,8 @@ object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator") {
 }
 
 object MakeIterator: SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val container = pop()
             val iterator = container.makeIterator() ?: typeError("Can't iterate over " + container.asString().value, Pos(0, 0, "TODO"))
             push(iterator)
@@ -36,8 +36,8 @@ object MakeIterator: SuspendOpCode() {
 }
 
 class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTarget) : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             val iterator = stack.top() as SkIterator
 
             if (iterator.moveToNext()) {
@@ -47,7 +47,7 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
                     stack.push(iterator.getCurrentValue())
             } else {
                 stack.pop()
-                ip = end.value
+                return end
             }
         }
         return null
@@ -56,11 +56,11 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
 }
 
 class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val to = pop()
             val from = pop()
-            push(from.makeRange(to, true, state, exprDebug))
+            push(from.makeRange(to, true, frame.env, exprDebug))
         }
         return null
     }
@@ -68,11 +68,11 @@ class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
 }
 
 class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
-    override suspend fun executeSuspend(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val to = pop()
             val from = pop()
-            push(from.makeRange(to, false, state, exprDebug))
+            push(from.makeRange(to, false, frame.env, exprDebug))
         }
         return null
     }

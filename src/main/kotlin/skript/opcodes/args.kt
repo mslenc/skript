@@ -1,10 +1,11 @@
 package skript.opcodes
 
+import skript.exec.Frame
 import skript.exec.RuntimeState
 
 class ArgsExtractRegular(val name: String, val localIndex: Int): FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             locals[localIndex] = args.extractArg(name)
         }
         return null
@@ -13,8 +14,8 @@ class ArgsExtractRegular(val name: String, val localIndex: Int): FastOpCode() {
 }
 
 class ArgsExtractPosVarArgs(val name: String, val localIndex: Int): FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             locals[localIndex] = args.extractPosVarArgs(name)
         }
         return null
@@ -23,8 +24,8 @@ class ArgsExtractPosVarArgs(val name: String, val localIndex: Int): FastOpCode()
 }
 
 class ArgsExtractKwOnly(val name: String, val localIndex: Int): FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             locals[localIndex] = args.extractKwOnlyArg(name)
         }
         return null
@@ -33,8 +34,8 @@ class ArgsExtractKwOnly(val name: String, val localIndex: Int): FastOpCode() {
 }
 
 class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             locals[localIndex] = args.extractKwVarArgs(name)
         }
         return null
@@ -43,8 +44,8 @@ class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): FastOpCode() 
 }
 
 object ArgsExpectNothingElse : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.apply {
             args.expectNothingElse()
         }
         return null

@@ -1,6 +1,6 @@
 package skript.values
 
-import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
 import skript.opcodes.equals.aboutEqual
@@ -28,7 +28,7 @@ abstract class SkAbstractList : SkObject() {
         return getValidSlot(index)
     }
 
-    override suspend fun contains(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         for (index in 0 until getSize())
             if (aboutEqual(getSlot(index), key))
                 return true
@@ -36,24 +36,24 @@ abstract class SkAbstractList : SkObject() {
         return false
     }
 
-    override suspend fun entryGet(key: SkValue, state: RuntimeState): SkValue {
+    override suspend fun entryGet(key: SkValue, env: SkriptEnv): SkValue {
         key.toNonNegativeIntOrNull()?.let { index ->
             return getSlot(index)
         }
 
-        return super.entryGet(key, state)
+        return super.entryGet(key, env)
     }
 
-    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, env: SkriptEnv) {
         key.toNonNegativeIntOrNull()?.let { index ->
             setSlot(index, value)
             return
         }
 
-        super.entrySet(key, value, state)
+        super.entrySet(key, value, env)
     }
 
-    override suspend fun entryDelete(key: SkValue, state: RuntimeState): Boolean {
+    override suspend fun entryDelete(key: SkValue, env: SkriptEnv): Boolean {
         key.toNonNegativeIntOrNull()?.let { index ->
             if (index < getSize()) {
                 setSlot(index, SkUndefined)
@@ -65,7 +65,7 @@ abstract class SkAbstractList : SkObject() {
             return false
         }
 
-        return super.entryDelete(key, state)
+        return super.entryDelete(key, env)
     }
 
     override fun asBoolean(): SkBoolean {

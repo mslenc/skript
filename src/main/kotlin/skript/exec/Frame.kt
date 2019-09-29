@@ -1,17 +1,15 @@
 package skript.exec
 
-import skript.opcodes.OpCode
+import skript.io.SkriptEnv
 import skript.util.SkArguments
 import skript.util.Stack
 import skript.values.SkUndefined
 import skript.values.SkValue
 
-class Frame(localsSize: Int, val ops: Array<OpCode>, val args: SkArguments, val closure: Array<Array<SkValue>> = EMPTY_CLOSURE) {
+class Frame(localsSize: Int, val args: SkArguments, val closure: Array<Array<SkValue>> = EMPTY_CLOSURE, val env: SkriptEnv) {
     val locals = Array<SkValue>(localsSize) { SkUndefined }
     val stack = Stack<SkValue>()
     val argsStack = Stack<SkArguments>()
-    var ip = 0
-    var result: SkValue = SkUndefined
 
     fun makeClosure(size: Int): Array<Array<SkValue>> {
         return when(size) {

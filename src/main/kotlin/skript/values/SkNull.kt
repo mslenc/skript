@@ -1,6 +1,6 @@
 package skript.values
 
-import skript.exec.RuntimeState
+import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
 
@@ -9,15 +9,15 @@ object SkNull : SkScalar() {
         typeError("Can't convert null into an object")
     }
 
-    override suspend fun propertySet(key: String, value: SkValue, state: RuntimeState) {
+    override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         typeError("Can't set properties on null")
     }
 
-    override suspend fun entrySet(key: SkValue, value: SkValue, state: RuntimeState) {
+    override suspend fun entrySet(key: SkValue, value: SkValue, env: SkriptEnv) {
         typeError("Can't set elements on null")
     }
 
-    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("$exprDebug evaluated to null, so range can't be created")
     }
 
@@ -41,7 +41,7 @@ object SkNull : SkScalar() {
         sb.append("null")
     }
 
-    override suspend fun callMethod(methodName: String, args: SkArguments, state: RuntimeState, exprDebug: String): SkValue {
+    override suspend fun callMethod(methodName: String, args: SkArguments, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("$exprDebug is null, so can't call methods on it")
     }
 }

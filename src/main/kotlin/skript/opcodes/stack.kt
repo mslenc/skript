@@ -1,10 +1,10 @@
 package skript.opcodes
 
-import skript.exec.RuntimeState
+import skript.exec.Frame
 
 object Dup : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             push(top())
         }
         return null
@@ -13,8 +13,8 @@ object Dup : FastOpCode() {
 }
 
 object Dup2 : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             push(top(1))
             push(top(1))
         }
@@ -24,16 +24,16 @@ object Dup2 : FastOpCode() {
 }
 
 object Pop : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.pop()
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.pop()
         return null
     }
     override fun toString() = "Pop"
 }
 
 object CopyTopTwoDown : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val value = pop()
             val obj = pop()
 
@@ -47,8 +47,8 @@ object CopyTopTwoDown : FastOpCode() {
 }
 
 object CopyTopThreeDown : FastOpCode() {
-    override fun execute(state: RuntimeState): OpCodeResult? {
-        state.topFrame.stack.apply {
+    override fun execute(frame: Frame): OpCodeResult? {
+        frame.stack.apply {
             val value = pop()
             val index = pop()
             val arr = pop()
