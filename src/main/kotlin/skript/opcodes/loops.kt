@@ -1,5 +1,6 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.io.toSkript
 import skript.parser.Pos
@@ -33,6 +34,10 @@ object MakeIterator: SuspendOpCode() {
         return null
     }
     override fun toString() = "MakeIterator"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(0)
+    }
 }
 
 class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTarget) : FastOpCode() {
@@ -53,6 +58,11 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
         return null
     }
     override fun toString() = "IteratorNext end=${end.value} pushKey=${pushKey} pushValue=${pushValue}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase((if (pushKey) 1 else 0) + (if (pushValue) 1 else 0))
+        receiver.jumpCase(-1, end)
+    }
 }
 
 class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
@@ -65,6 +75,10 @@ class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "MakeRangeEndInclusive expr=$exprDebug"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }
 
 class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
@@ -77,4 +91,8 @@ class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "MakeRangeEndExclusive expr=$exprDebug"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }

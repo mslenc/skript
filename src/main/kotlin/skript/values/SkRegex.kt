@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.interop.HoldsNative
 import skript.io.SkriptEnv
 import skript.io.toSkript

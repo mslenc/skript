@@ -1,12 +1,12 @@
 package skript.opcodes.compare
 
 import skript.exec.Frame
-import skript.opcodes.FastOpCode
 import skript.opcodes.OpCodeResult
+import skript.opcodes.numeric.FastBinaryOpCode
 import skript.values.SkBoolean
 import skript.values.SkUndefined
 
-object BinaryLessOrEqualOp : FastOpCode() {
+object BinaryLessOrEqualOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val b = pop()

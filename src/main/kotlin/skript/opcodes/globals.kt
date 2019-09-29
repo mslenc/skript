@@ -1,5 +1,6 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 
 class GetGlobal(private val name: String) : FastOpCode() {
@@ -8,6 +9,10 @@ class GetGlobal(private val name: String) : FastOpCode() {
         return null
     }
     override fun toString() = "GetGlobal name=$name"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }
 
 class SetGlobal(private val name: String) : FastOpCode() {
@@ -16,6 +21,10 @@ class SetGlobal(private val name: String) : FastOpCode() {
         return null
     }
     override fun toString() = "SetGlobal name=$name"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }
 
 class GetModuleVar(private val moduleName: String, private val indexInModule: Int) : FastOpCode() {
@@ -25,6 +34,10 @@ class GetModuleVar(private val moduleName: String, private val indexInModule: In
         return null
     }
     override fun toString() = "GetModuleVar moduleName=$moduleName indexInModule=$indexInModule"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }
 
 class SetModuleVar(private val moduleName: String, private val indexInModule: Int) : FastOpCode() {
@@ -34,4 +47,8 @@ class SetModuleVar(private val moduleName: String, private val indexInModule: In
         return null
     }
     override fun toString() = "SetModuleVar moduleName=$moduleName indexInModule=$indexInModule"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }

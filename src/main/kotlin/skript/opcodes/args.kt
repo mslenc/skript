@@ -1,9 +1,15 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
-import skript.exec.RuntimeState
 
-class ArgsExtractRegular(val name: String, val localIndex: Int): FastOpCode() {
+abstract class ArgsFastOpCode : FastOpCode() {
+    final override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(0)
+    }
+}
+
+class ArgsExtractRegular(val name: String, val localIndex: Int): ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             locals[localIndex] = args.extractArg(name)
@@ -13,7 +19,7 @@ class ArgsExtractRegular(val name: String, val localIndex: Int): FastOpCode() {
     override fun toString() = "ArgsExtractRegular name=$name localIndex=$localIndex"
 }
 
-class ArgsExtractPosVarArgs(val name: String, val localIndex: Int): FastOpCode() {
+class ArgsExtractPosVarArgs(val name: String, val localIndex: Int): ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             locals[localIndex] = args.extractPosVarArgs(name)
@@ -23,7 +29,7 @@ class ArgsExtractPosVarArgs(val name: String, val localIndex: Int): FastOpCode()
     override fun toString() = "ArgsExtractPosVarArgs name=$name localIndex=$localIndex"
 }
 
-class ArgsExtractKwOnly(val name: String, val localIndex: Int): FastOpCode() {
+class ArgsExtractKwOnly(val name: String, val localIndex: Int): ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             locals[localIndex] = args.extractKwOnlyArg(name)
@@ -33,7 +39,7 @@ class ArgsExtractKwOnly(val name: String, val localIndex: Int): FastOpCode() {
     override fun toString() = "ArgsExtractKwOnly name=$name localIndex=$localIndex"
 }
 
-class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): FastOpCode() {
+class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             locals[localIndex] = args.extractKwVarArgs(name)
@@ -43,7 +49,7 @@ class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): FastOpCode() 
     override fun toString() = "ArgsExtractKwVarArgs name=$name localIndex=$localIndex"
 }
 
-object ArgsExpectNothingElse : FastOpCode() {
+object ArgsExpectNothingElse : ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             args.expectNothingElse()

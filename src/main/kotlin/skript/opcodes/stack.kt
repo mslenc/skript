@@ -1,5 +1,6 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 
 object Dup : FastOpCode() {
@@ -10,6 +11,10 @@ object Dup : FastOpCode() {
         return null
     }
     override fun toString() = "Dup"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }
 
 object Dup2 : FastOpCode() {
@@ -21,6 +26,10 @@ object Dup2 : FastOpCode() {
         return null
     }
     override fun toString() = "Dup2"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(2)
+    }
 }
 
 object Pop : FastOpCode() {
@@ -29,6 +38,10 @@ object Pop : FastOpCode() {
         return null
     }
     override fun toString() = "Pop"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }
 
 object CopyTopTwoDown : FastOpCode() {
@@ -44,6 +57,10 @@ object CopyTopTwoDown : FastOpCode() {
         return null
     }
     override fun toString() = "CopyTopTwoDown"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }
 
 object CopyTopThreeDown : FastOpCode() {
@@ -61,4 +78,8 @@ object CopyTopThreeDown : FastOpCode() {
         return null
     }
     override fun toString() = "CopyTopThreeDown"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }

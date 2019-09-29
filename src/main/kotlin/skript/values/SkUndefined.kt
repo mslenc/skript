@@ -1,6 +1,5 @@
 package skript.values
 
-import skript.exec.RuntimeState
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments

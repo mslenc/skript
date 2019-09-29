@@ -1,7 +1,9 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.exec.FunctionDef
+import skript.opcodes.numeric.FastBinaryOpCode
 import skript.parser.Pos
 import skript.typeError
 import skript.values.SkBoolean
@@ -18,9 +20,13 @@ class MakeFunction(val def: FunctionDef) : FastOpCode() {
     }
 
     override fun toString() = "MakeFunction def=$def"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }
 
-object ObjectIsOp : FastOpCode() {
+object ObjectIsOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val klass = pop()
@@ -40,7 +46,7 @@ object ObjectIsOp : FastOpCode() {
     override fun toString() = "ObjectIsOp"
 }
 
-object ObjectIsntOp : FastOpCode() {
+object ObjectIsntOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val klass = pop()
@@ -72,6 +78,10 @@ object ValueInOp : SuspendOpCode() {
     }
 
     override fun toString() = "ValueInOp"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }
 
 object ValueNotInOp : SuspendOpCode() {
@@ -86,4 +96,8 @@ object ValueNotInOp : SuspendOpCode() {
     }
 
     override fun toString() = "ValueNotInOp"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }

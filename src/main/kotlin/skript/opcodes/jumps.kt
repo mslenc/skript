@@ -1,5 +1,6 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.values.SkBoolean
 import skript.values.SkNull
@@ -10,6 +11,10 @@ class Jump(val target: JumpTarget) : FastOpCode() {
         return target
     }
     override fun toString() = "Jump to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpIfTruthy(val target: JumpTarget) : FastOpCode() {
@@ -20,6 +25,11 @@ class JumpIfTruthy(val target: JumpTarget) : FastOpCode() {
         }
     }
     override fun toString() = "JumpIfTruthy to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(-1, target)
+    }
 }
 
 class JumpIfFalsy(val target: JumpTarget) : FastOpCode() {
@@ -30,6 +40,11 @@ class JumpIfFalsy(val target: JumpTarget) : FastOpCode() {
         }
     }
     override fun toString() = "JumpIfFalsy to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(-1, target)
+    }
 }
 
 class JumpIfLocalDefined(val varIndex: Int, val target: JumpTarget) : FastOpCode() {
@@ -40,6 +55,11 @@ class JumpIfLocalDefined(val varIndex: Int, val target: JumpTarget) : FastOpCode
         }
     }
     override fun toString() = "JumpIfLocalDefined to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(0)
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
@@ -56,6 +76,11 @@ class JumpIfTopDefinedElseDrop(val target: JumpTarget): FastOpCode() {
         return null
     }
     override fun toString() = "JumpIfTopDefinedElseDrop to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
@@ -69,6 +94,11 @@ class JumpForSafeMethodCall(val target: JumpTarget) : FastOpCode() {
         }
     }
     override fun toString() = "JumpForSafeMethodCall to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(0)
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
@@ -81,6 +111,11 @@ class JumpIfTopTruthyElseDrop(val target: JumpTarget): FastOpCode() {
         }
     }
     override fun toString() = "JumpIfTopTruthyElseDrop to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
@@ -95,6 +130,11 @@ class JumpIfTopTruthyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() 
         return null
     }
     override fun toString() = "JumpIfTopTruthyElseDropAlsoMakeBool to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
@@ -109,6 +149,11 @@ class JumpIfTopFalsyElseDrop(val target: JumpTarget): FastOpCode() {
         return null
     }
     override fun toString() = "JumpIfTopFalsyElseDrop to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(0, target)
+    }
 }
 
 class JumpIfTopFalsyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
@@ -123,4 +168,9 @@ class JumpIfTopFalsyElseDropAlsoMakeBool(val target: JumpTarget): FastOpCode() {
         return null
     }
     override fun toString() = "JumpIfTopFalsyElseDropAlsoMakeBool to ${target.value}"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+        receiver.jumpCase(0, target)
+    }
 }

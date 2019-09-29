@@ -1,5 +1,6 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 
 object SetElementOp : SuspendOpCode() {
@@ -14,6 +15,10 @@ object SetElementOp : SuspendOpCode() {
         return null
     }
     override fun toString() = "SetElementOp"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-3)
+    }
 }
 
 object SetElementKeepValueOp : SuspendOpCode() {
@@ -30,6 +35,10 @@ object SetElementKeepValueOp : SuspendOpCode() {
         return null
     }
     override fun toString() = "SetElementKeepValueOp"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-2)
+    }
 }
 
 class SetPropertyOp(val key: String) : SuspendOpCode() {
@@ -43,6 +52,10 @@ class SetPropertyOp(val key: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "SetPropertyOp key=$key"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-2)
+    }
 }
 
 class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
@@ -58,6 +71,10 @@ class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "SetPropertyKeepValueOp key=$key"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }
 
 object GetElementOp : SuspendOpCode() {
@@ -71,6 +88,10 @@ object GetElementOp : SuspendOpCode() {
         return null
     }
     override fun toString() = "GetElementOp"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }
 
 class GetPropertyOp(val key: String) : SuspendOpCode() {
@@ -83,4 +104,8 @@ class GetPropertyOp(val key: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "GetPropertyOp"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(0)
+    }
 }

@@ -1,11 +1,14 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.values.SkValue
 
 sealed class OpCode {
     abstract fun execute(frame: Frame): OpCodeResult?
     abstract suspend fun executeSuspend(frame: Frame): OpCodeResult?
+
+    abstract fun getStackInfo(receiver: StackSizeInfoReceiver)
 }
 
 abstract class FastOpCode : OpCode() {

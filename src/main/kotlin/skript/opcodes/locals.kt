@@ -1,5 +1,6 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.util.OpCache
 
@@ -12,6 +13,10 @@ class GetLocal private constructor(private val varIndex: Int) : FastOpCode() {
     }
 
     override fun toString() = "GetLocal varIndex=$varIndex"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 
     companion object {
         private val cache = OpCache.createOpCache(20) { GetLocal(it) }
@@ -30,6 +35,10 @@ class SetLocal private constructor(private val varIndex: Int) : FastOpCode() {
 
     override fun toString() = "SetLocal varIndex=$varIndex"
 
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
+
     companion object {
         private val cache = OpCache.createOpCache(20) { SetLocal(it) }
 
@@ -46,6 +55,10 @@ class GetClosureVar(private val closureIndex: Int, private val varIndex: Int) : 
     }
 
     override fun toString() = "GetClosureVar closureIndex=$closureIndex varIndex=$varIndex"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(1)
+    }
 }
 
 class SetClosureVar(private val closureIndex: Int, private val varIndex: Int) : FastOpCode() {
@@ -57,4 +70,8 @@ class SetClosureVar(private val closureIndex: Int, private val varIndex: Int) : 
     }
 
     override fun toString() = "SetClosureVar closureIndex=$closureIndex varIndex=$varIndex"
+
+    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(-1)
+    }
 }

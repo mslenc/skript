@@ -1,9 +1,16 @@
 package skript.opcodes
 
+import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.values.SkBoolean
 
-object UnaryPlus : FastOpCode() {
+abstract class FastUnaryOpCode : FastOpCode() {
+    final override fun getStackInfo(receiver: StackSizeInfoReceiver) {
+        receiver.normalCase(0)
+    }
+}
+
+object UnaryPlus : FastUnaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             stack.push(stack.pop().asNumber())
@@ -13,7 +20,7 @@ object UnaryPlus : FastOpCode() {
     override fun toString() = "UnaryPlus"
 }
 
-object UnaryMinus : FastOpCode() {
+object UnaryMinus : FastUnaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             stack.push(stack.pop().asNumber().negate())
@@ -23,7 +30,7 @@ object UnaryMinus : FastOpCode() {
     override fun toString() = "UnaryMinus"
 }
 
-object UnaryNegate : FastOpCode() {
+object UnaryNegate : FastUnaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             push(SkBoolean.valueOf(!pop().asBoolean().value))
@@ -33,7 +40,7 @@ object UnaryNegate : FastOpCode() {
     override fun toString() = "UnaryNegate"
 }
 
-object ConvertToBool : FastOpCode() {
+object ConvertToBool : FastUnaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             push(pop().asBoolean())
@@ -43,7 +50,7 @@ object ConvertToBool : FastOpCode() {
     override fun toString() = "ConvertToBool"
 }
 
-object ConvertToString : FastOpCode() {
+object ConvertToString : FastUnaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             push(pop().asString())
