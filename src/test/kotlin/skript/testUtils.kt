@@ -2,16 +2,16 @@ package skript
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
-import skript.io.ModuleSourceProvider
-import skript.io.ParsedModuleProvider
-import skript.io.SkriptEngine
-import skript.io.SkriptEnv
+import skript.io.*
 import skript.opcodes.equals.strictlyEqual
 import skript.util.SkArguments
 import skript.values.SkFunction
 import skript.values.SkUndefined
 import skript.values.SkValue
+import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlin.math.min
+import kotlin.reflect.KClass
 
 fun emitInto(outputs: MutableList<SkValue>): SkFunction {
     return object : SkFunction("emit", listOf("value")) {
@@ -31,7 +31,11 @@ suspend fun runScriptWithEmit(script: String): List<SkValue> {
 suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String): List<SkValue> {
     val sourceProvider = ModuleSourceProvider.static(emptyMap<String, String>())
     val moduleProvider = ParsedModuleProvider.from(sourceProvider)
-    val skriptEngine = SkriptEngine(moduleProvider)
+    val skriptEngine = SkriptEngine(moduleProvider, nativeAccessGranter = object : NativeAccessGranter {
+        override fun isAccessAllowed(klass: KClass<*>): Boolean {
+            return klass == LocalDate::class || klass == LocalDateTime::class
+        }
+    })
 
     val outputs = ArrayList<SkValue>()
 

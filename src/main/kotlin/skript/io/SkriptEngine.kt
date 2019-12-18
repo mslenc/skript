@@ -1,6 +1,5 @@
 package skript.io
 
-import jdk.nashorn.internal.parser.Lexer
 import skript.interop.*
 import skript.interop.wrappers.SkCodecNativeArray
 import skript.interop.wrappers.SkCodecNativeCollection

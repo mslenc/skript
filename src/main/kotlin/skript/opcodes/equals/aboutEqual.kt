@@ -12,9 +12,9 @@ import skript.values.*
  * * strings that parse as numbers are equal to those numbers
  * * lists are equal if they have the same elements (as in, about equal, recursively)
  * * maps are equal if they have the same members (as in, about equal, recursively)
+ * * native objects use the native equals() method
  * * other objects, functions, classes and methods only equal themselves
  */
-// TODO: native objects should probably use equals()
 
 fun aboutEqual(aObj: SkValue, bObj: SkValue): Boolean {
     val a = if (aObj is SkScalarObject) aObj.value else aObj

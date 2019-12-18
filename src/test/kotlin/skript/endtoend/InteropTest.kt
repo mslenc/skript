@@ -7,6 +7,7 @@ import skript.interop.*
 import skript.io.toSkript
 import skript.runScriptWithEmit
 import skript.typeError
+import java.time.LocalDate
 import kotlin.reflect.full.findParameterByName
 import kotlin.reflect.full.instanceParameter
 import kotlin.reflect.full.primaryConstructor
@@ -17,6 +18,10 @@ data class TestObj(
 ) {
     fun fooBar(suffix: String): String {
         return foo + bar + suffix
+    }
+
+    fun makeDate(str: String): LocalDate {
+        return LocalDate.parse(str)
     }
 
     companion object {
@@ -98,6 +103,10 @@ class InteropTest {
             emit(bibi.fooBar(" Mm"));
                         
             emit(TestObj.bibi);
+            
+            emit(bibi.makeDate("2019-12-18") == bibi.makeDate("2019-12-19"));
+            emit(bibi.makeDate("2019-12-18") == TestObj().makeDate("2019-12-19"));
+            emit(bibi.makeDate("2019-12-19") == TestObj().makeDate("2019-12-19"));
         """.trimIndent())
 
         val expect = listOf(
@@ -109,7 +118,10 @@ class InteropTest {
             "deffoo666 nm".toSkript(),
             "deffoo1000 pm".toSkript(),
             "daFoo432 Mm".toSkript(),
-            "Bibi!!!".toSkript()
+            "Bibi!!!".toSkript(),
+            false.toSkript(),
+            false.toSkript(),
+            true.toSkript()
         )
 
         assertEmittedEquals(expect, result)
