@@ -30,6 +30,10 @@ class SkDoubleArray(override val nativeObj: DoubleArray) : SkAbstractNativeArray
     override suspend fun makeIterator(): SkIterator {
         return SkDoubleArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): DoubleArray {
+        return nativeObj
+    }
 }
 
 object SkDoubleArrayClassDef : SkClassDef("DoubleArray", SkAbstractListClassDef)

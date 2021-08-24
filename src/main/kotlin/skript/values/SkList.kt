@@ -98,6 +98,10 @@ class SkList : SkAbstractList {
     override fun hashCode(): Int {
         return listEls.hashCode() * 31 + entries.hashCode()
     }
+
+    override fun unwrap(): List<Any?> {
+        return listEls.map { it.unwrap() }
+    }
 }
 
 object SkListClassDef : SkCustomClass<SkList>("List", SkAbstractListClassDef) {

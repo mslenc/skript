@@ -17,5 +17,9 @@ class SkNativeObject<T: Any>(override val nativeObj: T, override val klass: SkNa
     override fun hashCode(): Int {
         return nativeObj.hashCode()
     }
+
+    override fun unwrap(): Any {
+        return nativeObj
+    }
 }
 

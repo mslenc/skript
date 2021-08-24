@@ -54,6 +54,10 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
     fun isInstance(value: SkValue): Boolean {
         return def.isInstance(value)
     }
+
+    override fun unwrap(): SkClass {
+        return this
+    }
 }
 
 fun SkClassDef.isSuperClassOf(clazz: SkClassDef): Boolean {

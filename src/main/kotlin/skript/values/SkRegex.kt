@@ -12,7 +12,9 @@ class SkRegex(override val nativeObj: Regex) : SkObject(), HoldsNative<Regex> {
     override val klass: SkClassDef
         get() = SkRegexClassDef
 
-
+    override fun unwrap(): Regex {
+        return nativeObj
+    }
 }
 
 fun MatchGroup.toSkript() = SkMap(mapOf(
@@ -157,6 +159,10 @@ object SkRegexClassDef : SkCustomClass<SkRegex>("Regex") {
 class SkMatchGroup(override val nativeObj: MatchGroup): SkObject(), HoldsNative<MatchGroup> {
     override val klass: SkClassDef
         get() = SkMatchGroupClassDef
+
+    override fun unwrap(): MatchGroup {
+        return nativeObj
+    }
 }
 
 object SkMatchGroupClassDef : SkCustomClass<SkMatchGroup>("MatchGroup") {
@@ -169,6 +175,10 @@ object SkMatchGroupClassDef : SkCustomClass<SkMatchGroup>("MatchGroup") {
 class SkMatchResult(override val nativeObj: MatchResult) : SkObject(), HoldsNative<MatchResult> {
     override val klass: SkClassDef
         get() = SkMatchResultClassDef
+
+    override fun unwrap(): MatchResult {
+        return nativeObj
+    }
 }
 
 object SkMatchResultClassDef : SkCustomClass<SkMatchResult>("MatchResult") {

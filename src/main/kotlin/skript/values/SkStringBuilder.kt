@@ -1,6 +1,6 @@
 package skript.values
 
-class SkStringBuilder() : SkObject() {
+class SkStringBuilder : SkObject() {
     val sb = StringBuilder()
 
     override val klass: SkClassDef
@@ -16,6 +16,10 @@ class SkStringBuilder() : SkObject() {
 
     override fun asString(): SkString {
         return SkString(sb.toString())
+    }
+
+    override fun unwrap(): StringBuilder {
+        return sb
     }
 }
 

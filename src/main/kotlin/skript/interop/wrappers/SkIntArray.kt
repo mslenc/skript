@@ -30,6 +30,10 @@ class SkIntArray(override val nativeObj: IntArray) : SkAbstractNativeArray<IntAr
     override suspend fun makeIterator(): SkIterator {
         return SkIntArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): IntArray {
+        return nativeObj
+    }
 }
 
 object SkIntArrayClassDef : SkClassDef("IntArray", SkAbstractListClassDef)

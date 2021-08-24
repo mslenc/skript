@@ -44,4 +44,8 @@ object SkNull : SkScalar() {
     override suspend fun callMethod(methodName: String, args: SkArguments, env: SkriptEnv, exprDebug: String): SkValue {
         typeError("$exprDebug is null, so can't call methods on it")
     }
+
+    override fun unwrap(): Any? {
+        return null
+    }
 }

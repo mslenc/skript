@@ -93,6 +93,10 @@ class SkString(val value: String) : SkScalar() {
         return value.hashCode()
     }
 
+    override fun unwrap(): String {
+        return value
+    }
+
     companion object {
         val EMPTY = SkString("")
         val NULL = SkString("null")
@@ -117,6 +121,10 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
 
     override fun asString(): SkString {
         return value
+    }
+
+    override fun unwrap(): String {
+        return value.unwrap()
     }
 }
 
@@ -176,13 +184,13 @@ object SkStringClassDef : SkCustomClass<SkStringObject>("String", SkObjectClassD
         defineMethod("toUpperCase").
             withParam("locale").
             withImpl { string, locale, _ ->
-                string.value.value.toUpperCase(resolveLocale(locale)).toSkript()
+                string.value.value.uppercase(resolveLocale(locale)).toSkript()
             }
 
         defineMethod("toLowerCase").
             withParam("locale").
             withImpl { string, locale, _ ->
-                string.value.value.toLowerCase(resolveLocale(locale)).toSkript()
+                string.value.value.lowercase(resolveLocale(locale)).toSkript()
             }
     }
 }

@@ -56,6 +56,8 @@ sealed class SkNumber : SkScalar(), Comparable<SkNumber> {
     abstract fun asDouble(): SkDouble
     abstract fun asDecimal(): SkDecimal
 
+    abstract override fun unwrap(): Number
+
     companion object {
         val MINUS_ONE get() = SkDouble.MINUS_ONE
         val ZERO get() = SkDouble.ZERO
@@ -160,6 +162,10 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
 
     override fun hashCode(): Int {
         return value.hashCode()
+    }
+
+    override fun unwrap(): BigDecimal {
+        return value
     }
 
     companion object {
@@ -278,6 +284,10 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         return value.hashCode()
     }
 
+    override fun unwrap(): Double {
+        return dvalue
+    }
+
     companion object {
         val MINUS_ONE = SkDouble(-1.0)
         val ZERO = SkDouble(0.0)
@@ -329,6 +339,10 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject() {
 
     override fun asString(): SkString {
         return value.asString()
+    }
+
+    override fun unwrap(): Number {
+        return value.unwrap()
     }
 }
 

@@ -30,6 +30,10 @@ class SkByteArray(override val nativeObj: ByteArray) : SkAbstractNativeArray<Byt
     override suspend fun makeIterator(): SkIterator {
         return SkByteArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): ByteArray {
+        return nativeObj
+    }
 }
 
 object SkByteArrayClassDef : SkClassDef("ByteArray", SkAbstractListClassDef)

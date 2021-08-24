@@ -45,14 +45,14 @@ fun unpack(str: String): SkValue {
             }
 
             'n' -> {
-                val len = str[pos++].toInt() - '0'.toInt()
+                val len = str[pos++].code - '0'.code
                 val num = str.substring(pos, pos + len).toDouble()
                 pos += len
                 top.receive(SkDouble.valueOf(num))
             }
 
             'N' -> {
-                val lenLen = str[pos++].toInt() - '0'.toInt()
+                val lenLen = str[pos++].code - '0'.code
                 val len = str.substring(pos, pos + lenLen).toInt()
                 pos += lenLen
                 val num = str.substring(pos, pos + len).toDouble()
@@ -61,14 +61,14 @@ fun unpack(str: String): SkValue {
             }
 
             'd' -> {
-                val len = str[pos++].toInt() - '0'.toInt()
+                val len = str[pos++].code - '0'.code
                 val num = str.substring(pos, pos + len).toBigDecimal()
                 pos += len
                 top.receive(SkDecimal.valueOf(num))
             }
 
             'D' -> {
-                val lenLen = str[pos++].toInt() - '0'.toInt()
+                val lenLen = str[pos++].code - '0'.code
                 val len = str.substring(pos, pos + lenLen).toInt()
                 pos += lenLen
                 val num = str.substring(pos, pos + len).toBigDecimal()
@@ -77,14 +77,14 @@ fun unpack(str: String): SkValue {
             }
 
             's' -> {
-                val len = str[pos++].toInt() - '0'.toInt()
+                val len = str[pos++].code - '0'.code
                 val string = str.substring(pos, pos + len)
                 pos += len
                 top.receive(SkString(string))
             }
 
             'S' -> {
-                val lenLen = str[pos++].toInt() - '0'.toInt()
+                val lenLen = str[pos++].code - '0'.code
                 val len = str.substring(pos, pos + lenLen).toInt()
                 pos += lenLen
                 val string = str.substring(pos, pos + len)
@@ -93,12 +93,12 @@ fun unpack(str: String): SkValue {
             }
 
             'r' -> {
-                val reps = str[pos++].toInt() - '0'.toInt()
+                val reps = str[pos++].code - '0'.code
                 top.repeatLast(reps)
             }
 
             'R' -> {
-                val repsLen = str[pos++].toInt() - '0'.toInt()
+                val repsLen = str[pos++].code - '0'.code
                 val reps = str.substring(pos, pos + repsLen).toInt()
                 pos += repsLen
                 top.repeatLast(reps)

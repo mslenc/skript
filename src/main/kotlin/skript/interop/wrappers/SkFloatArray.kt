@@ -30,6 +30,10 @@ class SkFloatArray(override val nativeObj: FloatArray) : SkAbstractNativeArray<F
     override suspend fun makeIterator(): SkIterator {
         return SkFloatArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): FloatArray {
+        return nativeObj
+    }
 }
 
 object SkFloatArrayClassDef : SkClassDef("FloatArray", SkAbstractListClassDef)

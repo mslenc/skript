@@ -20,6 +20,10 @@ class SkListWrapper<T>(override val nativeObj: List<T>, val elementCodec: SkCode
     override fun getValidSlot(index: Int): SkValue {
         return elementCodec.toSkript(nativeObj[index], env)
     }
+
+    override fun unwrap(): List<T> {
+        return nativeObj
+    }
 }
 
 object SkListWrapperClassDef : SkClassDef("ListWrapper", SkAbstractListClassDef)

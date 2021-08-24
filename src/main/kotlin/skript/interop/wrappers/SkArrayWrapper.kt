@@ -21,6 +21,10 @@ class SkArrayWrapper<T>(override val nativeObj: Array<T>, override val elementCo
     override fun setValidSlot(index: Int, value: SkValue) {
         nativeObj[index] = elementCodec.toKotlin(value, env)
     }
+
+    override fun unwrap(): Array<T> {
+        return nativeObj
+    }
 }
 
 object SkArrayWrapperClassDef : SkClassDef("ArrayWrapper", SkAbstractListClassDef)

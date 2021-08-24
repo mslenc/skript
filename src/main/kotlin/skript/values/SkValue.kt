@@ -47,4 +47,6 @@ abstract class SkValue {
     }
 
     abstract suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue
+
+    abstract fun unwrap(): Any?
 }

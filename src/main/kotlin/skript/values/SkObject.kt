@@ -90,6 +90,10 @@ abstract class SkObject : SkValue() {
 
         typeError("$exprDebug has no method $methodName")
     }
+
+    override fun unwrap(): Any {
+        return this
+    }
 }
 
 object SkObjectClassDef : SkClassDef("Object", null) {

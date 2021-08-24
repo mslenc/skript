@@ -1,12 +1,14 @@
 package skript.interop
 
-import skript.interop.wrappers.SkCodecNativeArray
 import skript.io.SkriptEngine
 import skript.io.SkriptIgnore
 import skript.values.SkFunction
 import skript.values.SkMethod
 import skript.values.SkObjectProperty
 import skript.values.SkStaticProperty
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.reflect.*
 import kotlin.reflect.full.*
 
@@ -91,8 +93,25 @@ fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>,
     val membersByName = HashMap<String, ArrayList<SkClassInstanceMember>>()
     val staticsByName = HashMap<String, ArrayList<SkClassStaticMember>>()
 
+    if (klass.isSubclassOf(Enum::class)) {
+        EnumSet.allOf(klass.java as Class<Enum<*>>).forEach { enum ->
+            enum as T
+            val prop = SkNativeStaticReadOnlyProperty(
+                name = enum.name,
+                nullable = false,
+                codec = (engine.getNativeCodec(klass)) as SkCodec<T>,
+                getter = { enum }
+            )
+
+            staticsByName.getOrPut(enum.name) { ArrayList() }.add(prop)
+        }
+    }
+
     nextMember@
     for (member in klass.members) {
+        if (member.name == "ENUMS" && klass.isSubclassOf(Enum::class) && member is KProperty0)
+            continue
+
         if (shouldIgnore(member))
             continue
 

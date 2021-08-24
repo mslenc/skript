@@ -30,6 +30,10 @@ class SkShortArray(override val nativeObj: ShortArray) : SkAbstractNativeArray<S
     override suspend fun makeIterator(): SkIterator {
         return SkShortArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): ShortArray {
+        return nativeObj
+    }
 }
 
 object SkShortArrayClassDef : SkClassDef("ShortArray", SkAbstractListClassDef)

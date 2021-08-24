@@ -11,6 +11,10 @@ abstract class SkIterator : SkObject() {
     abstract fun moveToNext(): Boolean
     abstract fun getCurrentKey(): SkValue
     abstract fun getCurrentValue(): SkValue
+
+    override fun unwrap(): SkIterator {
+        return this // TODO: should we try to produce
+    }
 }
 
 object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator") {

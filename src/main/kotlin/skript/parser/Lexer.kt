@@ -284,7 +284,7 @@ fun Char.toPrintable(): String {
         }
 
         else -> {
-            "U+" + this.toInt().toString(16).padStart(4, '0')
+            "U+" + this.code.toString(16).padStart(4, '0')
         }
     }
 }

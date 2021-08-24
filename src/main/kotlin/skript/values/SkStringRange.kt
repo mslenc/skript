@@ -1,5 +1,6 @@
 package skript.values
 
+import com.github.mslenc.utils.ComparableRangeEx
 import skript.io.SkriptEnv
 import skript.util.SkArguments
 import skript.util.expectBoolean
@@ -18,6 +19,11 @@ class SkStringRange(val start: String, val end: String, val endInclusive: Boolea
             !endInclusive && str.value >= end -> false
             else -> true
         }
+    }
+
+    override fun unwrap(): Any = when {
+        endInclusive -> start..end
+        else -> ComparableRangeEx(start, end)
     }
 }
 

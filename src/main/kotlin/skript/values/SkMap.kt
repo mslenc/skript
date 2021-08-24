@@ -83,6 +83,10 @@ class SkMap : SkObject {
     override fun hashCode(): Int {
         return entries.hashCode()
     }
+
+    override fun unwrap(): Map<String, Any?> {
+        return entries.mapValues { it.value.unwrap() }
+    }
 }
 
 object SkMapClassDef : SkClassDef("Map") {

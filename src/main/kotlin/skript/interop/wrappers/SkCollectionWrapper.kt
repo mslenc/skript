@@ -27,6 +27,10 @@ class SkCollectionWrapper<T>(override val nativeObj: Collection<T>, val elementC
     override suspend fun makeIterator(): SkIterator {
         return SkCollectionIterator(nativeObj.iterator(), elementCodec, env)
     }
+
+    override fun unwrap(): Collection<T> {
+        return nativeObj
+    }
 }
 
 object SkCollectionWrapperClassDef : SkClassDef("CollectionWrapper", SkAbstractListClassDef)

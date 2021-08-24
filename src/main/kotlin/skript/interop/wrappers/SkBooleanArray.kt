@@ -30,6 +30,10 @@ class SkBooleanArray(override val nativeObj: BooleanArray) : SkAbstractNativeArr
     override suspend fun makeIterator(): SkIterator {
         return SkBooleanArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): BooleanArray {
+        return nativeObj
+    }
 }
 
 object SkBooleanArrayClassDef : SkClassDef("BooleanArray", SkAbstractListClassDef)

@@ -28,6 +28,10 @@ class SkCharArray(override val nativeObj: CharArray) : SkAbstractNativeArray<Cha
     override suspend fun makeIterator(): SkIterator {
         return SkCharArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): CharArray {
+        return nativeObj
+    }
 }
 
 object SkCharArrayClassDef : SkClassDef("CharArray", SkAbstractListClassDef)

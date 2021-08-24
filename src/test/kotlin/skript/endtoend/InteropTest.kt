@@ -1,12 +1,16 @@
 package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
 import skript.interop.*
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.runScriptWithEmit
 import skript.typeError
+import skript.values.*
+import java.time.DayOfWeek
 import java.time.LocalDate
 import kotlin.reflect.full.findParameterByName
 import kotlin.reflect.full.instanceParameter
@@ -28,6 +32,41 @@ data class TestObj(
         val bibi = "Bibi!!!"
     }
 }
+
+enum class TestEnum {
+    ENUM,
+    CLASS,
+    TEST
+}
+
+class TestNativeClass(val prefix: String) {
+    fun getTester(suffix: String): TestSkObject {
+        return TestSkObject(prefix + suffix)
+    }
+}
+
+class TestSkObject(val src: String) : SkObject() {
+    override val klass: SkClassDef
+        get() = TestSkObjectClassDef
+
+    override suspend fun propertyGet(key: String, env: SkriptEnv): SkValue {
+        return when (key) {
+            "lower" -> src.lowercase().toSkript()
+            "upper" -> src.uppercase().toSkript()
+            else -> super.propertyGet(key, env)
+        }
+    }
+
+    override suspend fun entryGet(key: SkValue, env: SkriptEnv): SkValue {
+        return when (key.asString().value) {
+            "LOWER" -> src.lowercase().toSkript()
+            "UPPER" -> src.uppercase().toSkript()
+            else -> super.entryGet(key, env)
+        }
+    }
+}
+
+object TestSkObjectClassDef : SkCustomClass<TestSkObject>("TestSkObject")
 
 class InteropTest {
     @Test
@@ -125,5 +164,128 @@ class InteropTest {
         )
 
         assertEmittedEquals(expect, result)
+    }
+
+    @Test
+    fun testReflectedEnumClass() = runBlocking {
+        val testObj = ObjectWithEnumProps()
+        val testObj2 = ObjectWithEnumProps()
+
+        val result = runScriptWithEmit({ env ->
+            env.setClassAsGlobal(DayOfWeek::class)
+            env.setNativeGlobal("testObj", testObj)
+            env.setNativeGlobal("testObj2", testObj2)
+        }, """
+            testObj.day = DayOfWeek.THURSDAY;
+            testObj.testSet("abc")
+            
+            testObj2.testSet(day = DayOfWeek.WEDNESDAY, name = "Wed");
+            
+            for (value in DayOfWeek.values()) {
+              emit(value.name)
+            }
+        """.trimIndent())
+
+        val expect = listOf(
+            "MONDAY".toSkript(),
+            "TUESDAY".toSkript(),
+            "WEDNESDAY".toSkript(),
+            "THURSDAY".toSkript(),
+            "FRIDAY".toSkript(),
+            "SATURDAY".toSkript(),
+            "SUNDAY".toSkript(),
+        )
+
+        assertEmittedEquals(expect, result)
+
+        assertEquals(DayOfWeek.THURSDAY, testObj.day)
+        assertEquals("abc", testObj.funName)
+        assertEquals(DayOfWeek.SATURDAY, testObj.funDay)
+
+        assertEquals("Wed", testObj2.funName)
+        assertEquals(DayOfWeek.WEDNESDAY, testObj2.funDay)
+    }
+
+    @Test
+    fun testReflectedKotlinEnumClass() = runBlocking {
+        val testObj = ObjectWithEnumProps()
+        val testObj2 = ObjectWithEnumProps()
+
+        val result = runScriptWithEmit({ env ->
+            env.setClassAsGlobal(DayOfWeek::class)
+            env.setClassAsGlobal(TestEnum::class)
+            env.setNativeGlobal("testObj", testObj)
+            env.setNativeGlobal("testObj2", testObj2)
+        }, """
+            testObj.day = DayOfWeek.THURSDAY;
+            testObj.testSet("abc")
+            
+            testObj2.testSet(day = DayOfWeek.WEDNESDAY, name = "Wed");
+            testObj2.kotEnum = TestEnum.TEST;
+            
+            for (value in DayOfWeek.values()) {
+              emit(value.name)
+            }
+        """.trimIndent())
+
+        val expect = listOf(
+            "MONDAY".toSkript(),
+            "TUESDAY".toSkript(),
+            "WEDNESDAY".toSkript(),
+            "THURSDAY".toSkript(),
+            "FRIDAY".toSkript(),
+            "SATURDAY".toSkript(),
+            "SUNDAY".toSkript(),
+        )
+
+        assertEmittedEquals(expect, result)
+
+        assertEquals(DayOfWeek.THURSDAY, testObj.day)
+        assertEquals("abc", testObj.funName)
+        assertEquals(DayOfWeek.SATURDAY, testObj.funDay)
+
+        assertEquals("Wed", testObj2.funName)
+        assertEquals(DayOfWeek.WEDNESDAY, testObj2.funDay)
+
+        assertEquals(TestEnum.TEST, testObj2.kotEnum)
+    }
+
+    @Test
+    fun testNativeClassReturningSkObject() = runBlocking {
+        val result = runScriptWithEmit({ env ->
+            env.setNativeGlobal("testerFactory", TestNativeClass("Test_"))
+        }, """
+            val tester = testerFactory.getTester("mimI")
+            
+            emit(tester.upper)
+            emit(tester.lower)
+            emit(tester.bubu)
+            emit(tester["UPPER"])
+            emit(tester["LOWER"])
+            emit(tester["BUBU"])
+        """.trimIndent())
+
+        val expect = listOf(
+            "TEST_MIMI".toSkript(),
+            "test_mimi".toSkript(),
+            SkUndefined,
+            "TEST_MIMI".toSkript(),
+            "test_mimi".toSkript(),
+            SkUndefined
+        )
+
+        assertEmittedEquals(expect, result)
+    }
+}
+
+class ObjectWithEnumProps {
+    var day: DayOfWeek? = null
+    var funDay: DayOfWeek? = null
+    var funName: String? = null
+    var kotEnum: TestEnum? = null
+
+    fun testSet(name: String, day: DayOfWeek = DayOfWeek.SATURDAY) {
+        funName = name
+        funDay = day
     }
 }

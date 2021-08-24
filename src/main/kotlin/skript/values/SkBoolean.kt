@@ -48,6 +48,10 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
 
         fun valueOf(value: Boolean) = if (value) TRUE else FALSE
     }
+
+    override fun unwrap(): Boolean {
+        return value
+    }
 }
 
 class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
@@ -64,6 +68,10 @@ class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
 
     override fun asBoolean(): SkBoolean {
         return value
+    }
+
+    override fun unwrap(): Boolean {
+        return value.unwrap()
     }
 
     companion object {

@@ -30,6 +30,10 @@ class SkLongArray(override val nativeObj: LongArray) : SkAbstractNativeArray<Lon
     override suspend fun makeIterator(): SkIterator {
         return SkLongArrayIterator(nativeObj)
     }
+
+    override fun unwrap(): LongArray {
+        return nativeObj
+    }
 }
 
 object SkLongArrayClassDef : SkClassDef("LongArray", SkAbstractListClassDef)

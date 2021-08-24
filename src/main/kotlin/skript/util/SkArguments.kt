@@ -151,6 +151,14 @@ class SkArguments : SkObject() {
         return kwArgs.isEmpty()
     }
 
+    override fun unwrap(): SkArguments {
+        return this
+    }
+
+    override fun toString(): String {
+        return "SkArguments(posArgs=$posArgs, kwArgs=$kwArgs)"
+    }
+
     companion object {
         fun of(vararg posArgs: SkValue): SkArguments {
             val res = SkArguments()

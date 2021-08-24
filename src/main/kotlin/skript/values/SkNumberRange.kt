@@ -1,5 +1,6 @@
 package skript.values
 
+import com.github.mslenc.utils.ComparableRangeEx
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
@@ -32,6 +33,22 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
             endInclusive && num > end -> false
             !endInclusive && num >= end -> false
             else -> true
+        }
+    }
+
+    override fun unwrap(): Any {
+        return if (endInclusive) {
+            if (start is SkDecimal && end is SkDecimal) {
+                start.unwrap()..end.unwrap()
+            } else {
+                start.toDouble()..end.toDouble()
+            }
+        } else {
+            if (start is SkDecimal && end is SkDecimal) {
+                ComparableRangeEx(start.unwrap(), end.unwrap())
+            } else {
+                ComparableRangeEx(start.toDouble(), end.toDouble())
+            }
         }
     }
 }

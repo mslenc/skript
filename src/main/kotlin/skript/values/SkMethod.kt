@@ -14,6 +14,10 @@ sealed class SkCallable(val name: String) : SkObject() {
     final override fun asNumber(): SkNumber {
         typeError("Can't convert functions into numbers")
     }
+
+    override fun unwrap(): SkCallable {
+        return this
+    }
 }
 
 abstract class SkFunction(name: String, val paramNames: List<String>) : SkCallable(name), SkClassStaticMember {

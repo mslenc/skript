@@ -41,6 +41,11 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
     }
 
     fun getNativeCodec(type: KType): SkCodec<*>? {
+        val classifier = type.classifier
+        if (classifier is KClass<*> && classifier.isSubclassOf(SkValue::class)) {
+            return SkCodecSkValue
+        }
+
         nativeCodecs[type]?.let { return it }
 
         if (type.arguments.isEmpty()) {
