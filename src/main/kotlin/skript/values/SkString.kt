@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.*
 import skript.interop.HoldsNative
 import skript.io.SkriptEnv
@@ -97,6 +99,10 @@ class SkString(val value: String) : SkScalar() {
         return value
     }
 
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        return factory.textNode(value)
+    }
+
     companion object {
         val EMPTY = SkString("")
         val NULL = SkString("null")
@@ -125,6 +131,10 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
 
     override fun unwrap(): String {
         return value.unwrap()
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        return value.toJson(factory)
     }
 }
 

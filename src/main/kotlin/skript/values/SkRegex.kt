@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.interop.HoldsNative
 import skript.io.SkriptEnv
 import skript.io.toSkript
@@ -14,6 +16,10 @@ class SkRegex(override val nativeObj: Regex) : SkObject(), HoldsNative<Regex> {
 
     override fun unwrap(): Regex {
         return nativeObj
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        return factory.textNode(nativeObj.pattern)
     }
 }
 
@@ -163,6 +169,10 @@ class SkMatchGroup(override val nativeObj: MatchGroup): SkObject(), HoldsNative<
     override fun unwrap(): MatchGroup {
         return nativeObj
     }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        return factory.textNode(nativeObj.value)
+    }
 }
 
 object SkMatchGroupClassDef : SkCustomClass<SkMatchGroup>("MatchGroup") {
@@ -178,6 +188,10 @@ class SkMatchResult(override val nativeObj: MatchResult) : SkObject(), HoldsNati
 
     override fun unwrap(): MatchResult {
         return nativeObj
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        return factory.textNode(nativeObj.value)
     }
 }
 

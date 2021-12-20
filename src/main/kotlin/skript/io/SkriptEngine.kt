@@ -4,6 +4,7 @@ import skript.interop.*
 import skript.interop.wrappers.SkCodecNativeArray
 import skript.interop.wrappers.SkCodecNativeCollection
 import skript.interop.wrappers.SkCodecNativeList
+import skript.interop.wrappers.SkCodecNativeMap
 import skript.parser.CharStream
 import skript.parser.TokenType
 import skript.parser.lex
@@ -76,6 +77,8 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
                         val innerType = getNativeCodec(type.arguments[0].type ?: return null) ?: return null
                         SkCodecNativeCollection(container, innerType)
                     }
+
+
 //                    TODO: support gqlktx's Maybe somehow
 //                    container.isSubclassOf(Maybe::class) -> {
 //                        val innerType = getNativeCodec(type.arguments[0].type ?: return null) ?: return null
@@ -85,7 +88,20 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
                 }
             }
 
-            // TODO: do at least Map
+            type.arguments.size == 2 -> {
+                val container = type.classifier as? KClass<*> ?: return null
+
+                when {
+                    container.isSubclassOf(Map::class) -> {
+                        val keyType = getNativeCodec(type.arguments[0].type ?: return null) ?: return null
+                        val valueType = getNativeCodec(type.arguments[1].type ?: return null) ?: return null
+                        SkCodecNativeMap(container, keyType, valueType)
+                    }
+
+                    else -> return null
+                }
+            }
+
             else -> return null
         }
 

@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.interop.SkClassInstanceMember
 import skript.interop.SkClassStaticMember
 import skript.io.SkriptEnv
@@ -17,6 +19,10 @@ sealed class SkCallable(val name: String) : SkObject() {
 
     override fun unwrap(): SkCallable {
         return this
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        throw UnsupportedOperationException("Functions can't be converted to JSON")
     }
 }
 

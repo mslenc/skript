@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.io.SkriptEnv
 import skript.opcodes.SkIterator
 import skript.util.SkArguments
@@ -49,4 +51,6 @@ abstract class SkValue {
     abstract suspend fun makeRange(end: SkValue, endInclusive: Boolean, env: SkriptEnv, exprDebug: String): SkValue
 
     abstract fun unwrap(): Any?
+
+    abstract suspend fun toJson(factory: JsonNodeFactory = JsonNodeFactory.withExactBigDecimals(true)): JsonNode
 }

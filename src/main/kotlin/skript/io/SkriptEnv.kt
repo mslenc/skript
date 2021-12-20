@@ -69,11 +69,7 @@ class SkriptEnv(val engine: SkriptEngine) {
 
         val runtimeModule = RuntimeModule(module)
         modules[module.name] = runtimeModule
-        try {
-            return executeFunction(module.moduleInit, emptyArray(), SkArguments())
-        } finally {
-            modules.remove(module.name)
-        }
+        return executeFunction(module.moduleInit, emptyArray(), SkArguments())
     }
 
     suspend fun createFunction(paramNames: List<String>, functionBody: String): SkScriptFunction {

@@ -2,16 +2,20 @@ package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
+import skript.assertStrictlyEqual
 import skript.interop.*
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.runScriptWithEmit
 import skript.typeError
+import skript.util.SkArguments
 import skript.values.*
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.util.*
 import kotlin.reflect.full.findParameterByName
 import kotlin.reflect.full.instanceParameter
 import kotlin.reflect.full.primaryConstructor
@@ -67,6 +71,19 @@ class TestSkObject(val src: String) : SkObject() {
 }
 
 object TestSkObjectClassDef : SkCustomClass<TestSkObject>("TestSkObject")
+
+class TestMapsObject {
+    fun getDailyData(): Map<DayOfWeek, List<Int>> {
+        return mapOf(
+            DayOfWeek.THURSDAY to listOf(3, 17),
+            DayOfWeek.FRIDAY to listOf(22, 11, 0)
+        )
+    }
+
+    fun processDailyData(data: Map<DayOfWeek, List<Int>>): String {
+        return TreeMap(data).toString()
+    }
+}
 
 class InteropTest {
     @Test
@@ -275,6 +292,71 @@ class InteropTest {
         )
 
         assertEmittedEquals(expect, result)
+    }
+
+    @Test
+    fun testBasicMapSupport() = runBlocking {
+        val result = runScriptWithEmit({ env ->
+            env.setClassAsGlobal(DayOfWeek::class)
+            env.setNativeGlobal("tester", TestMapsObject())
+        }, """
+            val dailyData = tester.getDailyData()
+            
+            emit(dailyData[DayOfWeek.THURSDAY])
+            emit(dailyData[DayOfWeek.FRIDAY])
+            emit(dailyData[DayOfWeek.SATURDAY])
+            
+            emit(tester.processDailyData(dailyData))
+        """.trimIndent())
+
+        val firstList = result[0] as SkAbstractList
+
+        assertStrictlyEqual(3.toSkript(), firstList.getSlot(0))
+        assertStrictlyEqual(17.toSkript(), firstList.getSlot(1))
+        assertEquals(2, firstList.getSize())
+
+        val secondList = result[1] as SkAbstractList
+
+        assertStrictlyEqual(22.toSkript(), secondList.getSlot(0))
+        assertStrictlyEqual(11.toSkript(), secondList.getSlot(1))
+        assertStrictlyEqual(0.toSkript(), secondList.getSlot(2))
+        assertEquals(3, secondList.getSize())
+
+        assertStrictlyEqual(SkUndefined, result[2])
+
+        assertStrictlyEqual("{THURSDAY=[3, 17], FRIDAY=[22, 11, 0]}".toSkript(), result[3])
+    }
+
+    @Test
+    fun testEventHandler() = runBlocking {
+        val ui = UiBuilder()
+        lateinit var env: SkriptEnv
+
+        val result = runScriptWithEmit({
+            env = it
+            it.setNativeGlobal("ui", ui)
+        }, """
+            ui.setButton("Test", fun(text) {
+                emit(123)
+                emit(text)
+            })
+        """.trimIndent())
+
+        ui.handler?.call(SkArguments().apply { addPosArg("test123".toSkript()) }, env)
+
+        assertEquals(2, result.size)
+        assertStrictlyEqual(123.toSkript(), result[0])
+        assertStrictlyEqual("test123".toSkript(), result[1])
+    }
+}
+
+class UiBuilder {
+    var text: String? = null
+    var handler: SkScriptFunction? = null
+
+    fun setButton(text: String, handler: SkScriptFunction) {
+        this.text = text
+        this.handler = handler
     }
 }
 

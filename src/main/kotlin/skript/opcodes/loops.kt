@@ -1,5 +1,7 @@
 package skript.opcodes
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.io.toSkript
@@ -14,6 +16,10 @@ abstract class SkIterator : SkObject() {
 
     override fun unwrap(): SkIterator {
         return this // TODO: should we try to produce
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        throw UnsupportedOperationException("Iterators can't be converted to JSON.")
     }
 }
 

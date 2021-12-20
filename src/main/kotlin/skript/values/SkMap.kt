@@ -6,14 +6,16 @@ import skript.opcodes.SkIterator
 import skript.typeError
 import skript.util.SkArguments
 
-class SkMap : SkObject {
+class SkMap() : SkAbstractMap() {
     override val klass: SkClassDef
         get() = SkMapClassDef
 
-    constructor() : super()
-
     constructor(initialValues: Map<String, SkValue>) : this() {
         entries.putAll(initialValues)
+    }
+
+    override fun getSize(): Int {
+        return entries.size
     }
 
     override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
@@ -46,14 +48,6 @@ class SkMap : SkObject {
 
     override fun getKind(): SkValueKind {
         return SkValueKind.MAP
-    }
-
-    override fun asBoolean(): SkBoolean {
-        return SkBoolean.valueOf(entries.isNotEmpty())
-    }
-
-    override fun asNumber(): SkNumber {
-        typeError("Can't convert a map into a number")
     }
 
     override fun asString(): SkString {
@@ -89,7 +83,7 @@ class SkMap : SkObject {
     }
 }
 
-object SkMapClassDef : SkClassDef("Map") {
+object SkMapClassDef : SkClassDef("Map", SkAbstractMapClassDef) {
     override suspend fun construct(runtimeClass: SkClass, args: SkArguments, env: SkriptEnv): SkObject {
         val result = SkMap()
 

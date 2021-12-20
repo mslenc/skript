@@ -1,5 +1,8 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
+
 class SkStringBuilder : SkObject() {
     val sb = StringBuilder()
 
@@ -20,6 +23,10 @@ class SkStringBuilder : SkObject() {
 
     override fun unwrap(): StringBuilder {
         return sb
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        return factory.textNode(sb.toString())
     }
 }
 

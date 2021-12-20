@@ -1,5 +1,7 @@
 package skript.interop.wrappers
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.interop.SkCodec
 import skript.interop.SkCodecDouble
 import skript.io.SkriptEnv
@@ -33,6 +35,15 @@ class SkDoubleArray(override val nativeObj: DoubleArray) : SkAbstractNativeArray
 
     override fun unwrap(): DoubleArray {
         return nativeObj
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        val array = factory.arrayNode(nativeObj.size)
+
+        for (value in nativeObj)
+            array.add(value)
+
+        return array
     }
 }
 

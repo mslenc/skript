@@ -1,5 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
+buildscript {
+    ext.jackson_version = '2.12.5'
+}
+
 plugins {
     id 'java'
     id 'org.jetbrains.kotlin.jvm' version '1.5.21'
@@ -8,7 +12,7 @@ plugins {
 }
 
 group 'com.github.mslenc'
-version '0.10.0'
+version '0.10.2'
 
 sourceCompatibility = 1.8
 
@@ -29,6 +33,12 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.21"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1"
     implementation "org.jetbrains.kotlin:kotlin-reflect:1.5.21"
+
+    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
+    compile "com.fasterxml.jackson.module:jackson-module-parameter-names:$jackson_version"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson_version"
+    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
 
     compile "com.github.mslenc:utilsktx:1.2.1"
 

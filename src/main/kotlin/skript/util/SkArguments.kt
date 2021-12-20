@@ -1,5 +1,7 @@
 package skript.util
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.syntaxError
 import skript.typeError
 import skript.values.*
@@ -157,6 +159,10 @@ class SkArguments : SkObject() {
 
     override fun toString(): String {
         return "SkArguments(posArgs=$posArgs, kwArgs=$kwArgs)"
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        throw UnsupportedOperationException("Can't convert Arguments to JSON")
     }
 
     companion object {

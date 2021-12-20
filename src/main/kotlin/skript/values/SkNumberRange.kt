@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.github.mslenc.utils.ComparableRangeEx
 import skript.io.SkriptEnv
 import skript.io.toSkript
@@ -50,6 +52,16 @@ class SkNumberRange(val start: SkNumber, val end: SkNumber, val endInclusive: Bo
                 ComparableRangeEx(start.toDouble(), end.toDouble())
             }
         }
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        val list = factory.arrayNode()
+
+        list.add(start.toJson(factory))
+        list.add(end.toJson(factory))
+        list.add(endInclusive)
+
+        return list
     }
 }
 

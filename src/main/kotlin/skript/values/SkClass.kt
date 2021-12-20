@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -57,6 +59,10 @@ class SkClass(val def: SkClassDef, val superClass: SkClass?) : SkObject() {
 
     override fun unwrap(): SkClass {
         return this
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        throw UnsupportedOperationException("Can't convert Class to JSON")
     }
 }
 

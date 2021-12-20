@@ -1,5 +1,7 @@
 package skript.values
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.typeError
@@ -93,6 +95,10 @@ abstract class SkObject : SkValue() {
 
     override fun unwrap(): Any {
         return this
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        TODO("Not yet implemented (${ this::class.java })")
     }
 }
 

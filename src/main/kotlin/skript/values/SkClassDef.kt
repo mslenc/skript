@@ -205,6 +205,10 @@ open class SkCustomClass<OBJ>(name: String, superClass: SkClassDef = SkObjectCla
     fun defineMutableProperty(propName: String, getter: suspend (OBJ)->SkValue, setter: suspend (OBJ, SkValue)->Unit) {
         defineInstanceProperty(SkCustomMutableProperty(this, propName, getter, setter))
     }
+
+    fun defineMutablePropertyEnv(propName: String, getter: suspend (OBJ, SkriptEnv)->SkValue, setter: suspend (OBJ, SkValue, SkriptEnv)->Unit) {
+        defineInstanceProperty(SkCustomMutablePropertyEnv(this, propName, getter, setter))
+    }
 }
 
 class SkCustomReadOnlyProperty<OBJ>(override val expectedClass: SkClassDef, override val name: String, val getter: suspend (OBJ)->SkValue) : SkObjectProperty() {
@@ -239,6 +243,24 @@ class SkCustomMutableProperty<OBJ>(override val expectedClass: SkClassDef, overr
     override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
         assert(expectedClass.isInstance(obj))
         setter(obj as OBJ, value)
+    }
+}
+
+class SkCustomMutablePropertyEnv<OBJ>(override val expectedClass: SkClassDef, override val name: String, val getter: suspend (OBJ, SkriptEnv)->SkValue, val setter: suspend (OBJ, SkValue, SkriptEnv)->Unit) : SkObjectProperty() {
+    override val nullable: Boolean
+        get() = true // TODO
+
+    override val readOnly: Boolean
+        get() = false
+
+    override suspend fun getValue(obj: SkObject, env: SkriptEnv): SkValue {
+        assert(expectedClass.isInstance(obj))
+        return getter(obj as OBJ, env)
+    }
+
+    override suspend fun setValue(obj: SkObject, value: SkValue, env: SkriptEnv) {
+        assert(expectedClass.isInstance(obj))
+        setter(obj as OBJ, value, env)
     }
 }
 

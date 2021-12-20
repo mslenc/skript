@@ -1,5 +1,7 @@
 package skript.interop.wrappers
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.interop.ConversionType
 import skript.interop.HoldsNative
 import skript.interop.SkCodec
@@ -30,6 +32,16 @@ class SkCollectionWrapper<T>(override val nativeObj: Collection<T>, val elementC
 
     override fun unwrap(): Collection<T> {
         return nativeObj
+    }
+
+    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
+        val list = factory.arrayNode()
+
+        for (el in nativeObj) {
+            list.add(elementCodec.toSkript(el, env).toJson(factory))
+        }
+
+        return list
     }
 }
 
