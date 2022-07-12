@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
+import skript.io.pack
 import skript.io.toSkript
 import skript.runScriptWithEmit
 
@@ -64,5 +65,26 @@ class MapLiteralTest {
         assertEquals("""
             {"foo":"bar","list":[1.0,2.43,3.011],"bools":{"t":true,"f":false}}
         """.trimIndent(), json.toString())
+    }
+
+    @Test
+    fun testRemovingWorks() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            val map1 = { a: "bcd", e: "fgh" }
+            emit(map1)
+            
+            val map2 = { a: "bcd", e: "fgh" }
+            map2["e"] = undefined
+            emit(map2)
+            
+            val map3 = { a: "bcd", e: "fgh" }
+            map3.remove("e")
+            emit(map3)
+            
+        """.trimIndent())
+
+        assertEquals("{s1as3bcds1es3fgh}", pack(outputs[0]))
+        assertEquals("{s1as3bcds1eu}", pack(outputs[1]))
+        assertEquals("{s1as3bcd}", pack(outputs[2]))
     }
 }

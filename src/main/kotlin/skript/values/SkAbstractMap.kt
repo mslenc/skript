@@ -59,12 +59,18 @@ object SkAbstractMapClassDef : SkCustomClass<SkAbstractMap>("AbstractMap", SkObj
 
         defineMethod("keys").withImpl { map ->
             val keys = SkList()
-            map.makeIterator()?.let {
+            map.makeIterator().let {
                 while (it.moveToNext()) {
                     keys.add(it.getCurrentKey())
                 }
             }
             keys
         }
+
+        defineMethod("remove").
+            withParam("key").
+            withImpl { map, key, env ->
+                map.entryDelete(key, env).toSkript()
+            }
     }
 }

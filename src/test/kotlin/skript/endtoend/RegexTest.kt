@@ -33,4 +33,32 @@ class RegexTest {
         assertEmittedEquals(expect, outputs)
     }
 
+    @Test
+    fun testRegexBasics2() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            fun cleanUp(email) {
+                val atRE = Regex.fromLiteral("@")
+                if (!atRE.containsMatchIn(email))
+                    return email
+                    
+                val parts = atRE.split(email, 2)
+                
+                val dotRE = Regex.fromLiteral(".")
+                val before = dotRE.replace(parts[0], "")
+                val after = parts[1]
+                
+                return `${'$'}{ before }@${'$'}{ after }`
+            }
+            
+            emit(cleanUp(false))
+            emit(cleanUp("john.doe@gmail.com"))            
+        """.trimIndent())
+
+        val expect = listOf(
+            false.toSkript(),
+            "johndoe@gmail.com".toSkript()
+        )
+
+        assertEmittedEquals(expect, outputs)
+    }
 }
