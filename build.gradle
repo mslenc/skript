@@ -1,20 +1,15 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 buildscript {
-    ext.jackson_version = '2.13.3'
+    ext.jackson_version = '2.14.1'
 }
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
-    id 'maven'
+    id 'org.jetbrains.kotlin.jvm' version '1.7.22'
     id 'maven-publish'
 }
 
 group 'com.github.mslenc'
-version '0.12.0'
-
-sourceCompatibility = 1.8
+version '0.13.0'
 
 repositories {
     mavenLocal()
@@ -31,30 +26,28 @@ publishing {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.6.21"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.22"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:1.6.21"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.7.22"
 
-    compile "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
-    compile "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
-    compile "com.fasterxml.jackson.module:jackson-module-parameter-names:$jackson_version"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson_version"
-    compile "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
+    implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
+    implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
+    implementation "com.fasterxml.jackson.module:jackson-module-parameter-names:$jackson_version"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson_version"
+    implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
 
-    compile "com.github.mslenc:utilsktx:1.3.0"
+    implementation "com.github.mslenc:utilsktx:1.4.0"
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_8
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
     withSourcesJar()
     withJavadocJar()
-}
-
-tasks.withType(KotlinCompile) {
-    kotlinOptions.jvmTarget = "1.8"
 }
 
 artifacts {

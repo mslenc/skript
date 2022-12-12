@@ -120,6 +120,7 @@ class SkriptEnv(val engine: SkriptEngine) {
                 is JumpTarget -> ip = result.value
                 is ReturnValue -> return result.result
                 is ThrowException -> throw result.ex
+                is ExecuteSuspend -> throw IllegalStateException("executeSuspend() returned ExecuteSuspend")
             }
         }
 

@@ -94,16 +94,15 @@ fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>,
     val staticsByName = HashMap<String, ArrayList<SkClassStaticMember>>()
 
     if (klass.isSubclassOf(Enum::class)) {
-        EnumSet.allOf(klass.java as Class<Enum<*>>).forEach { enum ->
-            enum as T
+        EnumHelper.getEnumValues(klass.java).forEach { (name, enum) ->
             val prop = SkNativeStaticReadOnlyProperty(
-                name = enum.name,
+                name = name,
                 nullable = false,
                 codec = (engine.getNativeCodec(klass)) as SkCodec<T>,
                 getter = { enum }
             )
 
-            staticsByName.getOrPut(enum.name) { ArrayList() }.add(prop)
+            staticsByName.getOrPut(name) { ArrayList() }.add(prop)
         }
     }
 
