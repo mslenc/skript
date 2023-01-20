@@ -172,7 +172,7 @@ object SkStringClassDef : SkCustomClass<SkStringObject>("String", SkObjectClassD
                 }
 
                 when (trimmed) {
-                    str.value.value -> str
+                    str.value.value -> str.value
                     else -> SkString(trimmed)
                 }
             }
@@ -201,6 +201,13 @@ object SkStringClassDef : SkCustomClass<SkStringObject>("String", SkObjectClassD
             withParam("locale").
             withImpl { string, locale, _ ->
                 string.value.value.lowercase(resolveLocale(locale)).toSkript()
+            }
+
+        defineMethod("split").
+            withStringParam("separator").
+            withImpl { string, sep, _ ->
+                val parts = string.value.value.split(sep)
+                SkList(parts.map { SkString(it) })
             }
     }
 }
