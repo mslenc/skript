@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
+import skript.interop.SkJson
 import skript.io.pack
 import skript.io.toSkript
 import skript.runScriptWithEmit
@@ -86,5 +87,54 @@ class MapLiteralTest {
         assertEquals("{s1as3bcds1es3fgh}", pack(outputs[0]))
         assertEquals("{s1as3bcds1eu}", pack(outputs[1]))
         assertEquals("{s1as3bcd}", pack(outputs[2]))
+    }
+
+    @Test
+    fun testParsingJson() = runBlocking {
+        val outputs = runScriptWithEmit(
+            {
+                it.setNativeGlobal("JSON", SkJson)
+                it.setGlobal("jsonSource", """
+                    {
+                        "foo": "bar",
+                        "list": [ 1, 2.43, 3.011 ],
+                        "bools": {
+                            "t": true,
+                            "f": false,
+                            "n": null
+                        }
+                    }
+                """.trimIndent().toSkript())
+            },
+
+            """
+            
+            emit(JSON.parse(jsonSource))
+            emit(JSON.stringify(JSON.parse(jsonSource)))
+            
+        """.trimIndent())
+
+        val json = outputs[0].toJson()
+
+        assertEquals("""
+            {"foo":"bar","list":[1,2.43,3.011],"bools":{"t":true,"f":false,"n":null}}
+        """.trimIndent(), json.toString())
+
+        assertEquals("{s3foos3bars4list[d11d42.43d53.011]s5bools{s1tTs1fFs1nU}}", pack(outputs[0]))
+
+
+        val json2 = outputs[1]
+
+        assertEquals("""
+            {
+              "foo" : "bar",
+              "list" : [ 1, 2.43, 3.011 ],
+              "bools" : {
+                "t" : true,
+                "f" : false,
+                "n" : null
+              }
+            }
+        """.trimIndent(), json2.asString().value)
     }
 }
