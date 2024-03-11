@@ -1,34 +1,28 @@
 buildscript {
-    ext.jackson_version = '2.14.1'
+    ext.jackson_version = '2.16.1'
+    ext.kotlin_version = '1.9.23'
 }
 
 plugins {
     id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.7.22'
+    id 'org.jetbrains.kotlin.jvm' version "$kotlin_version"
     id 'maven-publish'
+    id 'signing'
 }
 
-group 'com.github.mslenc'
-version '0.13.2'
+group 'io.github.mslenc'
+version '0.13.4'
 
 repositories {
     mavenLocal()
     mavenCentral()
-    maven { url "https://jitpack.io" }
-}
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
+    maven { url "https://mslenc-releases.s3.amazonaws.com/maven2" }
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.22"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:1.7.22"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     implementation "com.fasterxml.jackson.core:jackson-databind:$jackson_version"
     implementation "com.fasterxml.jackson.module:jackson-module-kotlin:$jackson_version"
@@ -36,7 +30,7 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson_version"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
 
-    implementation "com.github.mslenc:utilsktx:1.4.0"
+    implementation "io.github.mslenc:utilsktx:1.5.3"
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
@@ -50,9 +44,54 @@ java {
     withJavadocJar()
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = 'skript'
+            from components.java
+
+            pom {
+                name = "skript"
+                description = "A simple scripting language for Kotlin."
+                url = "https://github.com/mslenc/skript"
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'mslenc'
+                        name = 'Mitja Slenc'
+                        email = 'mslenc@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:https://github.com/mslenc/skript.git"
+                    developerConnection = "scm:git:git@github.com:mslenc/skript.git"
+                    url = "https://github.com/mslenc/skript"
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = "s3://mslenc-releases/maven2"
+            credentials(AwsCredentials) {
+                accessKey = awsAccessKeyMslenc
+                secretKey = awsSecretKeyMslenc
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
 }
 
 test {
