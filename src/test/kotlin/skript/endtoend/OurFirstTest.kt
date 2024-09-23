@@ -75,4 +75,31 @@ class OurFirstTest {
 
         assertEmittedEquals(expect, outputs)
     }
+
+    @Test
+    fun testElif() = runBlocking {
+        val outputs = runScriptWithEmit("""
+            var a = 13;
+            while (a++ < 21) {
+                if (a % 15 == 0) { emit("FizzBuzz"); }
+                elif (a % 5 == 0) { emit("Fizz") }
+                elif (a % 3 == 0) emit("Buzz")
+                else emit(a.toString()); 
+            }
+
+        """.trimIndent())
+
+        val expect = listOf(
+            "14",
+            "FizzBuzz",
+            "16",
+            "17",
+            "Buzz",
+            "19",
+            "Fizz",
+            "Buzz"
+        ).map { it.toSkript() }
+
+        assertEmittedEquals(expect, outputs)
+    }
 }

@@ -1,6 +1,11 @@
 package skript.io
 
-data class ModuleSource(val source: String, val moduleName: String, val fileName: String)
+enum class ModuleType {
+    SKRIPT,
+    PAGE_TEMPLATE,
+}
+
+data class ModuleSource(val source: String, val moduleName: String, val fileName: String, val type: ModuleType)
 
 interface ModuleSourceProvider {
     suspend fun getSource(moduleName: String): ModuleSource?
@@ -11,11 +16,18 @@ interface ModuleSourceProvider {
         }
 
         @JvmName("staticSources")
-        fun static(sources: Map<String, String>): ModuleSourceProvider {
+        fun static(skripts: Map<String, String>, templates: Map<String, String>): ModuleSourceProvider {
             val transformed = LinkedHashMap<String, ModuleSource>()
-            sources.forEach { moduleName, source ->
-                transformed[moduleName] = ModuleSource(source, moduleName, moduleName)
+
+            skripts.forEach { (moduleName, source) ->
+                transformed[moduleName] = ModuleSource(source, moduleName, moduleName, ModuleType.SKRIPT)
             }
+            templates.forEach { (moduleName, source) ->
+                transformed[moduleName] = ModuleSource(source, moduleName, moduleName, ModuleType.PAGE_TEMPLATE)
+            }
+
+            if (transformed.size != skripts.size + templates.size)
+                throw IllegalArgumentException("Sources have a repeated key.")
 
             return StaticModuleSourceProvider(transformed)
         }

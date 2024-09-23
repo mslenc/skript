@@ -24,17 +24,17 @@ class LexerTest {
             null**=undefined
             class//=fun
             super[this]
-            var val for while if
+            var val for while if elif
             else when do return
             break continue
             try throw typeof
             ( ) { }
             . , : ;
-            a in b || a !in b | a is C && Šlenc is ! is  & foo
+            a in b || a !in b | a is C && Šlenc is ! is !is & foo
             !a |= &= ||= &&=
             a == A === AAA
             a != b !== C
-            a < b <= c <=> d >= e > f
+            a < b <= c <=> d >= e > f |>
             @here { a -> a - 1 } ?: nooo???
             1..5 true..<false
             ++a--
@@ -43,7 +43,7 @@ class LexerTest {
             `abc ${'$'}{ a + { c: d } } def`
         """.trimIndent()
 
-        val tokens = CharStream(source, filename).lex()
+        val tokens = CharStream(source, filename).lexCodeModule()
 
         val expect = listOf(
             Token(IDENTIFIER,         "import",         Pos( 1,  1, filename)),
@@ -130,6 +130,7 @@ class LexerTest {
             Token(FOR,                "for",            Pos(13,  9, filename)),
             Token(WHILE,              "while",          Pos(13, 13, filename)),
             Token(IF,                 "if",             Pos(13, 19, filename)),
+            Token(ELIF,               "elif",           Pos(13, 22, filename)),
 
             Token(ELSE,               "else",           Pos(14,  1, filename)),
             Token(WHEN,               "when",           Pos(14,  6, filename)),
@@ -167,9 +168,11 @@ class LexerTest {
             Token(AND_AND,            "&&",             Pos(19, 28, filename)),
             Token(IDENTIFIER,         "Šlenc",          Pos(19, 31, filename)),
             Token(IS,                 "is",             Pos(19, 37, filename)),
-            Token(NOT_IS,             "!is",            Pos(19, 40, filename)),
-            Token(AND,                "&",              Pos(19, 46, filename)),
-            Token(IDENTIFIER,         "foo",            Pos(19, 48, filename)),
+            Token(EXCL,               "!",              Pos(19, 40, filename)),
+            Token(IS,                 "is",             Pos(19, 42, filename)),
+            Token(NOT_IS,             "!is",            Pos(19, 45, filename)),
+            Token(AND,                "&",              Pos(19, 49, filename)),
+            Token(IDENTIFIER,         "foo",            Pos(19, 51, filename)),
 
             Token(EXCL,               "!",              Pos(20,  1, filename)),
             Token(IDENTIFIER,         "a",              Pos(20,  2, filename)),
@@ -201,6 +204,7 @@ class LexerTest {
             Token(IDENTIFIER,         "e",              Pos(23, 21, filename)),
             Token(GREATER_THAN,       ">",              Pos(23, 23, filename)),
             Token(IDENTIFIER,         "f",              Pos(23, 25, filename)),
+            Token(PIPE_CALL,          "|>",             Pos(23, 27, filename)),
 
             Token(AT,                 "@",              Pos(24,  1, filename)),
             Token(IDENTIFIER,         "here",           Pos(24,  2, filename)),
@@ -245,7 +249,7 @@ class LexerTest {
             Token(DECIMAL,            "12.34E+5D",      Pos(28, 32, filename), "12.34E+5"),
             Token(DECIMAL,            "12.34E-5d",      Pos(28, 42, filename), "12.34E-5"),
 
-            Token(TEMPLATE,           "`abc \${ a + { c: d } } def`", Pos(29, 1, filename), listOf(
+            Token(STRING_TEMPLATE,    "`abc \${ a + { c: d } } def`", Pos(29, 1, filename), listOf(
                 TemplatePartString("abc "),
                 TemplatePartExpr(listOf(
                     Token(IDENTIFIER, "a", Pos(29,  9, filename)),
@@ -269,6 +273,9 @@ class LexerTest {
         assertEquals(expect.size, tokens.size)
 
         val remainingTokens = enumValues<TokenType>().toMutableSet()
+        remainingTokens.removeAll(listOf(
+            ECHO_TEXT, ECHO_NL, ECHO_WS, STMT_OPEN, STMT_CLOSE, EXPR_OPEN, EXPR_CLOSE // these only occur in templates
+        ))
         for (token in tokens)
             remainingTokens.remove(token.type)
 

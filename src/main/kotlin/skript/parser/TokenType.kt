@@ -5,7 +5,7 @@ enum class TokenType {
     STRING, DOUBLE, DECIMAL, TRUE, FALSE, NULL, UNDEFINED,
     CLASS, FUNCTION, SUPER, THIS,
     VAR, VAL,
-    FOR, WHILE, IF, ELSE, WHEN, DO, RETURN,
+    FOR, WHILE, IF, ELSE, ELIF, WHEN, DO, RETURN,
     BREAK, CONTINUE,
     TRY, THROW, TYPEOF,
 
@@ -25,12 +25,15 @@ enum class TokenType {
     STARSHIP, AT, ARROW,                 // <=> @ ->
     OR, AND, OR_OR, AND_AND,             // | & || &&
     DOT_DOT, DOT_DOT_LESS,               // .. ..<
+    PIPE_CALL,                           // |>
 
     PLUS_ASSIGN, MINUS_ASSIGN, STAR_ASSIGN, SLASH_ASSIGN, PERCENT_ASSIGN, // += -= *= /= %=
     STAR_STAR_ASSIGN, SLASH_SLASH_ASSIGN,                                 // **= //=
     OR_ASSIGN, AND_ASSIGN, OR_OR_ASSIGN, AND_AND_ASSIGN,                  // |= &= ||= &&=
 
-    TEMPLATE,
+    STRING_TEMPLATE,
+
+    ECHO_TEXT, ECHO_NL, ECHO_WS, STMT_OPEN, STMT_CLOSE, EXPR_OPEN, EXPR_CLOSE, // page templates - [text], {% %} {{ }}
 
     EOF
 }
@@ -49,6 +52,7 @@ val skriptKeywords = mapOf(
     "for" to TokenType.FOR,
     "while" to TokenType.WHILE,
     "if" to TokenType.IF,
+    "elif" to TokenType.ELIF,
     "else" to TokenType.ELSE,
     "when" to TokenType.WHEN,
     "do" to TokenType.DO,
@@ -62,4 +66,4 @@ val skriptKeywords = mapOf(
     "is" to TokenType.IS
 )
 
-val internedKeywords = skriptKeywords.map { (str, value) -> value to str }.toMap()
+val internedKeywordStrings = skriptKeywords.map { (str, value) -> value to str }.toMap()

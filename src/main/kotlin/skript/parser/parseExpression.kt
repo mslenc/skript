@@ -5,27 +5,459 @@ import skript.parser.TokenType.*
 import skript.syntaxError
 import skript.values.*
 
-fun Tokens.parseExpression(): Expression {
-    return parseAssignment()
-}
 
-fun Tokens.parseAssignment(): Expression {
-    val left = parseTernary()
 
-    if (left !is LValue)
-        return left
+open class ExpressionParser(val tokens: Tokens) {
+    protected val peekType: TokenType
+        get() = tokens.peek().type
 
-    val nextTok = peek()
+    protected val peekPos: Pos
+        get() = tokens.peek().pos
 
-    val binaryOp = when {
-        nextTok.type == ASSIGN -> null
-        else -> nextTok.type.toAssignOp() ?: return left
+    protected fun consume() = tokens.next()
+
+    protected fun consumePos() = consume().pos
+
+    fun parseExpression(): Expression {
+        return parseAssignment()
     }
-    next()
 
-    val value = parseAssignment()
+    fun parseAssignment(): Expression {
+        val left = parseTernary()
 
-    return AssignExpression(left, binaryOp, value)
+        if (left !is LValue)
+            return left
+
+        val nextTok = tokens.peek()
+
+        val binaryOp = when {
+            nextTok.type == ASSIGN -> null
+            else -> nextTok.type.toAssignOp() ?: return left
+        }
+        tokens.next()
+
+        val value = parseAssignment()
+
+        return AssignExpression(left, binaryOp, value)
+    }
+
+
+    fun parseTernary(): Expression {
+        val condition = parseDisjunction()
+
+        return if (tokens.consume(QUESTION) != null) {
+            val ifTrue = parseAssignment()
+            tokens.expect(COLON)
+            val ifFalse = parseAssignment()
+            TernaryExpression(condition, ifTrue, ifFalse)
+        } else {
+            condition
+        }
+    }
+
+    fun parseDisjunction(): Expression {
+        var result = parseConjunction()
+        while (true) {
+            result = when (peekType) {
+                OR ->    BinaryExpression(consumePos(), result, BinaryOp.OR,    parseConjunction())
+                OR_OR -> BinaryExpression(consumePos(), result, BinaryOp.OR_OR, parseConjunction())
+                else -> return result
+            }
+        }
+    }
+
+    fun parseConjunction(): Expression {
+        var result = parseComparison()
+        while (true) {
+            result = when (peekType) {
+                AND ->     BinaryExpression(consumePos(), result, BinaryOp.AND,     parseComparison())
+                AND_AND -> BinaryExpression(consumePos(), result, BinaryOp.AND_AND, parseComparison())
+                else -> return result
+            }
+        }
+    }
+
+    fun parseComparison(): Expression {
+        // we avoid allocating the lists for 0 and 1 operator, because those are expected to be the vast majority, and also
+        // to allow STARSHIP
+        // (but we do need the lists in bigger cases, because we only allow sequences where all operators are compatible, listed above)
+
+        val first = parseInIs()
+        val pos = peekPos
+        val firstOp = peekType.toComparisonOp()?.also { tokens.next() } ?: return first
+        val second = parseInIs()
+        val secondOp = peekType.toComparisonOp()?.also { tokens.next() } ?: return BinaryExpression(pos, first, firstOp, second)
+
+        val parts = mutableListOf(first, second, parseInIs())
+        val ops = mutableListOf(firstOp, secondOp)
+
+        while (true) {
+            ops += peekType.toComparisonOp()?.also { tokens.next() } ?: break
+            parts += parseInIs()
+        }
+
+        val opsSeen = ops.toSet()
+
+        for (validOption in validComparisonSetsSeq) {
+            if (validOption.containsAll(opsSeen)) {
+                return CompareSequence(parts, ops)
+            }
+        }
+
+        for (validOption in validComparisonSetsPairwise) {
+            if (validOption.containsAll(opsSeen)) {
+                return CompareAllPairs(parts, ops)
+            }
+        }
+
+        syntaxError("Can't combine these operators (${ opsSeen })", pos)
+    }
+
+    fun parseInIs(): Expression {
+        var result = parseElvis()
+
+        while (true) {
+            result = when (peekType) {
+                IN ->     { tokens.next(); ValueIn(result, parseElvis(), true) }
+                NOT_IN -> { tokens.next(); ValueIn(result, parseElvis(), false) }
+
+                IS ->     { tokens.next(); val ident = tokens.expect(IDENTIFIER); ObjectIs(result, Variable(ident.rawText, ident.pos), true) }
+                NOT_IS -> { tokens.next(); val ident = tokens.expect(IDENTIFIER); ObjectIs(result, Variable(ident.rawText, ident.pos), false) }
+
+                else -> return result
+            }
+        }
+    }
+
+    fun parseElvis(): Expression {
+        var result = parseInfixCall()
+        while (true) {
+            result = when (peekType) {
+                ELVIS -> BinaryExpression(tokens.next().pos, result, BinaryOp.ELVIS, parseInfixCall())
+                else -> return result
+            }
+        }
+    }
+
+    fun parseInfixCall(): Expression {
+        var result = parseRange()
+        while (true) {
+            result = when {
+                peekType == PIPE_CALL -> {
+                    tokens.next()
+                    val target = parseRange()
+
+                    PipeCall(result, target)
+                    /*
+                    val arg = listOf(PosArg(result))
+
+                    when (target) {
+                        is FuncCall -> FuncCall(target.func, arg + target.args)
+                        is MethodCall -> MethodCall(target.obj, target.methodName, arg + target.args, target.type)
+                        else -> FuncCall(target, arg)
+                    }
+
+                     */
+                }
+                tokens.peekOnNewLine() || peekType != IDENTIFIER -> return result
+                else -> MethodCall(result, tokens.next().rawText, listOf(PosArg(parseRange())), MethodCallType.INFIX)
+            }
+        }
+    }
+
+    fun parseRange(): Expression {
+        var result = parseAdd()
+        while (true) {
+            result = when (peekType) {
+                DOT_DOT ->      BinaryExpression(tokens.next().pos, result, BinaryOp.RANGE_TO,      parseAdd())
+                DOT_DOT_LESS -> BinaryExpression(tokens.next().pos, result, BinaryOp.RANGE_TO_EXCL, parseAdd())
+                else -> return result
+            }
+        }
+    }
+
+    fun parseAdd(): Expression {
+        var result = parseMul()
+        while (true) {
+            result = when (peekType) {
+                PLUS ->  BinaryExpression(tokens.next().pos, result, BinaryOp.ADD,      parseMul())
+                MINUS -> BinaryExpression(tokens.next().pos, result, BinaryOp.SUBTRACT, parseMul())
+                else -> return result
+            }
+        }
+    }
+
+    fun parseMul(): Expression {
+        var result = parsePower()
+        while (true) {
+            result = when (peekType) {
+                STAR ->        BinaryExpression(tokens.next().pos, result, BinaryOp.MULTIPLY,   parsePower())
+                SLASH ->       BinaryExpression(tokens.next().pos, result, BinaryOp.DIVIDE,     parsePower())
+                SLASH_SLASH -> BinaryExpression(tokens.next().pos, result, BinaryOp.DIVIDE_INT, parsePower())
+                PERCENT ->     BinaryExpression(tokens.next().pos, result, BinaryOp.REMAINDER,  parsePower())
+                else -> return result
+            }
+        }
+    }
+
+    fun parsePower(): Expression {
+        var result = parsePrefixUnary()
+        while (true) {
+            result = when (peekType) {
+                STAR_STAR -> BinaryExpression(tokens.next().pos, result, BinaryOp.POWER, parsePower())
+                else -> return result
+            }
+        }
+    }
+
+    fun parsePrefixUnary(): Expression {
+        return when (peekType) {
+            MINUS -> { tokens.next(); UnaryExpression(UnaryOp.MINUS, parsePrefixUnary()) }
+            PLUS -> { tokens.next(); UnaryExpression(UnaryOp.PLUS, parsePrefixUnary()) }
+            EXCL -> { tokens.next(); UnaryExpression(UnaryOp.NOT, parsePrefixUnary()) }
+            PLUS_PLUS -> {
+                val tok = tokens.next()
+                val inner = parsePrefixUnary()
+                if (inner is LValue) {
+                    PrePostExpr(PrePostOp.PRE_INCR, inner)
+                } else {
+                    syntaxError("Pre-increment ++ can only be used on lvalues", tok.pos)
+                }
+            }
+            MINUS_MINUS -> {
+                val tok = tokens.next()
+                val inner = parsePrefixUnary()
+                if (inner is LValue) {
+                    PrePostExpr(PrePostOp.PRE_DECR, inner)
+                } else {
+                    syntaxError("Pre-decrement -- can only be used on lvalues", tok.pos)
+                }
+            }
+            else -> parsePostfixUnary()
+        }
+    }
+
+    fun parsePostfixUnary(): Expression {
+        return parsePostfixes(parsePrimary())
+    }
+
+    fun parsePostfixes(primary: Expression): Expression {
+        var result = primary
+
+        while (true) {
+            if (tokens.peekOnNewLine() && peekType != SAFE_DOT && peekType != DOT) // all others can start a new statement
+                return result
+
+            result = when (peekType) {
+                PLUS_PLUS -> {
+                    val tok = tokens.next()
+                    if (result is LValue) {
+                        PrePostExpr(PrePostOp.POST_INCR, result)
+                    } else {
+                        syntaxError("Post-increment ++ can only be used on lvalues", tok.pos)
+                    }
+                }
+                MINUS_MINUS -> {
+                    val tok = tokens.next()
+                    if (result is LValue) {
+                        PrePostExpr(PrePostOp.POST_DECR, result)
+                    } else {
+                        syntaxError("Post-decrement -- can only be used on lvalues", tok.pos)
+                    }
+                }
+                SAFE_DOT,
+                DOT -> {
+                    val callType = if (tokens.next().type == SAFE_DOT) MethodCallType.SAFE else MethodCallType.REGULAR
+                    val ident = tokens.expect(IDENTIFIER)
+                    if (peekType == LPAREN) {
+                        MethodCall(result, ident.rawText, parseCallArgs(), callType)
+                    } else {
+                        PropertyAccess(result, ident.rawText)
+                    }
+                }
+                LBRACK -> {
+                    tokens.next()
+                    val index = parseExpression()
+                    tokens.expect(RBRACK)
+                    ElementAccess(result, index)
+                }
+                LPAREN -> {
+                    FuncCall(result, parseCallArgs())
+                }
+                else -> return result
+            }
+        }
+    }
+
+    fun parseCallArgs(): List<CallArg> {
+        val args = ArrayList<CallArg>()
+        val namesSeen = HashSet<String>()
+
+        var kwOnly = false
+
+        tokens.expect(LPAREN)
+        while (true) {
+            val peeked = tokens.peek()
+            when (peeked.type) {
+                RPAREN -> {
+                    tokens.next()
+                    return args
+                }
+                STAR -> {
+                    if (kwOnly) {
+                        syntaxError("Positional arguments must come before keyword arguments", peeked.pos)
+                    } else {
+                        tokens.next()
+                        args += SpreadPosArg(parseExpression())
+                    }
+                }
+                STAR_STAR -> {
+                    tokens.next()
+                    kwOnly = true
+                    args += SpreadKwArg(parseExpression())
+                }
+                else -> {
+                    val arg = parseExpression()
+                    if (arg is AssignExpression && arg.op == null && arg.left is Variable) {
+                        if (namesSeen.add(arg.left.varName)) {
+                            args += KwArg(arg.left.varName, arg.right)
+                            kwOnly = true
+                        } else {
+                            syntaxError("Argument named ${ arg.left.varName } was already defined", arg.left.pos)
+                        }
+                    } else {
+                        if (kwOnly) {
+                            syntaxError("Positional arguments must come before keyword arguments", peeked.pos)
+                        }
+                        args += PosArg(arg)
+                    }
+                }
+            }
+
+            if (peekType != RPAREN) {
+                tokens.expect(COMMA)
+            }
+        }
+    }
+
+    open fun parsePrimary(): Expression {
+        if (peekType == EOF)
+            syntaxError("Expected an expression, not <EOF>", peekPos)
+
+        val tok = tokens.next()
+
+        return when (tok.type) {
+            TRUE -> { Literal(SkBoolean.TRUE) }
+            FALSE -> { Literal(SkBoolean.FALSE) }
+            NULL -> { Literal(SkNull) }
+            UNDEFINED -> { Literal(SkUndefined) }
+            DOUBLE -> { Literal(SkDouble.valueOf(tok.rawText.toDoubleOrNull() ?: syntaxError("Couldn't parse double ${tok.rawText}", tok.pos))) }
+            DECIMAL -> { Literal(SkDecimal.valueOf(tok.value.toString().toBigDecimalOrNull() ?: syntaxError("Couldn't parse decimal ${tok.value}", tok.pos))) }
+            STRING -> { Literal(SkString(tok.value.toString())) }
+
+            LPAREN -> {
+                val result = parseExpression()
+                tokens.expect(RPAREN)
+                return Parentheses(result)
+            }
+
+            IDENTIFIER -> {
+                return Variable(tok.rawText, tok.pos)
+            }
+
+            LBRACK -> {
+                return parseRestOfListLiteral()
+            }
+
+            LCURLY -> {
+                return parseRestOfMapLiteral()
+            }
+
+            STRING_TEMPLATE -> {
+                return processStringTemplate(tok)
+            }
+
+            else -> {
+                syntaxError("Unexpected token ${tok.type}", tok.pos)
+            }
+        }
+    }
+
+    fun processStringTemplate(token: Token): StringTemplateExpr {
+        val parts = (token.value as List<TemplatePart>).map { part ->
+            when (part) {
+                is TemplatePartString -> {
+                    StrTemplateText(part.text)
+                }
+                is TemplatePartExpr -> {
+                    val sub = ExpressionParser(Tokens(part.tokens))
+                    val expr = sub.parseExpression()
+                    if (sub.peekType != EOF) {
+                        syntaxError("Unexpected token", sub.peekPos)
+                    } else {
+                        StrTemplateExpr(expr)
+                    }
+                }
+            }
+        }
+
+        return StringTemplateExpr(parts)
+    }
+
+    fun parseRestOfMapLiteral(): MapLiteral {
+        val parts = ArrayList<MapLiteralPart>()
+
+        while (true) {
+            parts += when {
+                tokens.consume(RCURLY) != null -> {
+                    return MapLiteral(parts)
+                }
+
+                tokens.consume(STAR_STAR) != null -> {
+                    val spread = parseExpression()
+                    MapLiteralPartSpread(spread)
+                }
+
+                tokens.consume(LBRACK) != null -> {
+                    val key = parseExpression()
+                    tokens.expect(RBRACK)
+                    tokens.expect(COLON)
+                    val value = parseExpression()
+                    MapLiteralPartExprKey(key, value)
+                }
+
+                else -> {
+                    val ident = tokens.expect(IDENTIFIER)
+                    tokens.expect(COLON)
+                    val value = parseExpression()
+                    MapLiteralPartFixedKey(ident.rawText, value)
+                }
+            }
+
+            if (peekType != RCURLY)
+                tokens.expect(COMMA)
+        }
+    }
+
+    fun parseRestOfListLiteral(): ListLiteral {
+        val parts = ArrayList<ListLiteralPart>()
+
+        while (true) {
+            parts += when {
+                tokens.consume(RBRACK) != null ->
+                    return ListLiteral(parts)
+
+                tokens.consume(STAR) != null ->
+                    ListLiteralPart(parseExpression(), isSpread = true)
+
+                else ->
+                    ListLiteralPart(parseExpression(), isSpread = false)
+            }
+
+            if (peekType != RBRACK)
+                tokens.expect(COMMA)
+        }
+    }
 }
 
 fun TokenType.toAssignOp(): BinaryOp? = when (this) {
@@ -41,41 +473,6 @@ fun TokenType.toAssignOp(): BinaryOp? = when (this) {
     OR_OR_ASSIGN -> BinaryOp.OR_OR
     AND_AND_ASSIGN -> BinaryOp.AND_AND
     else -> null
-}
-
-fun Tokens.parseTernary(): Expression {
-    val condition = parseDisjunction()
-
-    return if (consume(QUESTION) != null) {
-        val ifTrue = parseAssignment()
-        expect(COLON)
-        val ifFalse = parseAssignment()
-        TernaryExpression(condition, ifTrue, ifFalse)
-    } else {
-        condition
-    }
-}
-
-fun Tokens.parseDisjunction(): Expression {
-    var result = parseConjunction()
-    while (true) {
-        result = when (peek().type) {
-            OR ->    BinaryExpression(next().pos, result, BinaryOp.OR,    parseConjunction())
-            OR_OR -> BinaryExpression(next().pos, result, BinaryOp.OR_OR, parseConjunction())
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parseConjunction(): Expression {
-    var result = parseComparison()
-    while (true) {
-        result = when (peek().type) {
-            AND ->     BinaryExpression(next().pos, result, BinaryOp.AND,     parseComparison())
-            AND_AND -> BinaryExpression(next().pos, result, BinaryOp.AND_AND, parseComparison())
-            else -> return result
-        }
-    }
 }
 
 fun TokenType.toComparisonOp(): BinaryOp? = when (this) {
@@ -107,374 +504,3 @@ val validComparisonSetsPairwise = listOf(
 ).map { it.map { tt -> tt.toComparisonOp()!! }.toSet() }
 
 // also note that there is no setOf(STARSHIP) - it can't be in a sequence longer than a single operator
-
-fun Tokens.parseComparison(): Expression {
-    // we avoid allocating the lists for 0 and 1 operator, because those are expected to be the vast majority, and also
-    // to allow STARSHIP
-    // (but we do need the lists in bigger cases, because we only allow sequences where all operators are compatible, listed above)
-
-    val first = parseInIs()
-    val pos = peek().pos
-    val firstOp = peek().type.toComparisonOp()?.also { next() } ?: return first
-    val second = parseInIs()
-    val secondOp = peek().type.toComparisonOp()?.also { next() } ?: return BinaryExpression(pos, first, firstOp, second)
-
-    val parts = mutableListOf(first, second, parseInIs())
-    val ops = mutableListOf(firstOp, secondOp)
-
-    while (true) {
-        ops += peek().type.toComparisonOp()?.also { next() } ?: break
-        parts += parseInIs()
-    }
-
-    val opsSeen = ops.toSet()
-
-    for (validOption in validComparisonSetsSeq) {
-        if (validOption.containsAll(opsSeen)) {
-            return CompareSequence(parts, ops)
-        }
-    }
-
-    for (validOption in validComparisonSetsPairwise) {
-        if (validOption.containsAll(opsSeen)) {
-            return CompareAllPairs(parts, ops)
-        }
-    }
-
-    syntaxError("Can't combine these operators (${ opsSeen })", pos)
-}
-
-fun Tokens.parseInIs(): Expression {
-    var result = parseElvis()
-
-    while (true) {
-        val nextTok = peek().type
-
-        result = when (nextTok) {
-            IN ->     { next(); ValueIn(result, parseElvis(), true) }
-            NOT_IN -> { next(); ValueIn(result, parseElvis(), false) }
-
-            IS ->     { next(); val ident = expect(IDENTIFIER); ObjectIs(result, Variable(ident.rawText, ident.pos), true) }
-            NOT_IS -> { next(); val ident = expect(IDENTIFIER); ObjectIs(result, Variable(ident.rawText, ident.pos), false) }
-
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parseElvis(): Expression {
-    var result = parseInfixCall()
-    while (true) {
-        result = when (peek().type) {
-            ELVIS -> BinaryExpression(next().pos, result, BinaryOp.ELVIS, parseInfixCall())
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parseInfixCall(): Expression {
-    var result = parseRange()
-    while (true) {
-        if (peekOnNewLine() || peek().type != IDENTIFIER)
-            return result
-        result = MethodCall(result, next().rawText, listOf(PosArg(parseRange())), MethodCallType.INFIX)
-    }
-}
-
-fun Tokens.parseRange(): Expression {
-    var result = parseAdd()
-    while (true) {
-        result = when (peek().type) {
-            DOT_DOT ->      BinaryExpression(next().pos, result, BinaryOp.RANGE_TO,      parseAdd())
-            DOT_DOT_LESS -> BinaryExpression(next().pos, result, BinaryOp.RANGE_TO_EXCL, parseAdd())
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parseAdd(): Expression {
-    var result = parseMul()
-    while (true) {
-        result = when (peek().type) {
-            PLUS ->  BinaryExpression(next().pos, result, BinaryOp.ADD,      parseMul())
-            MINUS -> BinaryExpression(next().pos, result, BinaryOp.SUBTRACT, parseMul())
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parseMul(): Expression {
-    var result = parsePower()
-    while (true) {
-        result = when (peek().type) {
-            STAR ->        BinaryExpression(next().pos, result, BinaryOp.MULTIPLY,   parsePower())
-            SLASH ->       BinaryExpression(next().pos, result, BinaryOp.DIVIDE,     parsePower())
-            SLASH_SLASH -> BinaryExpression(next().pos, result, BinaryOp.DIVIDE_INT, parsePower())
-            PERCENT ->     BinaryExpression(next().pos, result, BinaryOp.REMAINDER,  parsePower())
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parsePower(): Expression {
-    var result = parsePrefixUnary()
-    while (true) {
-        result = when (peek().type) {
-            STAR_STAR -> BinaryExpression(next().pos, result, BinaryOp.POWER, parsePower())
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parsePrefixUnary(): Expression {
-    return when (peek().type) {
-        MINUS -> { next(); UnaryExpression(UnaryOp.MINUS, parsePrefixUnary()) }
-        PLUS -> { next(); UnaryExpression(UnaryOp.PLUS, parsePrefixUnary()) }
-        EXCL -> { next(); UnaryExpression(UnaryOp.NOT, parsePrefixUnary()) }
-        PLUS_PLUS -> {
-            val tok = next()
-            val inner = parsePrefixUnary()
-            if (inner is LValue) {
-                PrePostExpr(PrePostOp.PRE_INCR, inner)
-            } else {
-                syntaxError("Pre-increment ++ can only be used on lvalues", tok.pos)
-            }
-        }
-        MINUS_MINUS -> {
-            val tok = next()
-            val inner = parsePrefixUnary()
-            if (inner is LValue) {
-                PrePostExpr(PrePostOp.PRE_DECR, inner)
-            } else {
-                syntaxError("Pre-decrement -- can only be used on lvalues", tok.pos)
-            }
-        }
-        else -> parsePostfixUnary()
-    }
-}
-
-fun Tokens.parsePostfixUnary(): Expression {
-    return parsePostfixes(parsePrimary())
-}
-
-fun Tokens.parsePostfixes(primary: Expression): Expression {
-    var result = primary
-
-    while (true) {
-        if (peekOnNewLine() && peek().type != SAFE_DOT && peek().type != DOT) // all others can start a new statement
-            return result
-
-        result = when (peek().type) {
-            PLUS_PLUS -> {
-                val tok = next()
-                if (result is LValue) {
-                    PrePostExpr(PrePostOp.POST_INCR, result)
-                } else {
-                    syntaxError("Post-increment ++ can only be used on lvalues", tok.pos)
-                }
-            }
-            MINUS_MINUS -> {
-                val tok = next()
-                if (result is LValue) {
-                    PrePostExpr(PrePostOp.POST_DECR, result)
-                } else {
-                    syntaxError("Post-decrement -- can only be used on lvalues", tok.pos)
-                }
-            }
-            SAFE_DOT,
-            DOT -> {
-                val callType = if (next().type == SAFE_DOT) MethodCallType.SAFE else MethodCallType.REGULAR
-                val ident = expect(IDENTIFIER)
-                if (peek().type == LPAREN) {
-                    MethodCall(result, ident.rawText, parseCallArgs(), callType)
-                } else {
-                    PropertyAccess(result, ident.rawText)
-                }
-            }
-            LBRACK -> {
-                next()
-                val index = parseExpression()
-                expect(RBRACK)
-                ElementAccess(result, index)
-            }
-            LPAREN -> {
-                FuncCall(result, parseCallArgs())
-            }
-            else -> return result
-        }
-    }
-}
-
-fun Tokens.parseCallArgs(): List<CallArg> {
-    val args = ArrayList<CallArg>()
-    val namesSeen = HashSet<String>()
-
-    var kwOnly = false
-
-    expect(LPAREN)
-    while (true) {
-        val peeked = peek()
-        when (peeked.type) {
-            RPAREN -> {
-                next()
-                return args
-            }
-            STAR -> {
-                if (kwOnly) {
-                    syntaxError("Positional arguments must come before keyword arguments", peeked.pos)
-                } else {
-                    next()
-                    args += SpreadPosArg(parseExpression())
-                }
-            }
-            STAR_STAR -> {
-                next()
-                kwOnly = true
-                args += SpreadKwArg(parseExpression())
-            }
-            else -> {
-                val arg = parseExpression()
-                if (arg is AssignExpression && arg.op == null && arg.left is Variable) {
-                    if (namesSeen.add(arg.left.varName)) {
-                        args += KwArg(arg.left.varName, arg.right)
-                        kwOnly = true
-                    } else {
-                        syntaxError("Argument named ${ arg.left.varName } was already defined", arg.left.pos)
-                    }
-                } else {
-                    if (kwOnly) {
-                        syntaxError("Positional arguments must come before keyword arguments", peeked.pos)
-                    }
-                    args += PosArg(arg)
-                }
-            }
-        }
-
-        if (peek().type != RPAREN) {
-            expect(COMMA)
-        }
-    }
-}
-
-fun Tokens.parsePrimary(): Expression {
-    if (peek().type == EOF)
-        syntaxError("Expected an expression, not <EOF>", peek().pos)
-
-    val tok = next()
-
-    return when (tok.type) {
-        TRUE -> { Literal(SkBoolean.TRUE) }
-        FALSE -> { Literal(SkBoolean.FALSE) }
-        NULL -> { Literal(SkNull) }
-        UNDEFINED -> { Literal(SkUndefined) }
-        DOUBLE -> { Literal(SkDouble.valueOf(tok.rawText.toDoubleOrNull() ?: syntaxError("Couldn't parse double ${tok.rawText}", tok.pos))) }
-        DECIMAL -> { Literal(SkDecimal.valueOf(tok.value.toString().toBigDecimalOrNull() ?: syntaxError("Couldn't parse decimal ${tok.value}", tok.pos))) }
-        STRING -> { Literal(SkString(tok.value.toString())) }
-
-        LPAREN -> {
-            val result = parseExpression()
-            expect(RPAREN)
-            return Parentheses(result)
-        }
-
-        IDENTIFIER -> {
-            return Variable(tok.rawText, tok.pos)
-        }
-
-        FUNCTION -> {
-            return FunctionLiteral(parseFunctionDecl(funLiteral = true))
-        }
-
-        LBRACK -> {
-            return parseRestOfListLiteral()
-        }
-
-        LCURLY -> {
-            return parseRestOfMapLiteral()
-        }
-
-        TEMPLATE -> {
-            return processStringTemplate(tok)
-        }
-
-        else -> {
-            syntaxError("Unexpected token ${tok.type}", tok.pos)
-        }
-    }
-}
-
-fun processStringTemplate(token: Token): StringTemplateExpr {
-    val parts = (token.value as List<TemplatePart>).map { part ->
-        when (part) {
-            is TemplatePartString -> {
-                StrTemplateText(part.text)
-            }
-            is TemplatePartExpr -> {
-                val tokens = Tokens(part.tokens)
-                val expr = tokens.parseExpression()
-                if (tokens.peek().type != EOF) {
-                    syntaxError("Unexpected token", tokens.peek().pos)
-                } else {
-                    StrTemplateExpr(expr)
-                }
-            }
-        }
-    }
-
-    return StringTemplateExpr(parts)
-}
-
-fun Tokens.parseRestOfMapLiteral(): MapLiteral {
-    val parts = ArrayList<MapLiteralPart>()
-
-    while (true) {
-        parts += when {
-            consume(RCURLY) != null -> {
-                return MapLiteral(parts)
-            }
-
-            consume(STAR_STAR) != null -> {
-                val spread = parseExpression()
-                MapLiteralPartSpread(spread)
-            }
-
-            consume(LBRACK) != null -> {
-                val key = parseExpression()
-                expect(RBRACK)
-                expect(COLON)
-                val value = parseExpression()
-                MapLiteralPartExprKey(key, value)
-            }
-
-            else -> {
-                val ident = expect(IDENTIFIER)
-                expect(COLON)
-                val value = parseExpression()
-                MapLiteralPartFixedKey(ident.rawText, value)
-            }
-        }
-
-        if (peek().type != RCURLY)
-            expect(COMMA)
-    }
-}
-
-fun Tokens.parseRestOfListLiteral(): ListLiteral {
-    val parts = ArrayList<ListLiteralPart>()
-
-    while (true) {
-        parts += when {
-            consume(RBRACK) != null ->
-                return ListLiteral(parts)
-
-            consume(STAR) != null ->
-                ListLiteralPart(parseExpression(), isSpread = true)
-
-            else ->
-                ListLiteralPart(parseExpression(), isSpread = false)
-        }
-
-        if (peek().type != RBRACK)
-            expect(COMMA)
-    }
-}

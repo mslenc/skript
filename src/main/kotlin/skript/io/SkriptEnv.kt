@@ -9,9 +9,14 @@ import skript.opcodes.JumpTarget
 import skript.opcodes.ReturnValue
 import skript.opcodes.ThrowException
 import skript.parser.*
+import skript.templates.TemplateRuntime
 import skript.util.Globals
 import skript.util.SkArguments
 import skript.values.*
+import java.io.StringWriter
+import java.time.ZoneId
+import java.util.Currency
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KClass
 
@@ -22,6 +27,11 @@ class SkriptEnv(val engine: SkriptEngine) {
     val globalScope = GlobalScope()
     val modules = HashMap<String, RuntimeModule>()
     val classes = HashMap<SkClassDef, SkClass>()
+
+    fun setUpForTemplate(receiver: Appendable, defaultEscapeKey: String = "raw", locale: Locale = Locale.US, timeZone: ZoneId = ZoneId.systemDefault(), currency: Currency = Currency.getInstance(locale)) {
+        val runtime = TemplateRuntime.createWithDefaults(receiver, defaultEscapeKey, locale, timeZone, currency)
+        setNativeGlobal("templateRuntime", runtime)
+    }
 
     fun getClassObject(classDef: SkClassDef): SkClass {
         val superClass = classDef.superClass?.let { getClassObject(it) }
@@ -62,7 +72,7 @@ class SkriptEnv(val engine: SkriptEngine) {
 
     suspend fun runAnonymousScript(scriptSource: String): SkValue {
         val moduleName = "<anonModule${ anonCounter.incrementAndGet() }>"
-        val source = ModuleSource(scriptSource, moduleName, moduleName)
+        val source = ModuleSource(scriptSource, moduleName, moduleName, ModuleType.SKRIPT)
         val module = source.parse()
 
         analyze(module)
@@ -72,12 +82,29 @@ class SkriptEnv(val engine: SkriptEngine) {
         return executeFunction(module.moduleInit, emptyArray(), SkArguments())
     }
 
+    suspend fun runAnonymousTemplate(templateSource: String, defaultEscapeKey: String = "raw", locale: Locale = Locale.US, timeZone: ZoneId = ZoneId.systemDefault(), currency: Currency = Currency.getInstance(locale)): String {
+        val out = StringBuilder()
+        setUpForTemplate(out, defaultEscapeKey, locale, timeZone, currency)
+
+        val moduleName = "<anonTemplate${ anonCounter.incrementAndGet() }>"
+        val source = ModuleSource(templateSource, moduleName, moduleName, ModuleType.PAGE_TEMPLATE)
+        val module = source.parse()
+
+        analyze(module)
+
+        val runtimeModule = RuntimeModule(module)
+        modules[module.name] = runtimeModule
+        executeFunction(module.moduleInit, emptyArray(), SkArguments())
+
+        return out.toString()
+    }
+
     suspend fun createFunction(paramNames: List<String>, functionBody: String): SkScriptFunction {
         val funcName = "<callable${ anonCounter.incrementAndGet() }>"
         val moduleName = "<anonModule${ anonCounter.incrementAndGet() }>"
 
-        val tokens = CharStream(functionBody, funcName).lex()
-        val funcBody = Tokens(tokens).parseStatements(TokenType.EOF, allowFunctions = true, allowClasses = false, allowVars = true)
+        val tokens = CharStream(functionBody, funcName).lexCodeModule()
+        val funcBody = ModuleParser(Tokens(tokens)).parseStatements(TokenType.EOF, allowFunctions = true, allowClasses = false, allowVars = true)
         val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody), Pos(1, 1, "generated"))
         val returnFunc = ReturnStatement(Variable(funcName, Pos(1, 1, "generated")))
         val module = Module(moduleName, listOf(funcDecl, returnFunc))

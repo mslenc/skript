@@ -3,10 +3,9 @@ package skript.io
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import skript.ast.Module
-import skript.parser.CharStream
-import skript.parser.Tokens
-import skript.parser.lex
-import skript.parser.parseModule
+import skript.io.ModuleType.*
+import skript.parser.*
+import skript.parser.PageTemplateParser
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -53,9 +52,13 @@ object NoModuleProvider : ParsedModuleProvider {
     }
 }
 
-fun ModuleSource.parse(): Module {
-    val tokens = CharStream(source, fileName).lex()
-    return Tokens(tokens).parseModule(moduleName)
+internal fun ModuleSource.parse(): Module {
+    val chars = CharStream(source, fileName)
+
+    return when (type) {
+        SKRIPT ->        ModuleParser      (Tokens(chars.lexCodeModule())).  parseModule(moduleName)
+        PAGE_TEMPLATE -> PageTemplateParser(Tokens(chars.lexPageTemplate().cleanUpStmtOnlyLines())).parsePageTemplate(moduleName)
+    }
 }
 
 internal class NoCachePMP(val sourceProvider: ModuleSourceProvider) : ParsedModuleProvider {
@@ -90,6 +93,7 @@ suspend fun parseAndCache(sourceProvider: ModuleSourceProvider, moduleName: Stri
 internal class CacheAllNoCheckPMP(val sourceProvider: ModuleSourceProvider, val clock: Clock) : ParsedModuleProvider {
     val cache = HashMap<String, CacheEntry>()
     val mutex = Mutex()
+    val parser = NoCachePMP(sourceProvider)
 
     override suspend fun getModule(moduleName: String): Module? {
         mutex.withLock {

@@ -25,7 +25,9 @@ class CharStream(private val str: String, private val fileName: String) {
     /**
      * Retrieves the current position (row/column).
      */
-    fun getPos(): Pos {
+    fun getPos(offset: Int = 0): Pos {
+        val pos = this.pos + offset
+
         while (countedUpTo < pos) {
             when(str[countedUpTo++]) {
                 '\r' -> {
@@ -108,6 +110,29 @@ class CharStream(private val str: String, private val fileName: String) {
         }
     }
 
+    fun consume(opt: String): Boolean {
+        return when {
+            pos + opt.length > str.length -> false
+            str.regionMatches(pos, opt, 0, opt.length, false) -> { pos += opt.length; true }
+            else -> false
+        }
+    }
+
+    fun consumeNotId(opt: String): Boolean {
+        return when {
+            pos + opt.length > str.length -> false
+            str.regionMatches(pos, opt, 0, opt.length, false) -> {
+                if (pos + opt.length >= str.length || !Character.isJavaIdentifierPart(str[pos + opt.length])) {
+                    pos += opt.length
+                    true
+                } else {
+                    false
+                }
+            }
+            else -> false
+        }
+    }
+
     /**
      * Matches with the provided matcher while it returns true, copies the corresponding characters into sb, and returns the matched length.
      */
@@ -145,7 +170,7 @@ class CharStream(private val str: String, private val fileName: String) {
         return pos
     }
 
-    fun rawTextSince(start: Int): String {
-        return str.substring(start, pos)
+    fun rawTextSince(start: Int, offset: Int = 0): String {
+        return str.substring(start, pos + offset)
     }
 }

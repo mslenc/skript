@@ -39,6 +39,11 @@ interface ExprVisitor {
         }
     }
 
+    fun visitPipeCall(expr: PipeCall) {
+        expr.input.accept(this)
+        expr.target.accept(this)
+    }
+
     fun visitMapLiteral(expr: MapLiteral) { expr.parts.forEach {
         if (it is MapLiteralPartExprKey)
             it.key.accept(this)
@@ -442,6 +447,18 @@ class FuncCall(val func: Expression, val args: List<CallArg>): Expression() {
     override fun toString(sb: StringBuilder) {
         func.toString(sb)
         args.toString(sb)
+    }
+}
+
+class PipeCall(val input: Expression, val target: Expression): Expression() {
+    override fun accept(visitor: ExprVisitor) {
+        visitor.visitPipeCall(this)
+    }
+
+    override fun toString(sb: StringBuilder) {
+        input.toString(sb)
+        sb.append(" |> ")
+        target.toString(sb)
     }
 }
 

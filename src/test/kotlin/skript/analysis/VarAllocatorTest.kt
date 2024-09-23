@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import skript.ast.*
 import skript.io.ModuleSource
+import skript.io.ModuleType
 import skript.io.parse
 
 class VarAllocatorTest {
@@ -20,7 +21,7 @@ class VarAllocatorTest {
             }
         """.trimIndent()
 
-        val module = ModuleSource(source, "testBasics", "testBasics").parse()
+        val module = ModuleSource(source, "testBasics", "testBasics", ModuleType.SKRIPT).parse()
 
         VarAllocator(GlobalScope()).visitModule(module)
 

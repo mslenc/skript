@@ -10,6 +10,7 @@ import skript.values.SkUndefined
 import skript.values.SkValue
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import kotlin.math.min
 import kotlin.reflect.KClass
 
@@ -29,7 +30,7 @@ suspend fun runScriptWithEmit(script: String): List<SkValue> {
 }
 
 suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String): List<SkValue> {
-    val sourceProvider = ModuleSourceProvider.static(emptyMap<String, String>())
+    val sourceProvider = ModuleSourceProvider.static(emptyMap(), emptyMap())
     val moduleProvider = ParsedModuleProvider.from(sourceProvider)
     val skriptEngine = SkriptEngine(moduleProvider, nativeAccessGranter = object : NativeAccessGranter {
         override fun isAccessAllowed(klass: KClass<*>): Boolean {
@@ -46,6 +47,24 @@ suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String): List<
     env.runAnonymousScript(script)
 
     return outputs
+}
+
+suspend fun runTemplate(template: String): String {
+    return runTemplate({ }, template)
+}
+
+suspend fun runTemplate(initEnv: (SkriptEnv)->Unit, template: String, escape: String = "raw"): String {
+    val sourceProvider = ModuleSourceProvider.static(emptyMap(), emptyMap())
+    val moduleProvider = ParsedModuleProvider.from(sourceProvider)
+    val skriptEngine = SkriptEngine(moduleProvider, nativeAccessGranter = object : NativeAccessGranter {
+        override fun isAccessAllowed(klass: KClass<*>): Boolean {
+            return klass == LocalDate::class || klass == LocalDateTime::class
+        }
+    })
+
+    val env = skriptEngine.createEnv()
+    initEnv(env)
+    return env.runAnonymousTemplate(template, escape, timeZone = ZoneId.of("America/Los_Angeles"))
 }
 
 fun assertEmittedEquals(expected: List<SkValue>, actual: List<SkValue>) {

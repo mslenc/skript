@@ -6,7 +6,7 @@ import skript.assertEmittedEquals
 import skript.io.toSkript
 import skript.runScriptWithEmit
 
-class TemplatesTest {
+class StringTemplatesTest {
     @Test
     fun testTemplateBasics() = runBlocking {
         val result = runScriptWithEmit("""
@@ -19,8 +19,8 @@ class TemplatesTest {
             var t2 = `Hello ${'$'}{ str1 } ${'$'}{ str2 }!`;
             
             emit(t1);
-            emit(t2);
-            emit(`Abc ${'$'}{ str2 }`);
+            t2 |> emit();
+            `Abc ${'$'}{ str2 }` |> emit;
         """.trimIndent())
 
         val expect = listOf(

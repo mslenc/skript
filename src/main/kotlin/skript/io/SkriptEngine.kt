@@ -5,9 +5,7 @@ import skript.interop.wrappers.SkCodecNativeArray
 import skript.interop.wrappers.SkCodecNativeCollection
 import skript.interop.wrappers.SkCodecNativeList
 import skript.interop.wrappers.SkCodecNativeMap
-import skript.parser.CharStream
-import skript.parser.TokenType
-import skript.parser.lex
+import skript.parser.isValidSkriptIdentifier
 import skript.values.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -153,15 +151,7 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
 
     companion object {
         fun isValidIdentifier(ident: String): Boolean {
-            val tokens = try {
-                CharStream(ident, "").lex(withEof = false, inTemplate = false)
-            } catch (e: SkSyntaxError) {
-                return false
-            }
-
-            val token = tokens.singleOrNull() ?: return false
-
-            return token.type == TokenType.IDENTIFIER && token.rawText == ident
+            return isValidSkriptIdentifier(ident)
         }
     }
 }

@@ -11,6 +11,7 @@ import skript.opcodes.equals.BinaryNotEqualsOp
 import skript.opcodes.equals.BinaryStrictEqualsOp
 import skript.opcodes.equals.BinaryStrictNotEqualsOp
 import skript.opcodes.numeric.*
+import skript.parser.TokenType.PIPE_CALL
 import skript.syntaxError
 import skript.util.Stack
 import skript.values.SkNumber
@@ -572,6 +573,19 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
         expr.func.accept(this)
         doArgs(expr.args)
         builder += CallFunction(expr.func.toString())
+    }
+
+    override fun visitPipeCall(expr: PipeCall) {
+        val target = expr.target
+        val arg = listOf(PosArg(expr.input))
+
+        val rewritten = when (target) {
+            is FuncCall -> FuncCall(target.func, arg + target.args)
+            is MethodCall -> MethodCall(target.obj, target.methodName, arg + target.args, target.type)
+            else -> FuncCall(target, arg)
+        }
+
+        rewritten.accept(this)
     }
 
     private fun doArgs(args: List<CallArg>) {

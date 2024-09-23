@@ -135,7 +135,7 @@ class CallFunction(val exprDebug: String) : SuspendOpCode() {
                 val result = func.call(args, frame.env)
                 stack.push(result)
             } else {
-                typeError("$exprDebug is not a function or a class")
+                typeError("$exprDebug is not a function or a class (it is ${ func.javaClass })")
             }
         }
         return null
