@@ -146,8 +146,8 @@ class PageTemplateParser(tokens: Tokens) : ExpressionParser(tokens) {
             }
 
             else -> {
-                val tok = consume()
-                syntaxError("Unexpected " + tok.rawText, tok.pos)
+                val expr = parseExpression()
+                return ExpressionStatement(expr)
             }
         }
     }

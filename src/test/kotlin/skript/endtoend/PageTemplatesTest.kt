@@ -20,7 +20,7 @@ class PageTemplatesTest {
         },
         """
             {% val num1 = 12 %}
-            {% val num2 = 25 %}
+            {% var num2 = 25 %}
             Hello!
             {% if num1 > num2 %}
             Num1 is bigger ({{ num1 }} > {{ num2 }}).
@@ -29,6 +29,9 @@ class PageTemplatesTest {
             {% else %}
             The nums are the same ({{ num1 }} = {{ num2 }}).
             {% end if %}
+            
+            {% num2 //= 3 %}
+            Num2 is now {{ num2 }}.
             
             {{ date }}
             {{ date |> date }}
@@ -44,6 +47,8 @@ class PageTemplatesTest {
         val expect = """
             Hello!
             Num2 is bigger (25 > 12).
+            
+            Num2 is now 8.
             
             2024-09-05T12:43:44
             9/5/24
