@@ -90,7 +90,15 @@ abstract class SkObject : SkValue() {
             return method.call(this, args, env)
         }
 
-        typeError("$exprDebug has no method $methodName")
+        val method = propertyGet(methodName, env)
+
+        when (method) {
+            is SkFunction -> return method.call(args, env)
+            is SkMethod -> return method.call(this, args, env)
+            is SkNull -> typeError("Property $methodName of $exprDebug is null")
+            is SkUndefined -> typeError("Property $methodName of $exprDebug is undefined")
+            else -> typeError("Property $methodName of $exprDebug is not callable")
+        }
     }
 
     override fun unwrap(): Any {

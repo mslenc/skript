@@ -2,7 +2,7 @@ package skript.io
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import skript.ast.Module
+import skript.ast.ParsedModule
 import skript.io.ModuleType.*
 import skript.parser.*
 import skript.parser.PageTemplateParser
@@ -16,7 +16,7 @@ class CacheAll(val recheckEvery: Duration? = null) : CachePolicy()
 class CacheMostRecent(val entries: Int, val recheckEvery: Duration? = null): CachePolicy()
 
 interface ParsedModuleProvider {
-    suspend fun getModule(moduleName: String): Module?
+    suspend fun getModule(moduleName: String): ParsedModule?
 
     companion object {
         fun from(sourceProvider: ModuleSourceProvider, caching: CachePolicy = CacheAll(), clock: Clock = Clock.systemDefaultZone()): ParsedModuleProvider {
@@ -47,12 +47,12 @@ interface ParsedModuleProvider {
 }
 
 object NoModuleProvider : ParsedModuleProvider {
-    override suspend fun getModule(moduleName: String): Module? {
+    override suspend fun getModule(moduleName: String): ParsedModule? {
         return null
     }
 }
 
-internal fun ModuleSource.parse(): Module {
+internal fun ModuleSource.parse(): ParsedModule {
     val chars = CharStream(source, fileName)
 
     return when (type) {
@@ -62,18 +62,18 @@ internal fun ModuleSource.parse(): Module {
 }
 
 internal class NoCachePMP(val sourceProvider: ModuleSourceProvider) : ParsedModuleProvider {
-    override suspend fun getModule(moduleName: String): Module? {
+    override suspend fun getModule(moduleName: String): ParsedModule? {
         return sourceProvider.getSource(moduleName)?.parse()
     }
 }
 
-class CacheEntry(val source: String?, val module: Module?, val error: Exception?, val timestamp: Instant = Instant.now())
+class CacheEntry(val source: String?, val module: ParsedModule?, val error: Exception?, val timestamp: Instant = Instant.now())
 
 fun CacheEntry.withinTtl(now: Instant, ttl: Duration): Boolean {
     return now <= timestamp + ttl
 }
 
-suspend fun parseAndCache(sourceProvider: ModuleSourceProvider, moduleName: String, clock: Clock, mutex: Mutex, cache: MutableMap<String, CacheEntry>): Module? {
+suspend fun parseAndCache(sourceProvider: ModuleSourceProvider, moduleName: String, clock: Clock, mutex: Mutex, cache: MutableMap<String, CacheEntry>): ParsedModule? {
     val source = sourceProvider.getSource(moduleName)
     var error: Exception? = null
     val parsed = try {
@@ -95,7 +95,7 @@ internal class CacheAllNoCheckPMP(val sourceProvider: ModuleSourceProvider, val 
     val mutex = Mutex()
     val parser = NoCachePMP(sourceProvider)
 
-    override suspend fun getModule(moduleName: String): Module? {
+    override suspend fun getModule(moduleName: String): ParsedModule? {
         mutex.withLock {
             cache[moduleName]?.let { return it.module }
         }
@@ -108,7 +108,7 @@ internal class CacheAllCheckPMP(val sourceProvider: ModuleSourceProvider, val cl
     val cache = HashMap<String, CacheEntry>()
     val mutex = Mutex()
 
-    override suspend fun getModule(moduleName: String): Module? {
+    override suspend fun getModule(moduleName: String): ParsedModule? {
         mutex.withLock {
             cache[moduleName]?.let { cacheEntry ->
                 if (cacheEntry.withinTtl(clock.instant(), ttl)) {

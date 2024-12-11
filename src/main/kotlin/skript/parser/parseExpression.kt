@@ -18,6 +18,16 @@ open class ExpressionParser(val tokens: Tokens) {
 
     protected fun consumePos() = consume().pos
 
+    protected fun peekCtxKeyword(keyword: String): Boolean {
+        return peekType == IDENTIFIER && tokens.peek().value == keyword
+    }
+
+    protected fun expectCtxKeyword(keyword: String): Token {
+        if (!peekCtxKeyword(keyword))
+            syntaxError("Expected \"$keyword\" here.")
+        return tokens.next()
+    }
+
     fun parseExpression(): Expression {
         return parseAssignment()
     }

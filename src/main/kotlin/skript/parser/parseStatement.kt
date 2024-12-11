@@ -6,31 +6,31 @@ import skript.parser.TokenType.*
 import skript.syntaxError
 
 class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
-    fun parseModule(moduleName: String): Module {
-        return Module(moduleName, parseStatements(EOF, allowFunctions = true, allowClasses = true, allowVars = true))
+    fun parseModule(moduleName: String): ParsedModule {
+        return ParsedModule(moduleName, parseStatements(EOF, allowFunctions = true, allowClasses = true, allowVars = true, allowImports = true))
     }
 
     override fun parsePrimary(): Expression {
         if (peekType == FUNCTION) {
             consume()
-            return FunctionLiteral(parseFunctionDecl(funLiteral = true))
+            return FunctionLiteral(parseFunctionDecl(funLiteral = true, export = false))
         }
 
         return super.parsePrimary()
     }
 
-    fun parseStatements(endingToken: TokenType, allowFunctions: Boolean = false, allowClasses: Boolean = false, allowVars: Boolean = false): List<Statement> {
+    fun parseStatements(endingToken: TokenType, allowFunctions: Boolean = false, allowClasses: Boolean = false, allowVars: Boolean = false, allowImports: Boolean = false): List<Statement> {
         val result = ArrayList<Statement>()
 
         while (peekType != endingToken)
-            result += parseStatement(allowFunctions, allowClasses, allowVars)
+            result += parseStatement(allowFunctions, allowClasses, allowVars, allowImports)
 
         tokens.consume(endingToken).also { assert (it != null) }
 
         return result
     }
 
-    fun parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowVars: Boolean): Statement {
+    fun parseStatement(allowFunctions: Boolean, allowClasses: Boolean, allowVars: Boolean, allowImports: Boolean): Statement {
         val stmtLabel = if (peekType == IDENTIFIER) {
             val ident = tokens.next()
             if (tokens.consume(AT) != null) {
@@ -53,6 +53,18 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         }
 
         return when (peekType) {
+            IMPORT -> {
+                if (!allowImports)
+                    syntaxError("Imports not allowed here", peekPos)
+                parseImportStmt()
+            }
+
+            EXPORT -> {
+                if (!allowImports)
+                    syntaxError("Exports not allowed here", peekPos)
+                parseExportStmt()
+            }
+
             VAR,
             VAL -> {
                 if (!allowVars)
@@ -63,7 +75,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
             FUNCTION -> {
                 if (!allowFunctions)
                     syntaxError("Function declarations not allowed here", peekPos)
-                parseFunctionDecl(funLiteral = false)
+                parseFunctionDecl(funLiteral = false, export = false)
             }
 
             IF -> parseIfStatement()
@@ -74,7 +86,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
             BREAK -> parseBreakStmt()
             CONTINUE -> parseContinueStmt()
             RETURN -> parseReturnStmt()
-            SEMI -> EmptyStatement
+            SEMI -> EmptyStatement.also { consume() }
 
 
             WHEN -> syntaxError("when is not implemented yet", peekPos)
@@ -93,6 +105,105 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
                 ExpressionStatement(expr)
             }
         }
+    }
+
+    internal fun parseImportStmt(): ImportStatement {
+        tokens.expect(IMPORT)
+        if (peekType == STRING) { // just import "foo"
+            val moduleName = consume()
+            return ImportStatement(emptyList(), moduleName.value.toString(), moduleName.pos)
+        }
+
+        val decls = ArrayList<ImportDecl>()
+
+        if (peekType == IDENTIFIER) { // default import
+            val ident = consume()
+            decls += ImportDecl("default", ident.value.toString(), ident.pos)
+            if (peekCtxKeyword("from")) {
+                consume()
+                val moduleName = tokens.expect(STRING)
+                return ImportStatement(decls, moduleName.value.toString(), moduleName.pos)
+            } else {
+                tokens.expect(COMMA)
+            }
+        }
+
+        if (peekType == STAR) {
+            consume()
+            if (peekCtxKeyword("as")) {
+                consume()
+                val alias = tokens.expect(IDENTIFIER)
+                decls += ImportDecl(null, alias.value.toString(), alias.pos)
+                expectCtxKeyword("from")
+                val moduleName = tokens.expect(STRING)
+                return ImportStatement(decls, moduleName.value.toString(), moduleName.pos)
+            } else {
+                syntaxError("A wildcard import must be followed by \"as [name]\"")
+            }
+        }
+
+        tokens.expect(LCURLY)
+        while (true) {
+            val sourceName = tokens.expect(IDENTIFIER)
+            if (peekCtxKeyword("as")) {
+                consume()
+                val aliasName = tokens.expect(IDENTIFIER)
+                decls += ImportDecl(sourceName.value.toString(), aliasName.value.toString(), sourceName.pos)
+            } else {
+                decls += ImportDecl(sourceName.value.toString(), sourceName.value.toString(), sourceName.pos)
+            }
+            if (peekType == COMMA) {
+                consume()
+                if (peekType == RCURLY)
+                    break
+            } else {
+                break
+            }
+        }
+        tokens.expect(RCURLY)
+
+        expectCtxKeyword("from")
+        val moduleName = tokens.expect(STRING)
+        return ImportStatement(decls, moduleName.value.toString(), moduleName.pos)
+    }
+
+    internal fun parseExportStmt(): Statement {
+        val exportToken = tokens.expect(EXPORT)
+
+        if (tokens.consume(VAL) != null)
+            return LetStatement(listOf(parseVarDecl(AllowInit.REQUIRED)), export = true)
+
+        if (peekType == FUNCTION)
+            return parseFunctionDecl(funLiteral = false, export = true)
+
+        if (peekCtxKeyword("default")) {
+            consume()
+            val expr = parseExpression()
+            return ExportStatement(listOf(ExportDecl(expr, "default", exportToken.pos)))
+        }
+
+        tokens.expect(LCURLY)
+        val decls = ArrayList<ExportDecl>()
+        while (true) {
+            val sourceName = tokens.expect(IDENTIFIER)
+            if (peekCtxKeyword("as")) {
+                consume()
+                val aliasName = tokens.expect(IDENTIFIER)
+                decls += ExportDecl(Variable(sourceName.value.toString(), sourceName.pos), aliasName.value.toString(), sourceName.pos)
+            } else {
+                decls += ExportDecl(Variable(sourceName.value.toString(), sourceName.pos), sourceName.value.toString(), sourceName.pos)
+            }
+            if (peekType == COMMA) {
+                consume()
+                if (peekType == RCURLY)
+                    break
+            } else {
+                break
+            }
+        }
+        tokens.expect(RCURLY)
+
+        return ExportStatement(decls)
     }
 
     internal fun parseReturnStmt(): ReturnStatement {
@@ -163,7 +274,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         return params
     }
 
-    internal fun parseFunctionDecl(funLiteral: Boolean): DeclareFunction {
+    internal fun parseFunctionDecl(funLiteral: Boolean, export: Boolean): DeclareFunction {
         if (!funLiteral)
             tokens.expect(FUNCTION)
 
@@ -180,7 +291,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         tokens.expect(LCURLY)
         val body = parseStatements(RCURLY, allowFunctions = true, allowClasses = false, allowVars = true)
 
-        return DeclareFunction(name?.rawText, params, Statements(body), pos)
+        return DeclareFunction(name?.rawText, params, Statements(body), pos, export)
     }
 
     internal fun parseBreakStmt(): BreakStatement {
@@ -244,7 +355,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         val decls = parseVarDecls(allowInit) { tokens.atEndOfStatement() }
         tokens.expectEndOfStatement()
 
-        return LetStatement(decls)
+        return LetStatement(decls, false)
     }
 
     internal fun parseIfStatement(): IfStatement {
@@ -326,7 +437,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         return if (tokens.consume(LCURLY) != null) {
             Statements(parseStatements(RCURLY, allowFunctions, allowClasses, allowVars))
         } else {
-            parseStatement(allowFunctions, allowClasses, allowVars)
+            parseStatement(allowFunctions, allowClasses, allowVars, false)
         }
     }
 

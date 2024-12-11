@@ -65,9 +65,24 @@ class SkriptEnv(val engine: SkriptEngine) {
         return globals.get(name).also { if (it == SkUndefined) return null }
     }
 
-    internal fun analyze(module: Module) {
-        VarAllocator(globalScope).visitModule(module)
-        OpCodeGen().visitModule(module)
+    internal fun analyze(module: ParsedModule): RuntimeModule {
+        val moduleScope = VarAllocator(globalScope).visitModule(module)
+        val moduleInit = OpCodeGen().visitModule(module, moduleScope)
+        return RuntimeModule(module, moduleScope, moduleInit)
+    }
+
+    internal suspend fun registerAndInit(module: ParsedModule): Pair<SkValue, RuntimeModule> {
+        val runtimeModule = analyze(module)
+        modules[module.name] = runtimeModule
+        return Pair(executeFunction(runtimeModule.init, emptyArray(), SkArguments(), runtimeModule), runtimeModule)
+    }
+
+    suspend fun requireModule(moduleName: String, pos: Pos): RuntimeModule {
+        modules[moduleName]?.let { return it }
+
+        val module = engine.moduleProvider.getModule(moduleName) ?: throw SkImportError("Couldn't read module $moduleName", null, pos)
+
+        return registerAndInit(module).second
     }
 
     suspend fun runAnonymousScript(scriptSource: String): SkValue {
@@ -75,11 +90,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val source = ModuleSource(scriptSource, moduleName, moduleName, ModuleType.SKRIPT)
         val module = source.parse()
 
-        analyze(module)
-
-        val runtimeModule = RuntimeModule(module)
-        modules[module.name] = runtimeModule
-        return executeFunction(module.moduleInit, emptyArray(), SkArguments())
+        return registerAndInit(module).first
     }
 
     suspend fun runAnonymousTemplate(templateSource: String, defaultEscapeKey: String = "raw", locale: Locale = Locale.US, timeZone: ZoneId = ZoneId.systemDefault(), currency: Currency = Currency.getInstance(locale)): String {
@@ -90,11 +101,7 @@ class SkriptEnv(val engine: SkriptEngine) {
         val source = ModuleSource(templateSource, moduleName, moduleName, ModuleType.PAGE_TEMPLATE)
         val module = source.parse()
 
-        analyze(module)
-
-        val runtimeModule = RuntimeModule(module)
-        modules[module.name] = runtimeModule
-        executeFunction(module.moduleInit, emptyArray(), SkArguments())
+        registerAndInit(module)
 
         return out.toString()
     }
@@ -105,17 +112,16 @@ class SkriptEnv(val engine: SkriptEngine) {
 
         val tokens = CharStream(functionBody, funcName).lexCodeModule()
         val funcBody = ModuleParser(Tokens(tokens)).parseStatements(TokenType.EOF, allowFunctions = true, allowClasses = false, allowVars = true)
-        val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody), Pos(1, 1, "generated"))
+        val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody), Pos(1, 1, "generated"), export = false)
         val returnFunc = ReturnStatement(Variable(funcName, Pos(1, 1, "generated")))
-        val module = Module(moduleName, listOf(funcDecl, returnFunc))
+        val module = ParsedModule(moduleName, listOf(funcDecl, returnFunc))
 
-        analyze(module)
+        val runtimeModule = analyze(module)
 
-        val runtimeModule = RuntimeModule(module)
         val theFunction: SkScriptFunction
         modules[module.name] = runtimeModule
         try {
-            theFunction = executeFunction(module.moduleInit, emptyArray(), SkArguments()) as SkScriptFunction
+            theFunction = executeFunction(runtimeModule.init, emptyArray(), SkArguments(), runtimeModule) as SkScriptFunction
         } finally {
             modules.remove(module.name)
         }
@@ -128,11 +134,11 @@ class SkriptEnv(val engine: SkriptEngine) {
         return SuspendFunImpl(params, returnType, function, this)
     }
 
-    suspend fun executeFunction(func: FunctionDef, closure: Array<Array<SkValue>>, args: SkArguments): SkValue {
+    suspend fun executeFunction(func: FunctionDef, closure: Array<Array<SkValue>>, args: SkArguments, module: RuntimeModule): SkValue {
         val ops = func.ops
         val opsSize = ops.size
 
-        val frame = Frame(func.localsSize, args, closure, this)
+        val frame = Frame(func.localsSize, args, closure, this, module)
         var ip = 0
 
         nextOp@

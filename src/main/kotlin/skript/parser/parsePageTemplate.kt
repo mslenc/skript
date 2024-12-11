@@ -6,8 +6,8 @@ import skript.syntaxError
 import skript.values.SkString
 
 class PageTemplateParser(tokens: Tokens) : ExpressionParser(tokens) {
-    fun parsePageTemplate(moduleName: String): Module {
-        return Module(moduleName, parseBlockUntilEnd(null))
+    fun parsePageTemplate(moduleName: String): ParsedModule {
+        return ParsedModule(moduleName, parseBlockUntilEnd(null))
     }
 
     private fun processEmitFilters(expr: Expression, templateRuntime: Expression): Expression {
@@ -210,7 +210,7 @@ class PageTemplateParser(tokens: Tokens) : ExpressionParser(tokens) {
 
         val decls = parseVarDecls(allowInit) { peekType == STMT_CLOSE }
 
-        return LetStatement(decls)
+        return LetStatement(decls, false)
     }
 
     internal fun parseIfStatement(): IfStatement {

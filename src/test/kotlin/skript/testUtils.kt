@@ -6,6 +6,7 @@ import skript.io.*
 import skript.opcodes.equals.strictlyEqual
 import skript.util.SkArguments
 import skript.values.SkFunction
+import skript.values.SkList
 import skript.values.SkUndefined
 import skript.values.SkValue
 import java.time.LocalDate
@@ -25,12 +26,12 @@ fun emitInto(outputs: MutableList<SkValue>): SkFunction {
     }
 }
 
-suspend fun runScriptWithEmit(script: String): List<SkValue> {
-    return runScriptWithEmit({ }, script)
+suspend fun runScriptWithEmit(script: String, moduleSources: Map<String, String> = emptyMap()): List<SkValue> {
+    return runScriptWithEmit({ }, script, moduleSources)
 }
 
-suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String): List<SkValue> {
-    val sourceProvider = ModuleSourceProvider.static(emptyMap(), emptyMap())
+suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String, moduleSources: Map<String, String> = emptyMap()): List<SkValue> {
+    val sourceProvider = ModuleSourceProvider.static(moduleSources, emptyMap())
     val moduleProvider = ParsedModuleProvider.from(sourceProvider)
     val skriptEngine = SkriptEngine(moduleProvider, nativeAccessGranter = object : NativeAccessGranter {
         override fun isAccessAllowed(klass: KClass<*>): Boolean {
@@ -68,8 +69,16 @@ suspend fun runTemplate(initEnv: (SkriptEnv)->Unit, template: String, escape: St
 }
 
 fun assertEmittedEquals(expected: List<SkValue>, actual: List<SkValue>) {
-    for (i in 0 until min(expected.size, actual.size))
-        assertStrictlyEqual(expected[i], actual[i]) { "Element $i:\nExpected: ${expected[i]} (${expected[i].getKind()})\n  Actual: ${actual[i]} (${actual[i].getKind()})" }
+    for (i in 0 until min(expected.size, actual.size)) {
+        val a = expected[i]
+        val b = actual[i]
+
+        if (a is SkList && b is SkList) {
+            assertEmittedEquals(a.listEls, b.listEls)
+        } else {
+            assertStrictlyEqual(expected[i], actual[i]) { "Element $i:\nExpected: ${expected[i]} (${expected[i].getKind()})\n  Actual: ${actual[i]} (${actual[i].getKind()})" }
+        }
+    }
 
     assertEquals(expected.size, actual.size, "Number of elements should be the same")
 }

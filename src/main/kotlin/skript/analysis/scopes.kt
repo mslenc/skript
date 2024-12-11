@@ -1,6 +1,6 @@
 package skript.analysis
 
-import skript.ast.Module
+import skript.ast.ParsedModule
 import skript.opcodes.*
 import java.lang.UnsupportedOperationException
 
@@ -60,7 +60,7 @@ class GlobalScope : Scope() {
         get() = throw UnsupportedOperationException("Global scope has no parent") // TODO: we could also return this, or we could return null (but that makes everything else nullable)
 }
 
-class ModuleScope(val module: Module, override val parent: GlobalScope) : TopLevelScope() {
+class ModuleScope(val module: ParsedModule, override val parent: GlobalScope) : TopLevelScope() {
     override fun allocate(name: String): ModuleVarInfo {
         return ModuleVarInfo(name, module.name, localVarsIndex++)
     }

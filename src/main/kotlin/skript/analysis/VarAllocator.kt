@@ -10,9 +10,8 @@ import kotlin.math.max
 class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor {
     val scopeStack = Stack<Scope>()
 
-    fun visitModule(module: Module) {
+    fun visitModule(module: ParsedModule): ModuleScope {
         val moduleScope = ModuleScope(module, globalScope)
-        module.moduleScope = moduleScope
 
         scopeStack.push(moduleScope)
         try {
@@ -20,6 +19,8 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
         } finally {
             scopeStack.pop()
         }
+
+        return moduleScope
     }
 
     override fun visitBlock(stmts: Statements) {
@@ -44,6 +45,19 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
                 is LetStatement -> {
                     for (decl in stmt.decls) {
                         val name = decl.varName
+                        if (varsHere.containsKey(name))
+                            syntaxError("$name is already defined", decl.pos)
+
+                        top.allocate(name).also {
+                            varsHere[name] = it
+                            decl.varInfo = it
+                        }
+                    }
+                }
+
+                is ImportStatement -> {
+                    for (decl in stmt.imports) {
+                        val name = decl.importedName
                         if (varsHere.containsKey(name))
                             syntaxError("$name is already defined", decl.pos)
 
@@ -99,6 +113,18 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
         for (decl in stmt.decls) {
             check(decl.isVarInfoDefined())
             decl.initializer?.accept(this)
+        }
+    }
+
+    override fun visitImportStatement(stmt: ImportStatement) {
+        for (decl in stmt.imports) {
+            check(decl.isVarInfoDefined())
+        }
+    }
+
+    override fun visitExportStatement(stmt: ExportStatement) {
+        for (decl in stmt.exports) {
+            decl.source.accept(this)
         }
     }
 

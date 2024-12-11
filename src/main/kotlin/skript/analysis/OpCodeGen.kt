@@ -4,6 +4,7 @@ import skript.ast.*
 import skript.exec.FunctionDef
 import skript.exec.ParamDef
 import skript.exec.ParamType
+import skript.io.toSkript
 import skript.opcodes.*
 import skript.opcodes.compare.*
 import skript.opcodes.equals.BinaryEqualsOp
@@ -11,8 +12,9 @@ import skript.opcodes.equals.BinaryNotEqualsOp
 import skript.opcodes.equals.BinaryStrictEqualsOp
 import skript.opcodes.equals.BinaryStrictNotEqualsOp
 import skript.opcodes.numeric.*
-import skript.parser.TokenType.PIPE_CALL
+import skript.parser.Pos
 import skript.syntaxError
+import skript.typeError
 import skript.util.Stack
 import skript.values.SkNumber
 import skript.values.SkString
@@ -56,14 +58,24 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
     val loops = Stack<LoopInfo>()
     val builder: FunctionDefBuilder
         get() = builders.top()
+    val exportNames = HashSet<String>()
 
-    fun visitModule(module: Module) {
-        val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), module.moduleScope.varsAllocated, 0)
+    fun visitModule(module: ParsedModule, moduleScope: ModuleScope): FunctionDef {
+        val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), moduleScope.varsAllocated, 0)
         builders.withTop(moduleInit) {
             Statements(module.content).accept(this)
         }
 
-        module.moduleInit = moduleInit.build()
+        return moduleInit.build()
+    }
+
+    private fun prepareExport(name: String, pos: Pos) {
+        if (exportNames.add(name)) {
+            builder += CurrentModuleExports
+            builder += PushLiteral(name.toSkript())
+        } else {
+            syntaxError("$name is exported multiple times", pos)
+        }
     }
 
     override fun visitBlock(stmts: Statements) {
@@ -135,6 +147,14 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
                 builder += PushLiteral(SkUndefined)
             }
 
+            builder += decl.varInfo.storeOpCode
+
+            if (stmt.export) {
+                prepareExport(decl.varName, decl.pos)
+                builder += decl.varInfo.loadOpCode
+                builder += SetElementOp
+            }
+            /*
             when (val varInfo = decl.varInfo) {
                 is LocalVarInfo -> {
                     builder += SetLocal(varInfo.indexInScope)
@@ -144,6 +164,41 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
                 }
                 else -> throw IllegalStateException("let statement defining a global?!")
             }
+             */
+        }
+    }
+
+    override fun visitImportStatement(stmt: ImportStatement) {
+        builder += RequireModuleExports(stmt.moduleName, stmt.pos)
+
+        if (stmt.imports.isEmpty()) {
+            builder += Pop
+            return
+        }
+
+        for (i in stmt.imports.indices) {
+            val imp = stmt.imports[i]
+
+            if (i != stmt.imports.lastIndex)
+                builder += Dup
+
+            if (imp.sourceName != null) {
+                builder += PushLiteral(imp.sourceName.toSkript())
+                builder += GetElementOp
+            }
+
+            builder += imp.varInfo.storeOpCode
+        }
+    }
+
+    override fun visitExportStatement(stmt: ExportStatement) {
+        if (stmt.exports.isEmpty())
+            return
+
+        for (exp in stmt.exports) {
+            prepareExport(exp.exportedName, exp.pos)
+            exp.source.accept(this)
+            builder += SetElementOp
         }
     }
 
@@ -152,6 +207,14 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
 
         builder += MakeFunction(funcDef)
         builder += stmt.hoistedVarInfo.storeOpCode
+
+        if (stmt.export) {
+            val funcName = stmt.funcName ?: typeError("Can't export an unnamed function", stmt.pos)
+
+            prepareExport(funcName, stmt.pos)
+            builder += stmt.hoistedVarInfo.loadOpCode
+            builder += SetElementOp
+        }
     }
 
     fun makeFuncDef(stmt: DeclareFunction): FunctionDef {

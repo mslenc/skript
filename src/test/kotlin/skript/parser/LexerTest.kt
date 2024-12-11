@@ -12,7 +12,7 @@ class LexerTest {
         val filename = "testBasics.sk"
         
         val source = """
-            import { foo, bar } from rosetta.stone; # comment?
+            import { foo, bar } from "rosy/stone"; # comment?
             
             let a = 2 + 3 * 4 / 5 % 6 // 7 ** 8;
             
@@ -41,22 +41,21 @@ class LexerTest {
             a?b?.c:e
             12d 12.34d 12E5D 12E-4D 14E+2d 12.34E+5D 12.34E-5d
             `abc ${'$'}{ a + { c: d } } def`
+            export { abc }
         """.trimIndent()
 
         val tokens = CharStream(source, filename).lexCodeModule()
 
         val expect = listOf(
-            Token(IDENTIFIER,         "import",         Pos( 1,  1, filename)),
+            Token(IMPORT,             "import",         Pos( 1,  1, filename)),
             Token(LCURLY,             "{",              Pos( 1,  8, filename)),
             Token(IDENTIFIER,         "foo",            Pos( 1, 10, filename)),
             Token(COMMA,              ",",              Pos( 1, 13, filename)),
             Token(IDENTIFIER,         "bar",            Pos( 1, 15, filename)),
             Token(RCURLY,             "}",              Pos( 1, 19, filename)),
             Token(IDENTIFIER,         "from",           Pos( 1, 21, filename)),
-            Token(IDENTIFIER,         "rosetta",        Pos( 1, 26, filename)),
-            Token(DOT,                ".",              Pos( 1, 33, filename)),
-            Token(IDENTIFIER,         "stone",          Pos( 1, 34, filename)),
-            Token(SEMI,               ";",              Pos( 1, 39, filename)),
+            Token(STRING,             "\"rosy/stone\"", Pos( 1, 26, filename), "rosy/stone"),
+            Token(SEMI,               ";",              Pos( 1, 38, filename)),
 
             Token(IDENTIFIER,         "let",            Pos( 3,  1, filename)),
             Token(IDENTIFIER,         "a",              Pos( 3,  5, filename)),
@@ -264,7 +263,12 @@ class LexerTest {
                 TemplatePartString(" def")
             )),
 
-            Token(EOF,                "",               Pos(29, 28, filename))
+            Token(EXPORT,     "export", Pos(30,  1, filename)),
+            Token(LCURLY,     "{",      Pos(30,  8, filename)),
+            Token(IDENTIFIER, "abc",    Pos(30, 10, filename)),
+            Token(RCURLY,     "}",      Pos(30, 14, filename)),
+
+            Token(EOF,        "",       Pos(30, 15, filename)),
         )
 
         for (i in 0 until min(tokens.size, expect.size))

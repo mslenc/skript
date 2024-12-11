@@ -14,7 +14,7 @@ class MakeFunction(val def: FunctionDef) : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val closure = makeClosure(def.framesCaptured)
-            stack.push(SkScriptFunction(def, closure))
+            stack.push(SkScriptFunction(def, closure, frame.module))
         }
         return null
     }

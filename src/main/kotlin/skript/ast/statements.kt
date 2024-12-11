@@ -2,6 +2,7 @@ package skript.ast
 
 import skript.analysis.FunctionScope
 import skript.analysis.LocalVarInfo
+import skript.analysis.ModuleVarInfo
 import skript.analysis.VarInfo
 import skript.exec.ParamType
 import skript.parser.Pos
@@ -15,6 +16,8 @@ interface StatementVisitor {
     fun visitForStatement(stmt: ForStatement)
     fun visitLet(stmt: LetStatement)
     fun visitDeclareFunctionStmt(stmt: DeclareFunction)
+    fun visitImportStatement(stmt: ImportStatement)
+    fun visitExportStatement(stmt: ExportStatement)
     fun visitReturnStatement(stmt: ReturnStatement)
     fun visitBreakStatement(stmt: BreakStatement)
     fun visitContinueStatement(stmt: ContinueStatement)
@@ -70,7 +73,7 @@ class VarDecl(val varName: String, val initializer: Expression?, val pos: Pos) {
     }
 }
 
-class LetStatement(val decls: List<VarDecl>): Statement() {
+class LetStatement(val decls: List<VarDecl>, val export: Boolean): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitLet(this)
 }
 
@@ -78,7 +81,7 @@ class ParamDecl(val paramName: String, val paramType: ParamType, val defaultValu
     lateinit var varInfo: LocalVarInfo
 }
 
-class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements, val pos: Pos) : Statement() {
+class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements, val pos: Pos, val export: Boolean) : Statement() {
     lateinit var hoistedVarInfo: VarInfo
     lateinit var innerFunScope: FunctionScope
     override fun accept(visitor: StatementVisitor) = visitor.visitDeclareFunctionStmt(this)
@@ -90,4 +93,22 @@ class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val bo
 
 class ReturnStatement(val value: Expression?) : Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitReturnStatement(this)
+}
+
+class ImportDecl(val sourceName: String?, val importedName: String, val pos: Pos) {
+    lateinit var varInfo: VarInfo
+
+    internal fun isVarInfoDefined(): Boolean {
+        return ::varInfo.isInitialized
+    }
+}
+
+class ImportStatement(val imports: List<ImportDecl>, val moduleName: String, val pos: Pos): Statement() {
+    override fun accept(visitor: StatementVisitor) = visitor.visitImportStatement(this)
+}
+
+class ExportDecl(val source: Expression, val exportedName: String, val pos: Pos)
+
+class ExportStatement(val exports: List<ExportDecl>): Statement() {
+    override fun accept(visitor: StatementVisitor) = visitor.visitExportStatement(this)
 }

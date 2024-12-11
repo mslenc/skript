@@ -8,6 +8,7 @@ enum class TokenType {
     FOR, WHILE, IF, ELSE, ELIF, WHEN, DO, RETURN,
     BREAK, CONTINUE,
     TRY, THROW, TYPEOF,
+    IMPORT, EXPORT,
 
     LPAREN, RPAREN,                      // ( )
     LBRACK, RBRACK,                      // [ ]
@@ -63,7 +64,9 @@ val skriptKeywords = mapOf(
     "throw" to TokenType.THROW,
     "typeof" to TokenType.TYPEOF,
     "in" to TokenType.IN,
-    "is" to TokenType.IS
+    "is" to TokenType.IS,
+    "import" to TokenType.IMPORT,
+    "export" to TokenType.EXPORT,
 )
 
 val internedKeywordStrings = skriptKeywords.map { (str, value) -> value to str }.toMap()
