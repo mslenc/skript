@@ -6,8 +6,8 @@ import skript.syntaxError
 import skript.values.SkString
 
 class PageTemplateParser(tokens: Tokens) : ExpressionParser(tokens) {
-    fun parsePageTemplate(moduleName: String): ParsedModule {
-        return ParsedModule(moduleName, parseBlockUntilEnd(null))
+    fun parsePageTemplate(): List<Statement> {
+        return parseBlockUntilEnd(null)
     }
 
     private fun processEmitFilters(expr: Expression, templateRuntime: Expression): Expression {
@@ -128,7 +128,7 @@ class PageTemplateParser(tokens: Tokens) : ExpressionParser(tokens) {
         }
     }
 
-    fun parseRestOfStatement(): Statement {
+    fun  parseRestOfStatement(): Statement {
         return when (peekType) {
             VAR,
             VAL -> {
@@ -146,10 +146,83 @@ class PageTemplateParser(tokens: Tokens) : ExpressionParser(tokens) {
             }
 
             else -> {
+                if (tokens.peekMatch("extends"))
+                    return parseExtendsStmt()
+
+                if (tokens.peekMatch("include", STRING))
+                    return parseIncludeStmt()
+
+                if (tokens.peekMatch("declare", "block", IDENTIFIER)) {
+                    consume()
+                    return parseRestOfBlockDef(true)
+                }
+
+                if (tokens.peekMatch("block", IDENTIFIER)) {
+                    return parseRestOfBlockDef(false)
+                }
+
+                if (tokens.peekMatch("include", SUPER, "block")) {
+                    val posTok = consume()
+                    consume(); consume()
+                    return parseRestOfBlockInclusion(null, posTok.pos)
+                }
+
+                if (tokens.peekMatch("include", "block", IDENTIFIER)) {
+                    val posTok = consume()
+                    consume()
+                    val blockName = tokens.expect(IDENTIFIER).value.toString()
+                    return parseRestOfBlockInclusion(blockName, posTok.pos)
+                }
+
                 val expr = parseExpression()
                 return ExpressionStatement(expr)
             }
         }
+    }
+
+    internal fun parseOptCtxParams(): MapLiteral? {
+        if (!tokens.peekMatch("with"))
+            return null
+
+        tokens.expect(IDENTIFIER)
+        tokens.expect(LCURLY)
+        return parseRestOfMapLiteral()
+    }
+
+    internal fun parseExtendsStmt(): ExtendsStatement {
+        val extTok = tokens.expect(IDENTIFIER)
+        val templateName = tokens.expect(STRING)
+        return ExtendsStatement(templateName.value.toString(), extTok.pos)
+    }
+
+    internal fun parseIncludeStmt(): IncludeStatement {
+        val incTok = tokens.expect(IDENTIFIER)
+        val templateName = tokens.expect(STRING)
+        val ctxParams = parseOptCtxParams()
+
+        return IncludeStatement(templateName.value.toString(), incTok.pos, ctxParams)
+    }
+
+    internal fun parseRestOfBlockDef(declare: Boolean): TemplateBlockStatement {
+        val blockTok = tokens.expect(IDENTIFIER) // "block"
+        val name = tokens.expect(IDENTIFIER).value.toString()
+        tokens.expect(STMT_CLOSE)
+
+        val content = parseBlockUntilEnd(setOf("end"))
+        tokens.expect(IDENTIFIER) // end
+        if (tokens.peekMatch("block")) {
+            consume()
+            if (tokens.peekMatch(name)) {
+                consume()
+            }
+        }
+
+        return TemplateBlockStatement(name, declare = true, execute = !declare, fromParent = false, content = content.pack(), ctxParams = null, blockTok.pos)
+    }
+
+    internal fun parseRestOfBlockInclusion(name: String?, pos: Pos): TemplateBlockStatement { // null name means super block
+        val ctxParams = parseOptCtxParams()
+        return TemplateBlockStatement(name, declare = false, execute = true, fromParent = name == null, content = null, ctxParams = ctxParams, pos)
     }
 
     internal fun parseBreakStmt(): BreakStatement {

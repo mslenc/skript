@@ -3,9 +3,8 @@ package skript.analysis
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import skript.ast.*
-import skript.io.ModuleSource
-import skript.io.ModuleType
-import skript.io.parse
+import skript.io.ModuleName
+import skript.io.ModuleSourceSkript
 
 class VarAllocatorTest {
     @Test
@@ -21,11 +20,12 @@ class VarAllocatorTest {
             }
         """.trimIndent()
 
-        val module = ModuleSource(source, "testBasics", "testBasics", ModuleType.SKRIPT).parse()
+        val moduleName = ModuleName("testBasics")
+        val module = ModuleSourceSkript(moduleName, source).parse()
 
-        VarAllocator(GlobalScope()).visitModule(module)
+        VarAllocator(moduleName).visitModule(module)
 
-        val makeInc = module.content[0] as DeclareFunction
+        val makeInc = module[0] as DeclareFunction
 
         val makeIncScope = makeInc.innerFunScope
         assertEquals(2, makeIncScope.varsAllocated)

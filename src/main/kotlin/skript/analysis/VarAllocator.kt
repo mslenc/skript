@@ -1,21 +1,22 @@
 package skript.analysis
 
 import skript.ast.*
+import skript.io.ModuleName
 import skript.syntaxError
 import skript.util.Stack
 import skript.util.isNotEmpty
 import skript.withTop
 import kotlin.math.max
 
-class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor {
+class VarAllocator(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
     val scopeStack = Stack<Scope>()
 
-    fun visitModule(module: ParsedModule): ModuleScope {
-        val moduleScope = ModuleScope(module, globalScope)
+    fun visitModule(content: List<Statement>): ModuleScope {
+        val moduleScope = ModuleScope(moduleName)
 
         scopeStack.push(moduleScope)
         try {
-            visitBlock(Statements(module.content))
+            visitBlock(Statements(content))
         } finally {
             scopeStack.pop()
         }
@@ -67,6 +68,8 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
                         }
                     }
                 }
+
+                else -> Unit
             }
         }
 
@@ -83,7 +86,7 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
     fun visitDeclareFunction(stmt: DeclareFunction, isStatement: Boolean) {
         val parent = scopeStack.top()
 
-        val funcScope = FunctionScope(parent)
+        val funcScope = FunctionScope(parent, stmt.implicitCtxLookup)
         stmt.innerFunScope = funcScope
 
         scopeStack.withTop(funcScope) {
@@ -204,13 +207,20 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
                     scope = scope.parent
                 }
 
-                is GlobalScope -> {
-                    expr.varInfo = GlobalVarInfo(expr.varName)
-                    return
-                }
-
                 else -> {
-                    scope = scope.parent
+                    scope = scope.parent ?: run {
+                        if (expr.varName != "ctx" && funcs.any { it.implicitCtxLookup }) {
+                            val ctx = Variable("ctx", expr.pos)
+                            visitVarRef(ctx)
+                            if (ctx.varInfo.location != VarLocation.GLOBAL && ctx.varInfo.location != VarLocation.MODULE) {
+                                expr.varInfo = ImplicitCtxVarInfo(ctx.varInfo, expr.varName)
+                                return
+                            }
+                        }
+
+                        expr.varInfo = GlobalVarInfo(expr.varName)
+                        return
+                    }
                 }
             }
         }
@@ -222,5 +232,18 @@ class VarAllocator(val globalScope: GlobalScope) : StatementVisitor, ExprVisitor
         }
     }
 
+    override fun visitExtendsStatement(stmt: ExtendsStatement) {
+        stmt.rewritten.accept(this)
+    }
 
+    override fun visitIncludeStatement(stmt: IncludeStatement) {
+//        stmt.ctxParams?.accept(this)
+        stmt.rewritten.accept(this)
+    }
+
+    override fun visitTemplateBlockStatement(stmt: TemplateBlockStatement) {
+//        stmt.ctxParams?.accept(this)
+//        stmt.content?.accept(this)
+        stmt.rewritten.accept(this)
+    }
 }

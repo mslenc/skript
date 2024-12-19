@@ -9,6 +9,8 @@ class Stack<T> {
 
     fun top(offset: Int) = elements[top + offset] as T
 
+    fun bottom() = if (isNotEmpty()) elements.last() as T else throw IllegalStateException("stack is empty")
+
     fun push(element: T) {
         if (top < 1) {
             grow()
@@ -36,6 +38,14 @@ class Stack<T> {
     fun containsRef(obj: T): Boolean {
         for (i in top until elements.size)
             if (elements[i] === obj)
+                return true
+
+        return false
+    }
+
+    inline fun any(cond: (T) -> Boolean): Boolean {
+        for (i in 0 until size)
+            if (cond(top(i)))
                 return true
 
         return false

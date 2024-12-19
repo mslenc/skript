@@ -2,11 +2,12 @@ package skript.opcodes
 
 import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
+import skript.io.ModuleName
 import skript.parser.Pos
 
-object CurrentModuleExports : FastOpCode() {
+class GetModuleExports(val moduleName: ModuleName) : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
-        frame.stack.push(frame.module.exports)
+        frame.stack.push(frame.env.getModuleExports(moduleName))
         return null
     }
 
@@ -15,9 +16,9 @@ object CurrentModuleExports : FastOpCode() {
     }
 }
 
-class RequireModuleExports(val moduleName: String, val pos: Pos) : SuspendOpCode() {
+class RequireModuleExports(val sourceName: String, val importingModuleName: ModuleName, val pos: Pos) : SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
-        frame.stack.push(frame.env.requireModule(moduleName, pos).exports)
+        frame.stack.push(frame.env.requireModule(sourceName, importingModuleName, pos).exports)
         return null
     }
 

@@ -4,11 +4,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import skript.io.*
 import skript.opcodes.equals.strictlyEqual
+import skript.templates.TemplateRuntime
 import skript.util.SkArguments
-import skript.values.SkFunction
-import skript.values.SkList
-import skript.values.SkUndefined
-import skript.values.SkValue
+import skript.values.*
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -32,8 +30,8 @@ suspend fun runScriptWithEmit(script: String, moduleSources: Map<String, String>
 
 suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String, moduleSources: Map<String, String> = emptyMap()): List<SkValue> {
     val sourceProvider = ModuleSourceProvider.static(moduleSources, emptyMap())
-    val moduleProvider = ParsedModuleProvider.from(sourceProvider)
-    val skriptEngine = SkriptEngine(moduleProvider, nativeAccessGranter = object : NativeAccessGranter {
+    val moduleProvider = ModuleProvider.from(sourceProvider)
+    val skriptEngine = SkriptEngine(nativeAccessGranter = object : NativeAccessGranter {
         override fun isAccessAllowed(klass: KClass<*>): Boolean {
             return klass == LocalDate::class || klass == LocalDateTime::class
         }
@@ -41,7 +39,7 @@ suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String, module
 
     val outputs = ArrayList<SkValue>()
 
-    val env = skriptEngine.createEnv()
+    val env = skriptEngine.createEnv(moduleProvider = moduleProvider)
     initEnv(env)
     env.setGlobal("emit", emitInto(outputs))
 
@@ -50,22 +48,18 @@ suspend fun runScriptWithEmit(initEnv: (SkriptEnv)->Unit, script: String, module
     return outputs
 }
 
-suspend fun runTemplate(template: String): String {
-    return runTemplate({ }, template)
-}
-
-suspend fun runTemplate(initEnv: (SkriptEnv)->Unit, template: String, escape: String = "raw"): String {
-    val sourceProvider = ModuleSourceProvider.static(emptyMap(), emptyMap())
-    val moduleProvider = ParsedModuleProvider.from(sourceProvider)
-    val skriptEngine = SkriptEngine(moduleProvider, nativeAccessGranter = object : NativeAccessGranter {
+suspend fun runTemplate(ctx: Map<String, Any?>, template: String, escape: String = "raw"): String {
+    val skriptEngine = SkriptEngine(nativeAccessGranter = object : NativeAccessGranter {
         override fun isAccessAllowed(klass: KClass<*>): Boolean {
             return klass == LocalDate::class || klass == LocalDateTime::class
         }
     })
 
     val env = skriptEngine.createEnv()
-    initEnv(env)
-    return env.runAnonymousTemplate(template, escape, timeZone = ZoneId.of("America/Los_Angeles"))
+    val sb = StringBuilder()
+    val out = TemplateRuntime.createWithDefaults(sb, defaultEscapeKey = escape, timeZone = ZoneId.of("America/Los_Angeles"))
+    env.runAnonymousTemplate(template, ctx, out)
+    return sb.toString()
 }
 
 fun assertEmittedEquals(expected: List<SkValue>, actual: List<SkValue>) {

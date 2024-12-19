@@ -1,5 +1,7 @@
 package skript.io
 
+import com.github.mslenc.utils.error
+import com.github.mslenc.utils.getLogger
 import skript.analysis.*
 import skript.ast.*
 import skript.exec.*
@@ -9,11 +11,11 @@ import skript.opcodes.JumpTarget
 import skript.opcodes.ReturnValue
 import skript.opcodes.ThrowException
 import skript.parser.*
+import skript.templates.TemplateInstance
 import skript.templates.TemplateRuntime
 import skript.util.Globals
 import skript.util.SkArguments
 import skript.values.*
-import java.io.StringWriter
 import java.time.ZoneId
 import java.util.Currency
 import java.util.Locale
@@ -22,16 +24,10 @@ import kotlin.reflect.KClass
 
 val anonCounter = AtomicLong()
 
-class SkriptEnv(val engine: SkriptEngine) {
+class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, val moduleNameResolver: ModuleNameResolver) {
     internal val globals = Globals()
-    val globalScope = GlobalScope()
-    val modules = HashMap<String, RuntimeModule>()
+    val modules = HashMap<ModuleName, RuntimeModule>()
     val classes = HashMap<SkClassDef, SkClass>()
-
-    fun setUpForTemplate(receiver: Appendable, defaultEscapeKey: String = "raw", locale: Locale = Locale.US, timeZone: ZoneId = ZoneId.systemDefault(), currency: Currency = Currency.getInstance(locale)) {
-        val runtime = TemplateRuntime.createWithDefaults(receiver, defaultEscapeKey, locale, timeZone, currency)
-        setNativeGlobal("templateRuntime", runtime)
-    }
 
     fun getClassObject(classDef: SkClassDef): SkClass {
         val superClass = classDef.superClass?.let { getClassObject(it) }
@@ -41,6 +37,15 @@ class SkriptEnv(val engine: SkriptEngine) {
     fun <T: Any> createNativeWrapper(value: T, klass: KClass<T> = value::class as KClass<T>): SkValue {
         if (value is SkValue)
             return value
+
+        if (value is List<*>) {
+            val parts = value.map { if (it != null) createNativeWrapper(it) else SkNull }
+            return SkList(parts)
+        }
+
+        if (value is Map<*, *>) {
+            return SkMap(value.map { it.key.toString() to (it.value?.let { v -> createNativeWrapper(v) } ?: SkNull) }.toMap())
+        }
 
         val codec = engine.getNativeCodec(klass) ?: throw UnsupportedOperationException("Couldn't reflect class $klass")
         return codec.toSkript(value, this)
@@ -65,68 +70,118 @@ class SkriptEnv(val engine: SkriptEngine) {
         return globals.get(name).also { if (it == SkUndefined) return null }
     }
 
-    internal fun analyze(module: ParsedModule): RuntimeModule {
-        val moduleScope = VarAllocator(globalScope).visitModule(module)
-        val moduleInit = OpCodeGen().visitModule(module, moduleScope)
-        return RuntimeModule(module, moduleScope, moduleInit)
+    private fun makeVarsArray(size: Int): Array<SkValue> {
+        if (size == 0)
+            return emptyArray()
+
+        return Array(size) { SkUndefined }
     }
 
-    internal suspend fun registerAndInit(module: ParsedModule): Pair<SkValue, RuntimeModule> {
-        val runtimeModule = analyze(module)
-        modules[module.name] = runtimeModule
-        return Pair(executeFunction(runtimeModule.init, emptyArray(), SkArguments(), runtimeModule), runtimeModule)
+    suspend fun registerAndInitModule(moduleName: ModuleName, numModuleVars: Int, initializer: FunctionDef): Pair<SkValue, RuntimeModule> {
+        val runtimeModule = RuntimeModule(moduleName, SkMap(), makeVarsArray(numModuleVars))
+        modules[moduleName] = runtimeModule
+        return Pair(executeFunction(initializer, emptyArray(), SkArguments()), runtimeModule)
     }
 
-    suspend fun requireModule(moduleName: String, pos: Pos): RuntimeModule {
+    fun registerPreInitializedModule(moduleName: ModuleName, moduleExports: SkMap, moduleVars: Array<SkValue> = emptyArray()): RuntimeModule {
+        val runtimeModule = RuntimeModule(moduleName, moduleExports, moduleVars)
+        modules[moduleName] = runtimeModule
+        return runtimeModule
+    }
+
+    private fun failImport(moduleName: ModuleName, sourceName: String, pos: Pos?): Nothing {
+        val extraMsg = if (sourceName != moduleName.name) " (resolved to \"${ moduleName.name }\")" else ""
+        throw SkImportError("Couldn't read module $sourceName$extraMsg", null, pos)
+    }
+
+    /* This guy is for calling from scripts */
+    internal suspend fun requireModule(sourceName: String, importingModule: ModuleName, pos: Pos?): RuntimeModule {
+        val moduleName = moduleNameResolver.resolve(sourceName, importingModule)
+
+        try {
+            getOrInitModule(moduleName)?.let { return it }
+        } catch (e: Exception) {
+            logger.error { "Failed to import $sourceName from $importingModule at $pos" }
+            // fail below
+        }
+
+        failImport(moduleName, sourceName, pos)
+    }
+
+    internal suspend fun getOrInitModule(moduleName: ModuleName): RuntimeModule? {
         modules[moduleName]?.let { return it }
 
-        val module = engine.moduleProvider.getModule(moduleName) ?: throw SkImportError("Couldn't read module $moduleName", null, pos)
+        val module = moduleProvider.findModule(moduleName, engine) ?: return null
 
-        return registerAndInit(module).second
+        return module.instantiate(this).second
+    }
+
+    internal suspend fun runAnonModule(prepared: PreparedModuleSkript): SkValue {
+        val runtimeModule = RuntimeModule(prepared.moduleName, SkMap(), makeVarsArray(prepared.varsAllocated))
+        modules[prepared.moduleName] = runtimeModule
+        try {
+            return executeFunction(prepared.moduleInit, emptyArray(), SkArguments())
+        } finally {
+            modules.remove(prepared.moduleName)
+        }
     }
 
     suspend fun runAnonymousScript(scriptSource: String): SkValue {
         val moduleName = "<anonModule${ anonCounter.incrementAndGet() }>"
-        val source = ModuleSource(scriptSource, moduleName, moduleName, ModuleType.SKRIPT)
-        val module = source.parse()
-
-        return registerAndInit(module).first
+        val source = ModuleSourceSkript(ModuleName(moduleName), scriptSource)
+        return runAnonModule(source.prepare(engine))
     }
 
-    suspend fun runAnonymousTemplate(templateSource: String, defaultEscapeKey: String = "raw", locale: Locale = Locale.US, timeZone: ZoneId = ZoneId.systemDefault(), currency: Currency = Currency.getInstance(locale)): String {
-        val out = StringBuilder()
-        setUpForTemplate(out, defaultEscapeKey, locale, timeZone, currency)
+    private fun makeWrapperForRender(render: SkFunction): TemplateInstance {
+        return object : TemplateInstance {
+            override suspend fun execute(ctx: SkMap, out: TemplateRuntime) {
+                val args = SkArguments()
+                args.addPosArg(ctx)
+                args.addPosArg(createNativeWrapper(out))
 
+                render.call(args, this@SkriptEnv)
+            }
+        }
+    }
+
+    suspend fun runAnonymousTemplate(templateSource: String, ctx: Map<String, Any?>, runtime: TemplateRuntime) {
+        val skCtx = SkMap(ctx.mapValues { (_, v) -> v?.let { createNativeWrapper(v) } ?: SkNull })
+        runAnonymousTemplate(templateSource, skCtx, runtime)
+    }
+
+    suspend fun runAnonymousTemplate(templateSource: String, ctx: SkMap, runtime: TemplateRuntime) {
         val moduleName = "<anonTemplate${ anonCounter.incrementAndGet() }>"
-        val source = ModuleSource(templateSource, moduleName, moduleName, ModuleType.PAGE_TEMPLATE)
-        val module = source.parse()
+        val source = ModuleSourceTemplate(ModuleName(moduleName), templateSource)
+        val module = source.prepare(engine)
 
-        registerAndInit(module)
+        val exports = SkMap()
+        val runtimeModule = RuntimeModule(module.moduleName, exports, makeVarsArray(module.varsAllocated))
+        modules[module.moduleName] = runtimeModule
+        try {
+            executeFunction(module.moduleInit, emptyArray(), SkArguments())
 
-        return out.toString()
+            val render = exports.entryGet("render".toSkript(), this) as SkFunction
+            val wrapper = makeWrapperForRender(render)
+            wrapper.execute(ctx, runtime)
+        } finally {
+            modules.remove(module.moduleName)
+        }
     }
 
     suspend fun createFunction(paramNames: List<String>, functionBody: String): SkScriptFunction {
         val funcName = "<callable${ anonCounter.incrementAndGet() }>"
-        val moduleName = "<anonModule${ anonCounter.incrementAndGet() }>"
+        val moduleName = ModuleName("<anonModule${ anonCounter.incrementAndGet() }>")
 
         val tokens = CharStream(functionBody, funcName).lexCodeModule()
         val funcBody = ModuleParser(Tokens(tokens)).parseStatements(TokenType.EOF, allowFunctions = true, allowClasses = false, allowVars = true)
         val funcDecl = DeclareFunction(funcName, paramNames.map { ParamDecl(it, ParamType.NORMAL, null) }, Statements(funcBody), Pos(1, 1, "generated"), export = false)
-        val returnFunc = ReturnStatement(Variable(funcName, Pos(1, 1, "generated")))
-        val module = ParsedModule(moduleName, listOf(funcDecl, returnFunc))
+        val returnStmt = ReturnStatement(Variable(funcName, Pos(1, 1, "generated")))
+        val initializer = listOf(funcDecl, returnStmt)
+        val moduleScope = VarAllocator(moduleName).visitModule(initializer)
+        val moduleInit = OpCodeGen(moduleName).visitModule(moduleScope, initializer)
+        val preparedModule = PreparedModuleSkript(moduleName, moduleScope.varsAllocated, moduleInit)
 
-        val runtimeModule = analyze(module)
-
-        val theFunction: SkScriptFunction
-        modules[module.name] = runtimeModule
-        try {
-            theFunction = executeFunction(runtimeModule.init, emptyArray(), SkArguments(), runtimeModule) as SkScriptFunction
-        } finally {
-            modules.remove(module.name)
-        }
-
-        return theFunction
+        return runAnonModule(preparedModule) as SkScriptFunction
     }
 
     suspend fun <T> createCallable(params: List<Pair<String, SkCodec<*>>>, returnType: SkCodec<T>, functionBody: String): SuspendFun<T> {
@@ -134,11 +189,11 @@ class SkriptEnv(val engine: SkriptEngine) {
         return SuspendFunImpl(params, returnType, function, this)
     }
 
-    suspend fun executeFunction(func: FunctionDef, closure: Array<Array<SkValue>>, args: SkArguments, module: RuntimeModule): SkValue {
+    suspend fun executeFunction(func: FunctionDef, closure: Array<Array<SkValue>>, args: SkArguments): SkValue {
         val ops = func.ops
         val opsSize = ops.size
 
-        val frame = Frame(func.localsSize, args, closure, this, module)
+        val frame = Frame(func.localsSize, args, closure, this)
         var ip = 0
 
         nextOp@
@@ -159,6 +214,26 @@ class SkriptEnv(val engine: SkriptEngine) {
 
         return SkUndefined
     }
+
+    fun getModuleVars(moduleName: ModuleName): Array<SkValue> {
+        return modules[moduleName]?.moduleVars ?: throw IllegalStateException("No module $moduleName in runtime")
+    }
+
+    fun getModuleExports(moduleName: ModuleName): SkMap {
+        return modules[moduleName]?.exports ?: throw IllegalStateException("No module $moduleName in runtime")
+    }
+
+    suspend fun loadTemplate(sourceName: String): TemplateInstance {
+        return loadTemplate(moduleNameResolver.resolve(sourceName, null))
+    }
+
+    suspend fun loadTemplate(moduleName: ModuleName): TemplateInstance {
+        val module = getOrInitModule(moduleName) ?: throw IllegalStateException("Template module $moduleName couldn't be loaded.")
+        val render = module.exports.entries["render"] as? SkFunction ?: throw IllegalStateException("No render function in module $moduleName.")
+        return makeWrapperForRender(render)
+    }
+
+    val logger = getLogger<SkriptEnv>()
 }
 
 interface SuspendFun<T> {

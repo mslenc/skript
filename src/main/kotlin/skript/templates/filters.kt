@@ -2,6 +2,7 @@ package skript.templates
 
 import skript.io.SkriptEnv
 import skript.io.toSkript
+import skript.isInteger
 import skript.util.SkArguments
 import skript.values.*
 import java.text.NumberFormat
@@ -60,15 +61,19 @@ fun createNumberFormatter(locale: Locale, minDigits: Int, maxDigits: Int): Numbe
     return formatter
 }
 
-class FormatNumber(private val defaultFormat: NumberFormat, private val locale: Locale) : SkFunction("number", listOf("value", "fallback", "minDigits", "maxDigits")) {
+class FormatNumber(private val defaultFormat: NumberFormat, private val locale: Locale) : SkFunction("number", listOf("value", "fallback", "minDigits", "maxDigits", "preferInt")) {
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
         val value = (args.extractArg("value") as? SkNumber)?.toBigDecimal()
         val fallbackStr = args.extractArg("fallback").asStringOrNull(true) ?: ""
-        val minDigits = args.extractArg("minDigits").toNonNegativeIntOrNull()
-        val maxDigits = args.extractArg("maxDigits").toNonNegativeIntOrNull()
 
         if (value == null)
             return fallbackStr.toSkript()
+
+        val minDigitsDef = args.extractArg("minDigits").toNonNegativeIntOrNull()
+        val maxDigitsDef = args.extractArg("maxDigits").toNonNegativeIntOrNull()
+        val preferInt = args.extractArg("preferInt").asBoolean().value && value.isInteger()
+        val minDigits = if (preferInt) 0 else minDigitsDef
+        val maxDigits = if (preferInt) 0 else maxDigitsDef
 
         if (minDigits == null && maxDigits == null || ((minDigits == null || minDigits == defaultFormat.minimumFractionDigits) && (maxDigits == null || maxDigits == defaultFormat.maximumFractionDigits)))
             return defaultFormat.format(value).toSkript()

@@ -13,7 +13,7 @@ import kotlin.reflect.full.createType
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSubclassOf
 
-class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, val nativeAccessGranter: NativeAccessGranter = NoNativeAccess) {
+class SkriptEngine(val nativeAccessGranter: NativeAccessGranter = NoNativeAccess, val userData: Any? = null) {
     val nativeCodecs = HashMap<KType, SkCodec<*>>()
     val nativeClassDefs = HashMap<KClass<*>, SkNativeClassDef<*>>()
 
@@ -21,8 +21,8 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
         initCodecs(nativeCodecs)
     }
 
-    fun createEnv(initStandardGlobals: Boolean = true): SkriptEnv {
-        val env = SkriptEnv(this)
+    fun createEnv(initStandardGlobals: Boolean = true, moduleProvider: ModuleProvider = NoModuleProvider, moduleNameResolver: ModuleNameResolver = NoNameResolver): SkriptEnv {
+        val env = SkriptEnv(this, moduleProvider, moduleNameResolver)
 
         if (initStandardGlobals) {
             env.apply {
@@ -129,13 +129,7 @@ class SkriptEngine(val moduleProvider: ParsedModuleProvider = NoModuleProvider, 
         nativeCodecs[nullableType] = result
         nativeCodecs[nonNullType] = result
         nativeClassDefs[klass] = classDef
-
-        if (!reflectNativeClass(klass, classDef, this)) {
-            nativeCodecs.remove(nullableType)
-            nativeCodecs.remove(nonNullType)
-            nativeClassDefs.remove(klass)
-            return null
-        }
+        reflectNativeClass(klass, classDef, this)
 
         return result
     }

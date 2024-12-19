@@ -2,28 +2,11 @@ package skript.ast
 
 import skript.analysis.FunctionScope
 import skript.analysis.LocalVarInfo
-import skript.analysis.ModuleVarInfo
 import skript.analysis.VarInfo
 import skript.exec.ParamType
 import skript.parser.Pos
 
-interface StatementVisitor {
-    fun visitBlock(stmts: Statements)
-    fun visitIf(stmt: IfStatement)
-    fun visitExprStmt(stmt: ExpressionStatement)
-    fun visitWhile(stmt: WhileStatement)
-    fun visitDoWhile(stmt: DoWhileStatement)
-    fun visitForStatement(stmt: ForStatement)
-    fun visitLet(stmt: LetStatement)
-    fun visitDeclareFunctionStmt(stmt: DeclareFunction)
-    fun visitImportStatement(stmt: ImportStatement)
-    fun visitExportStatement(stmt: ExportStatement)
-    fun visitReturnStatement(stmt: ReturnStatement)
-    fun visitBreakStatement(stmt: BreakStatement)
-    fun visitContinueStatement(stmt: ContinueStatement)
-}
-
-abstract class Statement {
+sealed class Statement {
     abstract fun accept(visitor: StatementVisitor)
 }
 
@@ -81,7 +64,7 @@ class ParamDecl(val paramName: String, val paramType: ParamType, val defaultValu
     lateinit var varInfo: LocalVarInfo
 }
 
-class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements, val pos: Pos, val export: Boolean) : Statement() {
+class DeclareFunction(val funcName: String?, val params: List<ParamDecl>, val body: Statements, val pos: Pos, val export: Boolean, val implicitCtxLookup: Boolean = false) : Statement() {
     lateinit var hoistedVarInfo: VarInfo
     lateinit var innerFunScope: FunctionScope
     override fun accept(visitor: StatementVisitor) = visitor.visitDeclareFunctionStmt(this)
@@ -103,7 +86,7 @@ class ImportDecl(val sourceName: String?, val importedName: String, val pos: Pos
     }
 }
 
-class ImportStatement(val imports: List<ImportDecl>, val moduleName: String, val pos: Pos): Statement() {
+class ImportStatement(val imports: List<ImportDecl>, val sourceName: String, val pos: Pos): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitImportStatement(this)
 }
 
@@ -111,4 +94,30 @@ class ExportDecl(val source: Expression, val exportedName: String, val pos: Pos)
 
 class ExportStatement(val exports: List<ExportDecl>): Statement() {
     override fun accept(visitor: StatementVisitor) = visitor.visitExportStatement(this)
+}
+
+class ExtendsStatement(val templateName: String, val pos: Pos) : Statement() {
+    lateinit var rewritten: Statement
+    override fun accept(visitor: StatementVisitor) = visitor.visitExtendsStatement(this)
+}
+
+/*
+This is just the include "template" form, including blocks is done with BlockStatement
+ */
+class IncludeStatement(val templateName: String, val pos: Pos, val ctxParams: MapLiteral?): Statement() {
+    lateinit var rewritten: Statement
+    override fun accept(visitor: StatementVisitor) = visitor.visitIncludeStatement(this)
+}
+
+/*
+block bubu => declare = true, execute = true, fromParent = false
+declare block bubu => declare = true, execute = false, fromParent = false
+include block bubu => declare = false, execute = true, fromParent = false
+include super block => declare = false, execute = true, fromParent = true
+ */
+class TemplateBlockStatement(val blockName: String?, val declare: Boolean, val execute: Boolean, val fromParent: Boolean, val content: Statement?, val ctxParams: MapLiteral?, val pos: Pos): Statement() {
+    lateinit var resolvedBlockName: String
+    lateinit var rewritten: Statement
+
+    override fun accept(visitor: StatementVisitor) = visitor.visitTemplateBlockStatement(this)
 }

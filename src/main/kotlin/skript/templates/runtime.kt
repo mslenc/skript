@@ -60,5 +60,6 @@ class TemplateRuntime(private val receiver: Appendable, val filters: SkMap, val 
     }
 }
 
-
-
+interface TemplateInstance {
+    suspend fun execute(ctx: SkMap, out: TemplateRuntime)
+}

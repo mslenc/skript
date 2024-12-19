@@ -18,12 +18,12 @@ open class ExpressionParser(val tokens: Tokens) {
 
     protected fun consumePos() = consume().pos
 
-    protected fun peekCtxKeyword(keyword: String): Boolean {
-        return peekType == IDENTIFIER && tokens.peek().value == keyword
+    protected fun peekMatch(keyword: String): Boolean {
+        return tokens.peekMatch(keyword)
     }
 
     protected fun expectCtxKeyword(keyword: String): Token {
-        if (!peekCtxKeyword(keyword))
+        if (!peekMatch(keyword))
             syntaxError("Expected \"$keyword\" here.")
         return tokens.next()
     }
@@ -372,7 +372,7 @@ open class ExpressionParser(val tokens: Tokens) {
             }
 
             IDENTIFIER -> {
-                return Variable(tok.rawText, tok.pos)
+                return Variable(tok.value.toString(), tok.pos)
             }
 
             LBRACK -> {
@@ -438,9 +438,14 @@ open class ExpressionParser(val tokens: Tokens) {
 
                 else -> {
                     val ident = tokens.expect(IDENTIFIER)
-                    tokens.expect(COLON)
-                    val value = parseExpression()
-                    MapLiteralPartFixedKey(ident.rawText, value)
+                    if (peekType == COMMA || peekType == RCURLY) {
+                        val value = Variable(ident.value.toString(), ident.pos)
+                        MapLiteralPartFixedKey(ident.value.toString(), value)
+                    } else {
+                        tokens.expect(COLON)
+                        val value = parseExpression()
+                        MapLiteralPartFixedKey(ident.value.toString(), value)
+                    }
                 }
             }
 

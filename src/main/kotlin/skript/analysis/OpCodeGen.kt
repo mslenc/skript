@@ -4,6 +4,7 @@ import skript.ast.*
 import skript.exec.FunctionDef
 import skript.exec.ParamDef
 import skript.exec.ParamType
+import skript.io.ModuleName
 import skript.io.toSkript
 import skript.opcodes.*
 import skript.opcodes.compare.*
@@ -53,17 +54,17 @@ data class LoopInfo(
     }
 }
 
-class OpCodeGen : StatementVisitor, ExprVisitor {
+class OpCodeGen(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
     val builders = Stack<FunctionDefBuilder>()
     val loops = Stack<LoopInfo>()
     val builder: FunctionDefBuilder
         get() = builders.top()
     val exportNames = HashSet<String>()
 
-    fun visitModule(module: ParsedModule, moduleScope: ModuleScope): FunctionDef {
-        val moduleInit = FunctionDefBuilder("moduleInit_${module.name}", emptyArray(), moduleScope.varsAllocated, 0)
+    fun visitModule(moduleScope: ModuleScope, content: List<Statement>): FunctionDef {
+        val moduleInit = FunctionDefBuilder("moduleInit_${moduleName}", emptyArray(), moduleScope.varsAllocated, 0)
         builders.withTop(moduleInit) {
-            Statements(module.content).accept(this)
+            Statements(content).accept(this)
         }
 
         return moduleInit.build()
@@ -71,7 +72,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
 
     private fun prepareExport(name: String, pos: Pos) {
         if (exportNames.add(name)) {
-            builder += CurrentModuleExports
+            builder += GetModuleExports(moduleName)
             builder += PushLiteral(name.toSkript())
         } else {
             syntaxError("$name is exported multiple times", pos)
@@ -169,7 +170,7 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
     }
 
     override fun visitImportStatement(stmt: ImportStatement) {
-        builder += RequireModuleExports(stmt.moduleName, stmt.pos)
+        builder += RequireModuleExports(stmt.sourceName, moduleName, stmt.pos)
 
         if (stmt.imports.isEmpty()) {
             builder += Pop
@@ -753,5 +754,18 @@ class OpCodeGen : StatementVisitor, ExprVisitor {
             }
         }
         builder += StringTemplateEnd
+    }
+
+    // these three should all have been rewritten already
+    override fun visitExtendsStatement(stmt: ExtendsStatement) {
+        stmt.rewritten.accept(this)
+    }
+
+    override fun visitIncludeStatement(stmt: IncludeStatement) {
+        stmt.rewritten.accept(this)
+    }
+
+    override fun visitTemplateBlockStatement(stmt: TemplateBlockStatement) {
+        stmt.rewritten.accept(this)
     }
 }

@@ -46,6 +46,38 @@ class Tokens(val tokens: List<Token>) {
     }
 }
 
+inline fun Tokens.peekMatch(t1: (Token)->Boolean): Boolean {
+    return pos < tokens.size && t1(tokens[pos])
+}
+
+inline fun Tokens.peekMatch(t1: (Token)->Boolean, t2: (Token)->Boolean): Boolean {
+    return pos + 1 < tokens.size && t1(tokens[pos]) && t2(tokens[pos + 1])
+}
+
+inline fun Tokens.peekMatch(t1: (Token)->Boolean, t2: (Token)->Boolean, t3: (Token)->Boolean): Boolean {
+    return pos + 2 < tokens.size && t1(tokens[pos]) && t2(tokens[pos + 1]) && t3(tokens[pos + 2])
+}
+
+fun Tokens.peekMatch(t1: String): Boolean {
+    return peekMatch({ it.rawText == t1 })
+}
+
+fun Tokens.peekMatch(t1: String, t2: String): Boolean {
+    return peekMatch({ it.rawText == t1 }, { it.rawText == t2 })
+}
+
+fun Tokens.peekMatch(t1: String, t2: TokenType): Boolean {
+    return peekMatch({ it.rawText == t1 }, { it.type == t2 })
+}
+
+fun Tokens.peekMatch(t1: String, t2: String, t3: TokenType): Boolean {
+    return peekMatch({ it.rawText == t1 }, { it.rawText == t2 }, { it.type == t3 })
+}
+
+fun Tokens.peekMatch(t1: String, t2: TokenType, t3: String): Boolean {
+    return peekMatch({ it.rawText == t1 }, { it.type == t2 }, { it.rawText == t3 })
+}
+
 private val Token.isEcho
     get() = when (type) {
         TokenType.ECHO_WS,

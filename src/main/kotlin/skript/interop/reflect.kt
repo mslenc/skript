@@ -6,7 +6,6 @@ import skript.values.SkFunction
 import skript.values.SkMethod
 import skript.values.SkObjectProperty
 import skript.values.SkStaticProperty
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.reflect.*
@@ -89,7 +88,7 @@ fun <RCVR: Any> reflectCompanionMembers(companionClass: KClass<RCVR>, staticsByN
     }
 }
 
-fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine): Boolean {
+fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
     val membersByName = HashMap<String, ArrayList<SkClassInstanceMember>>()
     val staticsByName = HashMap<String, ArrayList<SkClassStaticMember>>()
 
@@ -211,8 +210,6 @@ fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>,
     }
 
     constructor?.let { makeNativeConstructor(it, classDef, engine)?.let { cons -> classDef.constructor = cons } }
-
-    return true
 }
 
 fun makeParamInfos(function: KFunction<*>, engine: SkriptEngine, vararg extraParams: SkNativeParam): SkNativeParams? {

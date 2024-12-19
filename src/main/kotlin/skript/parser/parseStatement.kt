@@ -6,8 +6,8 @@ import skript.parser.TokenType.*
 import skript.syntaxError
 
 class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
-    fun parseModule(moduleName: String): ParsedModule {
-        return ParsedModule(moduleName, parseStatements(EOF, allowFunctions = true, allowClasses = true, allowVars = true, allowImports = true))
+    fun parseModule(): List<Statement> {
+        return parseStatements(EOF, allowFunctions = true, allowClasses = true, allowVars = true, allowImports = true)
     }
 
     override fun parsePrimary(): Expression {
@@ -119,7 +119,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         if (peekType == IDENTIFIER) { // default import
             val ident = consume()
             decls += ImportDecl("default", ident.value.toString(), ident.pos)
-            if (peekCtxKeyword("from")) {
+            if (peekMatch("from")) {
                 consume()
                 val moduleName = tokens.expect(STRING)
                 return ImportStatement(decls, moduleName.value.toString(), moduleName.pos)
@@ -130,7 +130,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
 
         if (peekType == STAR) {
             consume()
-            if (peekCtxKeyword("as")) {
+            if (peekMatch("as")) {
                 consume()
                 val alias = tokens.expect(IDENTIFIER)
                 decls += ImportDecl(null, alias.value.toString(), alias.pos)
@@ -145,7 +145,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         tokens.expect(LCURLY)
         while (true) {
             val sourceName = tokens.expect(IDENTIFIER)
-            if (peekCtxKeyword("as")) {
+            if (peekMatch("as")) {
                 consume()
                 val aliasName = tokens.expect(IDENTIFIER)
                 decls += ImportDecl(sourceName.value.toString(), aliasName.value.toString(), sourceName.pos)
@@ -176,7 +176,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         if (peekType == FUNCTION)
             return parseFunctionDecl(funLiteral = false, export = true)
 
-        if (peekCtxKeyword("default")) {
+        if (peekMatch("default")) {
             consume()
             val expr = parseExpression()
             return ExportStatement(listOf(ExportDecl(expr, "default", exportToken.pos)))
@@ -186,7 +186,7 @@ class ModuleParser(tokens: Tokens) : ExpressionParser(tokens) {
         val decls = ArrayList<ExportDecl>()
         while (true) {
             val sourceName = tokens.expect(IDENTIFIER)
-            if (peekCtxKeyword("as")) {
+            if (peekMatch("as")) {
                 consume()
                 val aliasName = tokens.expect(IDENTIFIER)
                 decls += ExportDecl(Variable(sourceName.value.toString(), sourceName.pos), aliasName.value.toString(), sourceName.pos)

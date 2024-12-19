@@ -1,14 +1,10 @@
 package skript.io
 
-enum class ModuleType {
-    SKRIPT,
-    PAGE_TEMPLATE,
-}
-
-data class ModuleSource(val source: String, val moduleName: String, val fileName: String, val type: ModuleType)
-
 interface ModuleSourceProvider {
-    suspend fun getSource(moduleName: String): ModuleSource?
+    /**
+     * Returns the module source of the specified module (or null, if not found).
+     */
+    suspend fun findSource(moduleName: ModuleName): ModuleSource?
 
     companion object {
         fun combine(providers: List<ModuleSourceProvider>): ModuleSourceProvider {
@@ -17,39 +13,45 @@ interface ModuleSourceProvider {
 
         @JvmName("staticSources")
         fun static(skripts: Map<String, String>, templates: Map<String, String>): ModuleSourceProvider {
-            val transformed = LinkedHashMap<String, ModuleSource>()
+            val transformed = LinkedHashMap<ModuleName, ModuleSource>()
 
-            skripts.forEach { (moduleName, source) ->
-                transformed[moduleName] = ModuleSource(source, moduleName, moduleName, ModuleType.SKRIPT)
+            skripts.forEach { (name, source) ->
+                ModuleName(name).let { transformed[it] = ModuleSourceSkript(it, source) }
             }
-            templates.forEach { (moduleName, source) ->
-                transformed[moduleName] = ModuleSource(source, moduleName, moduleName, ModuleType.PAGE_TEMPLATE)
+            templates.forEach { (name, source) ->
+                ModuleName(name).let { transformed[it] = ModuleSourceTemplate(it, source) }
             }
 
             if (transformed.size != skripts.size + templates.size)
                 throw IllegalArgumentException("Sources have a repeated key.")
 
-            return StaticModuleSourceProvider(transformed)
+            return static(transformed)
         }
 
-        @JvmName("staticInfos")
+        @JvmName("staticByString")
         fun static(sources: Map<String, ModuleSource>): ModuleSourceProvider {
-            return StaticModuleSourceProvider(sources.toMap())
+            return StaticModuleSourceProvider(sources.mapKeys { ModuleName(it.key) })
+        }
+
+        @JvmName("staticByName")
+        fun static(sources: Map<ModuleName, ModuleSource>): ModuleSourceProvider {
+            return StaticModuleSourceProvider(sources)
         }
     }
 }
 
+
 internal class CombinedModuleSourceProvider(private val sources: List<ModuleSourceProvider>) : ModuleSourceProvider {
-    override suspend fun getSource(moduleName: String): ModuleSource? {
+    override suspend fun findSource(moduleName: ModuleName): ModuleSource? {
         for (source in sources) {
-            source.getSource(moduleName)?.let { return it }
+            source.findSource(moduleName)?.let { return it }
         }
         return null
     }
 }
 
-internal class StaticModuleSourceProvider(private val sources: Map<String, ModuleSource>) : ModuleSourceProvider {
-    override suspend fun getSource(moduleName: String): ModuleSource? {
+internal class StaticModuleSourceProvider(private val sources: Map<ModuleName, ModuleSource>) : ModuleSourceProvider {
+    override suspend fun findSource(moduleName: ModuleName): ModuleSource? {
         return sources[moduleName]
     }
 }

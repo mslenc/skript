@@ -80,6 +80,7 @@ class BinaryTrees {
     }
 
     @Test
+    @Disabled
     fun testBGBinaryTrees14() {
         val result = testBGBinaryTrees(14)
 

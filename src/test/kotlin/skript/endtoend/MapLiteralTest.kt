@@ -13,11 +13,18 @@ class MapLiteralTest {
     @Test
     fun testMapLiteralBasics() = runBlocking {
         val outputs = runScriptWithEmit("""
-            val first = { a: "A", b: "B", c: 12 };
+            val fifth = "fiverr"
+            
+            val first = { a: "A", b: "B", c: 12, fifth };
+            
+            val third = "3!"
+            val fourth = 123 - 119
             
             val second = {
                 **first,
-                [ first.a ]: "bigA"
+                third,
+                [ first.a ]: "bigA",
+                fourth,
             };
 
             for ((key, value) in first) {
@@ -36,11 +43,15 @@ class MapLiteralTest {
             "a".toSkript(), "A".toSkript(),
             "b".toSkript(), "B".toSkript(),
             "c".toSkript(), 12.toSkript(),
+            "fifth".toSkript(), "fiverr".toSkript(),
 
             "a".toSkript(), "A".toSkript(),
             "b".toSkript(), "B".toSkript(),
             "c".toSkript(), 12.toSkript(),
-            "A".toSkript(), "bigA".toSkript()
+            "fifth".toSkript(), "fiverr".toSkript(),
+            "third".toSkript(), "3!".toSkript(),
+            "A".toSkript(), "bigA".toSkript(),
+            "fourth".toSkript(), 4.toSkript(),
         )
 
         assertEmittedEquals(expect, outputs)
