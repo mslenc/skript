@@ -40,6 +40,12 @@ fun <RCVR, RES> ((RCVR)->RES).bind(receiver: RCVR): ()->RES {
 
 
 fun <RCVR: Any> reflectCompanionMembers(companionClass: KClass<RCVR>, staticsByName: HashMap<String, ArrayList<SkClassStaticMember>>, engine: SkriptEngine) {
+    return tryReflectOp({ "reflectCompanionMembers $companionClass" }) {
+        reflectCompanionMembers1(companionClass, staticsByName, engine)
+    }
+}
+
+private fun <RCVR: Any> reflectCompanionMembers1(companionClass: KClass<RCVR>, staticsByName: HashMap<String, ArrayList<SkClassStaticMember>>, engine: SkriptEngine) {
     val companion = companionClass.objectInstance ?: return
 
     nextMember@
@@ -88,7 +94,30 @@ fun <RCVR: Any> reflectCompanionMembers(companionClass: KClass<RCVR>, staticsByN
     }
 }
 
+class ReflectException(message: String?, cause: Throwable?) : Exception(message, cause) {
+    fun rethrowWith(pathElement: String): Nothing {
+        val newMessage = message?.let { it + "\n" + pathElement } ?: pathElement
+        throw ReflectException(newMessage, cause)
+    }
+}
+
+inline fun <T> tryReflectOp(pathElement: () -> String, block: () -> T): T {
+    try {
+        return block()
+    } catch (e: ReflectException) {
+        e.rethrowWith(pathElement())
+    } catch (e: Throwable) {
+        throw ReflectException("Failed reflection of:\n" + pathElement(), e)
+    }
+}
+
 fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
+    return tryReflectOp({ "reflectNativeClass $klass" }) {
+        reflectNativeClass1(klass, classDef, engine)
+    }
+}
+
+private fun <T: Any> reflectNativeClass1(klass: KClass<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine) {
     val membersByName = HashMap<String, ArrayList<SkClassInstanceMember>>()
     val staticsByName = HashMap<String, ArrayList<SkClassStaticMember>>()
 
@@ -190,11 +219,14 @@ fun <T: Any> reflectNativeClass(klass: KClass<T>, classDef: SkNativeClassDef<T>,
         }
     }
 
-    val constructors = klass.constructors.filter { cons ->
-        cons.visibility == KVisibility.PUBLIC &&
-        cons.findAnnotation<SkriptIgnore>() == null &&
-        cons.parameters.all { engine.getNativeCodec(it.type) != null }
+    val constructors = tryReflectOp({ "finding constructors of $klass" }) {
+        klass.constructors.filter { cons ->
+            cons.visibility == KVisibility.PUBLIC &&
+            cons.findAnnotation<SkriptIgnore>() == null &&
+            cons.parameters.all { engine.getNativeCodec(it.type) != null }
+        }
     }
+
 
     val constructor: KFunction<T>? = when {
         constructors.isEmpty() -> null
@@ -239,6 +271,12 @@ fun makeParamInfos(function: KFunction<*>, engine: SkriptEngine, vararg extraPar
 }
 
 fun <T: Any, R> makeNativeInstanceMethod(prop: KFunction<R>, classDef: SkNativeClassDef<T>, engine: SkriptEngine): SkNativeMethod<*>? {
+    return tryReflectOp({ "makeNativeInstanceMethod $prop" }) {
+        makeNativeInstanceMethod1(prop, classDef, engine)
+    }
+}
+
+private fun <T: Any, R> makeNativeInstanceMethod1(prop: KFunction<R>, classDef: SkNativeClassDef<T>, engine: SkriptEngine): SkNativeMethod<*>? {
     return SkNativeMethod(
         name = prop.name,
         thisParam = prop.instanceParameter ?: prop.extensionReceiverParameter ?: return null,
@@ -250,6 +288,12 @@ fun <T: Any, R> makeNativeInstanceMethod(prop: KFunction<R>, classDef: SkNativeC
 }
 
 fun <R> makeNativeStaticFunction(prop: KFunction<R>, engine: SkriptEngine, vararg extraParams: SkNativeParam): SkNativeFunction<*>? {
+    return tryReflectOp({ "makeNativeStaticFunction $prop" }) {
+        makeNativeStaticFunction1(prop, engine, *extraParams)
+    }
+}
+
+private fun <R> makeNativeStaticFunction1(prop: KFunction<R>, engine: SkriptEngine, vararg extraParams: SkNativeParam): SkNativeFunction<*>? {
     return SkNativeFunction(
         name = prop.name,
         params = makeParamInfos(prop, engine, *extraParams) ?: return null,
@@ -259,6 +303,12 @@ fun <R> makeNativeStaticFunction(prop: KFunction<R>, engine: SkriptEngine, varar
 }
 
 fun <T: Any> makeNativeConstructor(impl: KFunction<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine): SkNativeConstructor<T>? {
+    return tryReflectOp({ "makeNativeConstructor $impl" }) {
+        makeNativeConstructor1(impl, classDef, engine)
+    }
+}
+
+private fun <T: Any> makeNativeConstructor1(impl: KFunction<T>, classDef: SkNativeClassDef<T>, engine: SkriptEngine): SkNativeConstructor<T>? {
     return SkNativeConstructor(
         name = classDef.className,
         params = makeParamInfos(impl, engine) ?: return null,
@@ -267,8 +317,13 @@ fun <T: Any> makeNativeConstructor(impl: KFunction<T>, classDef: SkNativeClassDe
     )
 }
 
-
 fun <RCVR: Any, T> reflectMutableProperty(prop: KMutableProperty1<RCVR, T>, classDef: SkNativeClassDef<RCVR>, engine: SkriptEngine): SkNativeMutableProperty<RCVR, T>? {
+    return tryReflectOp({ "reflectMutableProperty prop" }) {
+        reflectMutableProperty1(prop, classDef, engine)
+    }
+}
+
+private fun <RCVR: Any, T> reflectMutableProperty1(prop: KMutableProperty1<RCVR, T>, classDef: SkNativeClassDef<RCVR>, engine: SkriptEngine): SkNativeMutableProperty<RCVR, T>? {
     return SkNativeMutableProperty(
         name = prop.name,
         nullable = prop.returnType.isMarkedNullable,
@@ -281,6 +336,12 @@ fun <RCVR: Any, T> reflectMutableProperty(prop: KMutableProperty1<RCVR, T>, clas
 }
 
 fun <RCVR: Any, T> reflectBoundMutableProperty(prop: KMutableProperty1<RCVR, T>, instance: RCVR, engine: SkriptEngine): SkNativeStaticMutableProperty<T>? {
+    return tryReflectOp({ "reflectBoundMutableProperty $prop" }) {
+        reflectBoundMutableProperty1(prop, instance, engine)
+    }
+}
+
+private fun <RCVR: Any, T> reflectBoundMutableProperty1(prop: KMutableProperty1<RCVR, T>, instance: RCVR, engine: SkriptEngine): SkNativeStaticMutableProperty<T>? {
     return SkNativeStaticMutableProperty(
         name = prop.name,
         nullable = prop.returnType.isMarkedNullable,
@@ -291,6 +352,12 @@ fun <RCVR: Any, T> reflectBoundMutableProperty(prop: KMutableProperty1<RCVR, T>,
 }
 
 fun <RCVR: Any, T> reflectReadOnlyProperty(prop: KProperty1<RCVR, T>, classDef: SkNativeClassDef<RCVR>, engine: SkriptEngine): SkNativeReadOnlyProperty<RCVR, T>? {
+    return tryReflectOp({ "reflectReadOnlyProperty $prop" }) {
+        reflectReadOnlyProperty1(prop, classDef, engine)
+    }
+}
+
+private fun <RCVR: Any, T> reflectReadOnlyProperty1(prop: KProperty1<RCVR, T>, classDef: SkNativeClassDef<RCVR>, engine: SkriptEngine): SkNativeReadOnlyProperty<RCVR, T>? {
     return SkNativeReadOnlyProperty(
         name = prop.name,
         nullable = prop.returnType.isMarkedNullable,
@@ -302,6 +369,12 @@ fun <RCVR: Any, T> reflectReadOnlyProperty(prop: KProperty1<RCVR, T>, classDef: 
 }
 
 fun <RCVR: Any, T> reflectBoundReadOnlyProperty(prop: KProperty1<RCVR, T>, instance: RCVR, engine: SkriptEngine): SkNativeStaticReadOnlyProperty<T>? {
+    return tryReflectOp({ "reflectBoundReadOnlyProperty $prop" }) {
+        reflectBoundReadOnlyProperty1(prop, instance, engine)
+    }
+}
+
+private fun <RCVR: Any, T> reflectBoundReadOnlyProperty1(prop: KProperty1<RCVR, T>, instance: RCVR, engine: SkriptEngine): SkNativeStaticReadOnlyProperty<T>? {
     return SkNativeStaticReadOnlyProperty(
         name = prop.name,
         nullable = prop.returnType.isMarkedNullable,
@@ -311,6 +384,12 @@ fun <RCVR: Any, T> reflectBoundReadOnlyProperty(prop: KProperty1<RCVR, T>, insta
 }
 
 fun <T> reflectMutableStaticProperty(prop: KMutableProperty0<T>, engine: SkriptEngine): SkNativeStaticMutableProperty<T>? {
+    return tryReflectOp({ "reflectMutableStaticProperty $prop" }) {
+        reflectMutableStaticProperty1(prop, engine)
+    }
+}
+
+private fun <T> reflectMutableStaticProperty1(prop: KMutableProperty0<T>, engine: SkriptEngine): SkNativeStaticMutableProperty<T>? {
     return SkNativeStaticMutableProperty(
         name = prop.name,
         nullable = prop.returnType.isMarkedNullable,
@@ -321,6 +400,12 @@ fun <T> reflectMutableStaticProperty(prop: KMutableProperty0<T>, engine: SkriptE
 }
 
 fun <T> reflectReadOnlyStaticProperty(prop: KProperty0<T>, engine: SkriptEngine): SkNativeStaticReadOnlyProperty<T>? {
+    return tryReflectOp({ "reflectReadOnlyStaticProperty $prop" }) {
+        reflectReadOnlyStaticProperty1(prop, engine)
+    }
+}
+
+private fun <T> reflectReadOnlyStaticProperty1(prop: KProperty0<T>, engine: SkriptEngine): SkNativeStaticReadOnlyProperty<T>? {
     return SkNativeStaticReadOnlyProperty(
         name = prop.name,
         nullable = prop.returnType.isMarkedNullable,

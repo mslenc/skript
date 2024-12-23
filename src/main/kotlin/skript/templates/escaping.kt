@@ -3,13 +3,16 @@ package skript.templates
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.util.SkArguments
-import skript.values.SkFunction
-import skript.values.SkString
+import skript.values.*
 import java.util.*
+
+fun SkValue.nullIfNull(): SkValue? {
+    return this.takeIf { this != SkNull && this != SkUndefined }
+}
 
 object EscapeRaw : SkFunction("raw", listOf("value")) {
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkString {
-        return args.extractArg("value").asString()
+        return args.extractArg("value").nullIfNull()?.asString() ?: SkString.EMPTY
     }
 }
 
@@ -17,7 +20,7 @@ object EscapeHtml : SkFunction("html", listOf("value")) {
     private val encode = BitSetBuilder().add("&<>\"'").build()
 
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkString {
-        val value = args.extractArg("value")
+        val value = args.extractArg("value").nullIfNull() ?: return SkString.EMPTY
         val raw = value.asString().value
         return escape(raw).toSkript()
     }
@@ -48,7 +51,7 @@ object EscapeJs : SkFunction("js", listOf("value")) {
     private val encode = BitSetBuilder().add("\'\"\\\n\r\t\b\u000B\u000C\u0000").build()
 
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkString {
-        val value = args.extractArg("value")
+        val value = args.extractArg("value").nullIfNull() ?: return SkString.EMPTY
         val raw = value.asString().value
         return escape(raw).toSkript()
     }
@@ -85,7 +88,7 @@ object EscapeUrl : SkFunction("url", listOf("value")) {
     private val dontEncode = BitSetBuilder().addRange('a', 'z').addRange('A', 'Z').addRange('0', '9').add("-_.!~*'(),;:").build()
 
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkString {
-        val value = args.extractArg("value")
+        val value = args.extractArg("value").nullIfNull() ?: return SkString.EMPTY
         val raw = value.asString().value
         return escape(raw).toSkript()
     }
@@ -116,7 +119,7 @@ object EscapeMarkdown : SkFunction("markdown", listOf("value")) {
     private val encode = BitSetBuilder().add("\\`*_{}[]<>()#+-.!|").build()
 
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkString {
-        val value = args.extractArg("value")
+        val value = args.extractArg("value").nullIfNull() ?: return SkString.EMPTY
         val raw = value.asString().value
         return escape(raw).toSkript()
     }

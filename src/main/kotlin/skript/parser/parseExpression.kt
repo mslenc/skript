@@ -437,14 +437,21 @@ open class ExpressionParser(val tokens: Tokens) {
                 }
 
                 else -> {
-                    val ident = tokens.expect(IDENTIFIER)
-                    if (peekType == COMMA || peekType == RCURLY) {
-                        val value = Variable(ident.value.toString(), ident.pos)
-                        MapLiteralPartFixedKey(ident.value.toString(), value)
-                    } else {
+                    if (tokens.peek().type == STRING) {
+                        val key = tokens.expect(STRING)
                         tokens.expect(COLON)
                         val value = parseExpression()
-                        MapLiteralPartFixedKey(ident.value.toString(), value)
+                        MapLiteralPartFixedKey(key.value.toString(), value)
+                    } else {
+                        val ident = tokens.expect(IDENTIFIER)
+                        if (peekType == COMMA || peekType == RCURLY) {
+                            val value = Variable(ident.value.toString(), ident.pos)
+                            MapLiteralPartFixedKey(ident.value.toString(), value)
+                        } else {
+                            tokens.expect(COLON)
+                            val value = parseExpression()
+                            MapLiteralPartFixedKey(ident.value.toString(), value)
+                        }
                     }
                 }
             }

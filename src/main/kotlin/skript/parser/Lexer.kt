@@ -126,12 +126,29 @@ fun CharStream.lexPageTemplate(): List<Token> {
         val pos = getPos()
 
         sb.setLength(0)
-        if (consumeInto(sb, notLeftCurlyOrNL) > 0) {
-            val s = sb.toString()
-            val hasText = s.any { it != ' ' && it != '\t' }
-            val type = if (hasText) ECHO_TEXT else ECHO_WS
-            tokens += Token(type, s, pos, s)
-            continue@outside
+        echoText@
+        while (true) {
+            consumeInto(sb, notLeftCurlyOrNL)
+            // skip solo {
+            if (consume('{')) {
+                val next = peek()
+                if (next != '{' && next != '#' && next != '%') {
+                    sb.append('{')
+                    continue@echoText
+                } else {
+                    putBack('{')
+                }
+            }
+
+            if (sb.length > 0) {
+                val s = sb.toString()
+                val hasText = s.any { it != ' ' && it != '\t' }
+                val type = if (hasText) ECHO_TEXT else ECHO_WS
+                tokens += Token(type, s, pos, s)
+                continue@outside
+            } else {
+                break
+            }
         }
 
         if (consume('\r')) {

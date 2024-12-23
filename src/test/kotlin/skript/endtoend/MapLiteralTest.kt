@@ -15,7 +15,7 @@ class MapLiteralTest {
         val outputs = runScriptWithEmit("""
             val fifth = "fiverr"
             
-            val first = { a: "A", b: "B", c: 12, fifth };
+            val first = { a: "A", b: "B", "c:d": 12, fifth };
             
             val third = "3!"
             val fourth = 123 - 119
@@ -42,12 +42,12 @@ class MapLiteralTest {
         val expect = listOf(
             "a".toSkript(), "A".toSkript(),
             "b".toSkript(), "B".toSkript(),
-            "c".toSkript(), 12.toSkript(),
+            "c:d".toSkript(), 12.toSkript(),
             "fifth".toSkript(), "fiverr".toSkript(),
 
             "a".toSkript(), "A".toSkript(),
             "b".toSkript(), "B".toSkript(),
-            "c".toSkript(), 12.toSkript(),
+            "c:d".toSkript(), 12.toSkript(),
             "fifth".toSkript(), "fiverr".toSkript(),
             "third".toSkript(), "3!".toSkript(),
             "A".toSkript(), "bigA".toSkript(),

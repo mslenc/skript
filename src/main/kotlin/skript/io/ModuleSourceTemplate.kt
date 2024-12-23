@@ -110,13 +110,16 @@ fun rewriteTemplate(template: List<Statement>, moduleName: ModuleName, fileName:
 
     val includeNames = HashMap<String, String>()
     for (inc in includes) {
-        if (includeNames.containsKey(inc.templateName))
-            continue
+        val varName: String
 
-        val varName = genIncName(inc.templateName, includeNames.keys)
-        includeNames[inc.templateName] = varName
-        // import * as varName from "..."
-        out += ImportStatement(listOf(ImportDecl(null, varName, inc.pos)), inc.templateName, inc.pos)
+        if (!includeNames.containsKey(inc.templateName)) {
+            // import * as varName from "..."
+            varName = genIncName(inc.templateName, includeNames.keys)
+            includeNames[inc.templateName] = varName
+            out += ImportStatement(listOf(ImportDecl(null, varName, inc.pos)), inc.templateName, inc.pos)
+        } else {
+            varName = includeNames.getValue(inc.templateName)
+        }
 
         val ctxArg = inc.ctxParams ?: MapLiteral(listOf(MapLiteralPartSpread(Variable("ctx", inc.pos))))
         val args = listOf(

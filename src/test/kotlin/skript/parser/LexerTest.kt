@@ -297,4 +297,90 @@ class LexerTest {
         assertFalse(isValidIdentifier("abc "))
         assertFalse(isValidIdentifier("fun"))
     }
+
+    @Test
+    fun testTemplateBasics() {
+        val filename = "testTemplateBasics.skt"
+
+        val source = """
+            <html>
+                <style>
+                    body {
+                        font-family: "{{ mainFont }}";
+                    }
+                </style>
+                <body>
+                    {# comment #}
+                    {% if condition && otherCondition %}
+                    {% else %}
+                    {% end if %}
+                </body>
+            </html>
+        """.trimIndent()
+
+        val tokens = CharStream(source, filename).lexPageTemplate()
+
+        val expect = listOf(
+            Token(ECHO_TEXT,  "<html>",                      Pos(1, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(1, 7, filename)),
+
+            Token(ECHO_TEXT,  "    <style>",                 Pos(2, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(2, 12, filename)),
+
+            Token(ECHO_TEXT,  "        body {",              Pos(3, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(3, 15, filename)),
+
+            Token(ECHO_TEXT,  "            font-family: \"", Pos(4, 1, filename)),
+            Token(EXPR_OPEN,  "{{",                          Pos(4, 27, filename)),
+            Token(IDENTIFIER, "mainFont",                    Pos(4, 30, filename)),
+            Token(EXPR_CLOSE, "}}",                          Pos(4, 39, filename)),
+            Token(ECHO_TEXT,  "\";",                         Pos(4, 41, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(4, 43, filename)),
+
+            Token(ECHO_TEXT,  "        }",                   Pos(5, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(5, 10, filename)),
+
+            Token(ECHO_TEXT,  "    </style>",                Pos(6, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(6, 13, filename)),
+
+            Token(ECHO_TEXT,  "    <body>",                  Pos(7, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(7, 11, filename)),
+
+            Token(ECHO_WS,    "        ",                    Pos(8, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(8, 22, filename)),
+
+            Token(ECHO_WS,    "        ",                    Pos(9, 1, filename)),
+            Token(STMT_OPEN,  "{%",                          Pos(9, 9, filename)),
+            Token(IF,         "if",                          Pos(9, 12, filename)),
+            Token(IDENTIFIER, "condition",                   Pos(9, 15, filename)),
+            Token(AND_AND,    "&&",                          Pos(9, 25, filename)),
+            Token(IDENTIFIER, "otherCondition",              Pos(9, 28, filename)),
+            Token(STMT_CLOSE, "%}",                          Pos(9, 43, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(9, 45, filename)),
+
+            Token(ECHO_WS,    "        ",                    Pos(10, 1, filename)),
+            Token(STMT_OPEN,  "{%",                          Pos(10, 9, filename)),
+            Token(ELSE,       "else",                        Pos(10, 12, filename)),
+            Token(STMT_CLOSE, "%}",                          Pos(10, 17, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(10, 19, filename)),
+
+            Token(ECHO_WS,    "        ",                    Pos(11, 1, filename)),
+            Token(STMT_OPEN,  "{%",                          Pos(11, 9, filename)),
+            Token(IDENTIFIER, "end",                         Pos(11, 12, filename)),
+            Token(IF,         "if",                          Pos(11, 16, filename)),
+            Token(STMT_CLOSE, "%}",                          Pos(11, 19, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(11, 21, filename)),
+
+            Token(ECHO_TEXT,  "    </body>",                 Pos(12, 1, filename)),
+            Token(ECHO_NL,    "\n",                          Pos(12, 12, filename)),
+
+            Token(ECHO_TEXT,  "</html>",                     Pos(13, 1, filename)),
+            Token(EOF,        "",                            Pos(13, 8, filename)),
+        )
+
+        for (i in 0 until min(tokens.size, expect.size))
+            assertEquals(expect[i], tokens[i])
+
+        assertEquals(expect.size, tokens.size)
+    }
 }

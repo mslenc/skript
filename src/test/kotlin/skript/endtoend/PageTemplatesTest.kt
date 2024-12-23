@@ -100,13 +100,17 @@ class PageTemplatesTest {
 
             "navbar" to "        <nav>{{ navTitle }}</nav>\n",
 
+            "multiInc" to "        Multi Inc.\n",
+
             "home" to """
                 {% extends "default" %}
                 {% block head %}<title>Skript.io - {% include super block with { title: "Home" } %}</title>{% end %}
                 {% block body %}
+                        {% include "multiInc" %}
                         <div>Top of body</div>
                     {% include super block with { navTitle: "home" }%}
                         <div>Bottom of body</div>
+                        {% include "multiInc" %}
                 {% end %}
                 {% block header %}
                     {% if navTitle == "footer" %}
@@ -161,10 +165,12 @@ class PageTemplatesTest {
                     <title>Skript.io - Home</title>
                 </head>
                 <body>
+                    Multi Inc.
                     <div>Top of body</div>
                     <nav>newHeader</nav>
                     <nav>footer</nav>
                     <div>Bottom of body</div>
+                    Multi Inc.
                 </body>
             </html>
 
