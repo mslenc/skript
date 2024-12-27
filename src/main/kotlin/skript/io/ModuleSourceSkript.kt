@@ -18,6 +18,10 @@ data class ModuleSourceSkript(override val moduleName: ModuleName, val source: S
     }
 
     override fun prepare(engine: SkriptEngine): PreparedModuleSkript {
+        return prepare()
+    }
+
+    fun prepare(): PreparedModuleSkript {
         val parsed = parse()
         val moduleScope = VarAllocator(moduleName).visitModule(parsed)
         val moduleInit = OpCodeGen(moduleName).visitModule(moduleScope, parsed)

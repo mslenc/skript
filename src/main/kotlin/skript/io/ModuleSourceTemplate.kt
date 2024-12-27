@@ -10,15 +10,51 @@ import java.lang.Character.isJavaIdentifierPart
 
 data class ModuleSourceTemplate(override val moduleName: ModuleName, val source: String, val fileName: String = moduleName.name) : ModuleSource() {
     override fun prepare(engine: SkriptEngine): PreparedModuleSkript {
+        return prepare()
+    }
+
+    private val parsed by lazy(LazyThreadSafetyMode.NONE) {
         val tokens = Tokens(CharStream(source, fileName).lexPageTemplate().cleanUpStmtOnlyLines())
-        val parsed = PageTemplateParser(tokens).parsePageTemplate()
-        val rewritten = rewriteTemplate(parsed, moduleName, fileName)
+        PageTemplateParser(tokens).parsePageTemplate()
+    }
+
+    private val finder by lazy(LazyThreadSafetyMode.NONE) {
+        val finder = ExtendsIncludesAndBlocksFinder()
+        for (stmt in parsed)
+            stmt.accept(finder)
+        finder
+    }
+
+    private val prepped by lazy(LazyThreadSafetyMode.NONE) {
+        val rewritten = rewriteTemplate(parsed, fileName, finder)
         val moduleScope = VarAllocator(moduleName).visitModule(rewritten)
         val moduleInit = OpCodeGen(moduleName).visitModule(moduleScope, rewritten)
 
-        return PreparedModuleSkript(moduleName, moduleScope.varsAllocated, moduleInit)
+        PreparedModuleSkript(moduleName, moduleScope.varsAllocated, moduleInit)
+    }
+
+    private val rels by lazy(LazyThreadSafetyMode.NONE) {
+        finder.let {
+            TemplateRelations(
+                extends = it.extends.singleOrNull()?.templateName,
+                includes = it.includes.mapTo(LinkedHashSet()) { it.templateName }
+            )
+        }
+    }
+
+    fun getRelations(): TemplateRelations {
+        return rels
+    }
+
+    fun prepare(): PreparedModuleSkript {
+        return prepped
     }
 }
+
+data class TemplateRelations(
+    val extends: String?,
+    val includes: Set<String>,
+)
 
 /**
  * So here we rewrite the template, its blocks, extends, and includes, so that they become a module like this:
@@ -69,12 +105,8 @@ data class ModuleSourceTemplate(override val moduleName: ModuleName, val source:
  *
  * ```
  */
-fun rewriteTemplate(template: List<Statement>, moduleName: ModuleName, fileName: String): List<Statement> {
+internal fun rewriteTemplate(template: List<Statement>, fileName: String, finder: ExtendsIncludesAndBlocksFinder): List<Statement> {
     val NO_POS = Pos(1, 1, fileName)
-
-    val finder = ExtendsIncludesAndBlocksFinder()
-    for (stmt in template)
-        stmt.accept(finder)
 
     val extends: List<ExtendsStatement> = finder.extends
     val includes: List<IncludeStatement> = finder.includes
