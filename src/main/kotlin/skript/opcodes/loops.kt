@@ -2,7 +2,6 @@ package skript.opcodes
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.io.toSkript
 import skript.parser.Pos
@@ -15,7 +14,7 @@ abstract class SkIterator : SkObject() {
     abstract fun getCurrentValue(): SkValue
 
     override fun unwrap(): SkIterator {
-        return this // TODO: should we try to produce
+        return this // TODO: should we try to produce Iterator?
     }
 
     override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
@@ -34,7 +33,7 @@ object SkIteratorClassDef : SkCustomClass<SkIterator>("Iterator") {
     }
 }
 
-object MakeIterator: SuspendOpCode() {
+data object MakeIterator: SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val container = pop()
@@ -42,11 +41,6 @@ object MakeIterator: SuspendOpCode() {
             push(iterator)
         }
         return null
-    }
-    override fun toString() = "MakeIterator"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0)
     }
 }
 
@@ -67,12 +61,8 @@ class IteratorNext(val pushKey: Boolean, val pushValue: Boolean, val end: JumpTa
         }
         return null
     }
-    override fun toString() = "IteratorNext end=${end.value} pushKey=${pushKey} pushValue=${pushValue}"
 
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase((if (pushKey) 1 else 0) + (if (pushValue) 1 else 0))
-        receiver.jumpCase(-1, end)
-    }
+    override fun toString() = "IteratorNext end=${end.value} pushKey=${pushKey} pushValue=${pushValue}"
 }
 
 class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
@@ -84,11 +74,8 @@ class MakeRangeEndInclusive(val exprDebug: String) : SuspendOpCode() {
         }
         return null
     }
-    override fun toString() = "MakeRangeEndInclusive expr=$exprDebug"
 
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
+    override fun toString() = "MakeRangeEndInclusive expr=$exprDebug"
 }
 
 class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
@@ -100,9 +87,6 @@ class MakeRangeEndExclusive(val exprDebug: String) : SuspendOpCode() {
         }
         return null
     }
-    override fun toString() = "MakeRangeEndExclusive expr=$exprDebug"
 
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
+    override fun toString() = "MakeRangeEndExclusive expr=$exprDebug"
 }

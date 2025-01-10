@@ -3,7 +3,6 @@ package skript.parser
 import skript.parser.TokenType.*
 import skript.syntaxError
 import java.lang.IllegalStateException
-import java.lang.ProcessBuilder.Redirect.PIPE
 
 val isWhitespace: (Char)->Boolean = Character::isWhitespace
 val notNewLine: (Char)->Boolean = { it != '\r' && it != '\n' }
@@ -140,7 +139,7 @@ fun CharStream.lexPageTemplate(): List<Token> {
                 }
             }
 
-            if (sb.length > 0) {
+            if (sb.isNotEmpty()) {
                 val s = sb.toString()
                 val hasText = s.any { it != ' ' && it != '\t' }
                 val type = if (hasText) ECHO_TEXT else ECHO_WS

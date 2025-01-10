@@ -92,9 +92,9 @@ abstract class SkObject : SkValue() {
 
         val method = propertyGet(methodName, env)
 
-        when (method) {
-            is SkFunction -> return method.call(args, env)
-            is SkMethod -> return method.call(this, args, env)
+        return when (method) {
+            is SkFunction -> method.call(args, env)
+            is SkMethod -> method.call(this, args, env)
             is SkNull -> typeError("Property $methodName of $exprDebug is null")
             is SkUndefined -> typeError("Property $methodName of $exprDebug is undefined")
             else -> typeError("Property $methodName of $exprDebug is not callable")

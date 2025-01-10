@@ -215,9 +215,9 @@ class FormatTime(private val defaultFormat: DateTimeFormatter, private val local
 }
 
 private fun SkValue.asStringOrNull(allowEmpty: Boolean = true): String? {
-    val str = when {
-        this is SkNull -> return null
-        this is SkUndefined -> return null
+    val str = when (this) {
+        is SkNull -> return null
+        is SkUndefined -> return null
         else -> this.asString().value
     }
 

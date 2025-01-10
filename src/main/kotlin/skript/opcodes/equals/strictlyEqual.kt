@@ -43,7 +43,7 @@ fun strictlyEqual(a: SkValue, b: SkValue): Boolean {
         SkValueKind.OBJECT,
         SkValueKind.FUNCTION,
         SkValueKind.METHOD -> {
-            a === b
+            false
         }
     }
 }

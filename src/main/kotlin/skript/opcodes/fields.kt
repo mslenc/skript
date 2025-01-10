@@ -1,9 +1,8 @@
 package skript.opcodes
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 
-object SetElementOp : SuspendOpCode() {
+data object SetElementOp : SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
         frame.apply {
             val value = stack.pop()
@@ -14,14 +13,9 @@ object SetElementOp : SuspendOpCode() {
         }
         return null
     }
-    override fun toString() = "SetElementOp"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-3)
-    }
 }
 
-object SetElementKeepValueOp : SuspendOpCode() {
+data object SetElementKeepValueOp : SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
         frame.apply {
             val value = stack.pop()
@@ -33,11 +27,6 @@ object SetElementKeepValueOp : SuspendOpCode() {
             stack.push(value)
         }
         return null
-    }
-    override fun toString() = "SetElementKeepValueOp"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-2)
     }
 }
 
@@ -52,10 +41,6 @@ class SetPropertyOp(val key: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "SetPropertyOp key=$key"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-2)
-    }
 }
 
 class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
@@ -71,13 +56,9 @@ class SetPropertyKeepValueOp(val key: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "SetPropertyKeepValueOp key=$key"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object GetElementOp : SuspendOpCode() {
+data object GetElementOp : SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
         frame.apply {
             val key = stack.pop()
@@ -86,11 +67,6 @@ object GetElementOp : SuspendOpCode() {
             stack.push(obj.entryGet(key, frame.env))
         }
         return null
-    }
-    override fun toString() = "GetElementOp"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }
 
@@ -104,8 +80,4 @@ class GetPropertyOp(val key: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "GetPropertyOp"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0)
-    }
 }

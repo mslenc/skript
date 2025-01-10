@@ -10,7 +10,7 @@ sealed class Statement {
     abstract fun accept(visitor: StatementVisitor)
 }
 
-object EmptyStatement : Statement() {
+data object EmptyStatement : Statement() {
     override fun accept(visitor: StatementVisitor) {
         // we just ignore it..
     }

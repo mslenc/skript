@@ -1,6 +1,5 @@
 package skript.opcodes
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.typeError
 import skript.util.SkArguments
@@ -26,31 +25,21 @@ To call a function:
 
 
 
-object BeginArgs : FastOpCode() {
+data object BeginArgs : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             argsStack.push(SkArguments())
         }
         return null
     }
-    override fun toString() = "BeginArgs"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0, argsStackSizeDelta = 1)
-    }
 }
 
-object AddPosArg : FastOpCode() {
+data object AddPosArg : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             argsStack.top().addPosArg(stack.pop())
         }
         return null
-    }
-    override fun toString() = "AddPosArg"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }
 
@@ -62,13 +51,9 @@ class AddKwArg(private val name: String) : FastOpCode() {
         return null
     }
     override fun toString() = "AddKwArg name=$name"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object SpreadPosArgs : FastOpCode() {
+data object SpreadPosArgs : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val arr = stack.pop()
@@ -81,14 +66,9 @@ object SpreadPosArgs : FastOpCode() {
         }
         return null
     }
-    override fun toString() = "SpreadPosArgs"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object SpreadKwArgs : FastOpCode() {
+data object SpreadKwArgs : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val kws = stack.pop()
@@ -100,11 +80,6 @@ object SpreadKwArgs : FastOpCode() {
             }
         }
         return null
-    }
-    override fun toString() = "SpreadKwArgs"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }
 
@@ -119,10 +94,6 @@ class CallMethod(val name: String, val exprDebug: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "CallMethod name=$name expr=$exprDebug"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0, argsStackSizeDelta = -1)
-    }
 }
 
 class CallFunction(val exprDebug: String) : SuspendOpCode() {
@@ -141,18 +112,10 @@ class CallFunction(val exprDebug: String) : SuspendOpCode() {
         return null
     }
     override fun toString() = "CallFunction expr=$exprDebug"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0, argsStackSizeDelta = -1)
-    }
 }
 
-object Return : FastOpCode() {
+data object Return : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult {
         return ReturnValue(frame.stack.pop())
-    }
-    override fun toString() = "Return"
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }

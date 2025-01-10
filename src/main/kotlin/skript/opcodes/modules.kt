@@ -1,6 +1,5 @@
 package skript.opcodes
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.io.ModuleName
 import skript.parser.Pos
@@ -11,8 +10,8 @@ class GetModuleExports(val moduleName: ModuleName) : FastOpCode() {
         return null
     }
 
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
+    override fun toString(): String {
+        return "GetModuleExports moduleName=$moduleName"
     }
 }
 
@@ -22,7 +21,7 @@ class RequireModuleExports(val sourceName: String, val importingModuleName: Modu
         return null
     }
 
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
+    override fun toString(): String {
+        return "RequireModuleExports sourceName=$sourceName importingModuleName=$importingModuleName pos=$pos"
     }
 }

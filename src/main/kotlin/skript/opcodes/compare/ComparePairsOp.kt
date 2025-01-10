@@ -1,6 +1,5 @@
 package skript.opcodes.compare
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.ast.BinaryOp
 import skript.exec.Frame
 import skript.opcodes.FastOpCode
@@ -48,10 +47,6 @@ class ComparePairsOp(val ops: Array<BinaryOp>): FastOpCode() {
             push(SkBoolean.TRUE)
             return null
         }
-    }
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-ops.size)
     }
 
     override fun toString() = "ComparePairsOp ops=$ops"

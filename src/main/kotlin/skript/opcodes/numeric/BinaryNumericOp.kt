@@ -1,17 +1,12 @@
 package skript.opcodes.numeric
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.opcodes.FastOpCode
 import skript.opcodes.OpCodeResult
 import skript.values.*
 import java.math.BigDecimal
 
-abstract class FastBinaryOpCode : FastOpCode() {
-    final override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
-}
+abstract class FastBinaryOpCode : FastOpCode()
 
 abstract class BinaryNumericOp : FastBinaryOpCode() {
     abstract fun computeResult(left: Double, right: Double): SkDouble?

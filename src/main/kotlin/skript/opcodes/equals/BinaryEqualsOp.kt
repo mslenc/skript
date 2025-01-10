@@ -5,7 +5,7 @@ import skript.opcodes.OpCodeResult
 import skript.opcodes.numeric.FastBinaryOpCode
 import skript.values.*
 
-object BinaryEqualsOp : FastBinaryOpCode() {
+data object BinaryEqualsOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val b = pop()
@@ -15,11 +15,9 @@ object BinaryEqualsOp : FastBinaryOpCode() {
         }
         return null
     }
-
-    override fun toString() = "BinaryEqualsOp"
 }
 
-object BinaryNotEqualsOp : FastBinaryOpCode() {
+data object BinaryNotEqualsOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val b = pop()
@@ -29,7 +27,5 @@ object BinaryNotEqualsOp : FastBinaryOpCode() {
         }
         return null
     }
-
-    override fun toString() = "BinaryNotEqualsOp"
 }
 

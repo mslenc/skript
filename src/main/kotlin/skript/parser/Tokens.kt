@@ -128,11 +128,11 @@ private class RawTextMerger {
 
 fun List<Token>.cleanUpStmtOnlyLines(): List<Token> {
     var pos = 0
-    var len = this.size
+    val len = this.size
     val out = RawTextMerger()
 
     while (pos < len) {
-        var first = pos
+        val first = pos
         var last = pos
         while (get(last).type != TokenType.ECHO_NL && last + 1 < len)
             last++

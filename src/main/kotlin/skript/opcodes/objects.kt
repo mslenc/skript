@@ -1,6 +1,5 @@
 package skript.opcodes
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.exec.FunctionDef
 import skript.opcodes.numeric.FastBinaryOpCode
@@ -20,13 +19,9 @@ class MakeFunction(val def: FunctionDef) : FastOpCode() {
     }
 
     override fun toString() = "MakeFunction def=$def"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
-    }
 }
 
-object ObjectIsOp : FastBinaryOpCode() {
+data object ObjectIsOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val klass = pop()
@@ -42,11 +37,9 @@ object ObjectIsOp : FastBinaryOpCode() {
         }
         return null
     }
-
-    override fun toString() = "ObjectIsOp"
 }
 
-object ObjectIsntOp : FastBinaryOpCode() {
+data object ObjectIsntOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val klass = pop()
@@ -62,11 +55,9 @@ object ObjectIsntOp : FastBinaryOpCode() {
         }
         return null
     }
-
-    override fun toString() = "ObjectIsntOp"
 }
 
-object ValueInOp : SuspendOpCode() {
+data object ValueInOp : SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val container = pop()
@@ -76,15 +67,9 @@ object ValueInOp : SuspendOpCode() {
         }
         return null
     }
-
-    override fun toString() = "ValueInOp"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object ValueNotInOp : SuspendOpCode() {
+data object ValueNotInOp : SuspendOpCode() {
     override suspend fun executeSuspend(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val container = pop()
@@ -93,11 +78,5 @@ object ValueNotInOp : SuspendOpCode() {
             push(SkBoolean.valueOf(!container.contains(value, frame.env)))
         }
         return null
-    }
-
-    override fun toString() = "ValueNotInOp"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }

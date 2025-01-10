@@ -61,7 +61,7 @@ class OpCodeGen(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
         get() = builders.top()
     val exportNames = HashSet<String>()
 
-    fun visitModule(moduleScope: ModuleScope, content: List<Statement>): FunctionDef {
+    fun visitModule(moduleScope: FunctionScope, content: List<Statement>): FunctionDef {
         val moduleInit = FunctionDefBuilder("moduleInit_${moduleName}", emptyArray(), moduleScope.varsAllocated, 0)
         builders.withTop(moduleInit) {
             Statements(content).accept(this)

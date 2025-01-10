@@ -1,10 +1,15 @@
 package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
+import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.runScriptWithEmit
+import skript.util.SkArguments
+import skript.values.SkFunction
+import skript.values.SkString
 
 class ClosuresTest {
     @Test
@@ -101,5 +106,29 @@ class ClosuresTest {
         )
 
         assertEmittedEquals(expect, outputs)
+    }
+
+    @Test
+    fun testModuleVarStaysPresent() = runBlocking {
+        lateinit var capturedEnv: SkriptEnv
+        val emitted = runScriptWithEmit({ env ->
+            capturedEnv = env
+            env.setGlobal("message", "Hello!".toSkript())
+        }, """
+            val toSend = message
+            
+            emit(fun() {
+                emit(toSend)
+            })
+        """.trimIndent())
+
+        assertEquals(1, emitted.size)
+
+        val hello = emitted[0] as SkFunction
+
+        hello.call(SkArguments.of(), capturedEnv)
+
+        assertEquals(2, emitted.size)
+        assertEquals("Hello!", (emitted[1] as SkString).value)
     }
 }

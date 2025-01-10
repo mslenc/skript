@@ -1,13 +1,8 @@
 package skript.opcodes
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 
-abstract class ArgsFastOpCode : FastOpCode() {
-    final override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0)
-    }
-}
+abstract class ArgsFastOpCode : FastOpCode()
 
 class ArgsExtractRegular(val name: String, val localIndex: Int): ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
@@ -49,12 +44,11 @@ class ArgsExtractKwVarArgs(val name: String, val localIndex: Int): ArgsFastOpCod
     override fun toString() = "ArgsExtractKwVarArgs name=$name localIndex=$localIndex"
 }
 
-object ArgsExpectNothingElse : ArgsFastOpCode() {
+data object ArgsExpectNothingElse : ArgsFastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             args.expectNothingElse()
         }
         return null
     }
-    override fun toString() = "ArgsExpectNothingElse"
 }

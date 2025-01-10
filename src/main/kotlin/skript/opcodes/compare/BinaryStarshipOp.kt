@@ -6,7 +6,7 @@ import skript.opcodes.numeric.FastBinaryOpCode
 import skript.values.SkNumber
 import skript.values.SkUndefined
 
-object BinaryStarshipOp : FastBinaryOpCode() {
+data object BinaryStarshipOp : FastBinaryOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val b = pop()
@@ -19,6 +19,4 @@ object BinaryStarshipOp : FastBinaryOpCode() {
         }
         return null
     }
-
-    override fun toString() = "BinaryStarshipOp"
 }

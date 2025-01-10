@@ -1,6 +1,5 @@
 package skript.opcodes
 
-import skript.analysis.StackSizeInfoReceiver
 import skript.exec.Frame
 import skript.typeError
 import skript.values.*
@@ -13,23 +12,14 @@ class PushLiteral(val literal: SkValue) : FastOpCode() {
         return null
     }
     override fun toString() = "PushLiteral literal=$literal"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
-    }
 }
 
-object MapNew : FastOpCode() {
+data object MapNew : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             stack.push(SkMap())
         }
         return null
-    }
-    override fun toString() = "MapNew"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
     }
 }
 
@@ -43,13 +33,9 @@ class MapDupSetKnownKey(private val key: String) : FastOpCode() {
         return null
     }
     override fun toString() = "MapDupSetKnownKey key=$key"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object MapDupSetKey : FastOpCode() {
+data object MapDupSetKey : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val value = stack.pop()
@@ -59,14 +45,9 @@ object MapDupSetKey : FastOpCode() {
         }
         return null
     }
-    override fun toString() = "MapDupSetKey"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-2)
-    }
 }
 
-object MapDupSpreadValues : FastOpCode() {
+data object MapDupSpreadValues : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val values = stack.pop()
@@ -83,28 +64,18 @@ object MapDupSpreadValues : FastOpCode() {
         }
         return null
     }
-    override fun toString() = "MapDupSpreadValues"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object ListNew : FastOpCode() {
+data object ListNew : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             stack.push(SkList())
         }
         return null
     }
-    override fun toString() = "ListNew"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
-    }
 }
 
-object ListDupAppend : FastOpCode() {
+data object ListDupAppend : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val value = stack.pop()
@@ -112,11 +83,6 @@ object ListDupAppend : FastOpCode() {
             list.add(value)
         }
         return null
-    }
-    override fun toString() = "ListDupAppend"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }
 
@@ -129,13 +95,9 @@ class ListDupAppendLiteral(private val literal: SkValue) : FastOpCode() {
         return null
     }
     override fun toString() = "ListDupAppendLiteral literal=$literal"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0)
-    }
 }
 
-object ListDupAppendSpread : FastOpCode() {
+data object ListDupAppendSpread : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.apply {
             val newElements = stack.pop()
@@ -149,22 +111,12 @@ object ListDupAppendSpread : FastOpCode() {
         }
         return null
     }
-    override fun toString() = "ListDupAppendSpread"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
-    }
 }
 
-object StringTemplateStart : FastOpCode() {
+data object StringTemplateStart : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.push(SkStringBuilder())
         return null
-    }
-    override fun toString() = "StringTemplateStart"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(1)
     }
 }
 
@@ -177,13 +129,9 @@ class StringTemplateAppendRaw(val text: String) : FastOpCode() {
         return null
     }
     override fun toString() = "StringTemplateAppendRaw text=$text"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(0)
-    }
 }
 
-object StringTemplateAppend : FastOpCode() {
+data object StringTemplateAppend : FastOpCode() {
     override fun execute(frame: Frame): OpCodeResult? {
         frame.stack.apply {
             val value = pop()
@@ -191,10 +139,5 @@ object StringTemplateAppend : FastOpCode() {
             sb.append(value)
         }
         return null
-    }
-    override fun toString() = "StringTemplateAppend"
-
-    override fun getStackInfo(receiver: StackSizeInfoReceiver) {
-        receiver.normalCase(-1)
     }
 }

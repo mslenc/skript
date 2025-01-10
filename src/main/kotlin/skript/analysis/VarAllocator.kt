@@ -11,8 +11,8 @@ import kotlin.math.max
 class VarAllocator(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
     val scopeStack = Stack<Scope>()
 
-    fun visitModule(content: List<Statement>): ModuleScope {
-        val moduleScope = ModuleScope(moduleName)
+    fun visitModule(content: List<Statement>): FunctionScope {
+        val moduleScope = FunctionScope(null, false)
 
         scopeStack.push(moduleScope)
         try {
@@ -192,7 +192,7 @@ class VarAllocator(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
         while (true) {
             val varInfo = scope.getOwnVar(expr.varName)
             if (varInfo != null) {
-                if (closureDepth == 0 || varInfo is ModuleVarInfo) {
+                if (closureDepth == 0) {
                     expr.varInfo = varInfo
                 } else {
                     expr.varInfo = ClosureVarInfo(varInfo as LocalVarInfo, closureDepth - 1)
@@ -200,11 +200,11 @@ class VarAllocator(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
                 break
             }
 
-            when (scope) {
-                is FunctionScope -> {
+            when {
+                scope is FunctionScope && scope.parent != null -> {
                     closureDepth++
                     funcs.push(scope)
-                    scope = scope.parent
+                    scope = scope.parent!!
                 }
 
                 else -> {
@@ -212,7 +212,7 @@ class VarAllocator(val moduleName: ModuleName) : StatementVisitor, ExprVisitor {
                         if (expr.varName != "ctx" && funcs.any { it.implicitCtxLookup }) {
                             val ctx = Variable("ctx", expr.pos)
                             visitVarRef(ctx)
-                            if (ctx.varInfo.location != VarLocation.GLOBAL && ctx.varInfo.location != VarLocation.MODULE) {
+                            if (ctx.varInfo.location != VarLocation.GLOBAL) {
                                 expr.varInfo = ImplicitCtxVarInfo(ctx.varInfo, expr.varName)
                                 return
                             }

@@ -16,9 +16,6 @@ import skript.templates.TemplateRuntime
 import skript.util.Globals
 import skript.util.SkArguments
 import skript.values.*
-import java.time.ZoneId
-import java.util.Currency
-import java.util.Locale
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.reflect.KClass
 
@@ -70,21 +67,14 @@ class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, va
         return globals.get(name).also { if (it == SkUndefined) return null }
     }
 
-    private fun makeVarsArray(size: Int): Array<SkValue> {
-        if (size == 0)
-            return emptyArray()
-
-        return Array(size) { SkUndefined }
-    }
-
-    suspend fun registerAndInitModule(moduleName: ModuleName, numModuleVars: Int, initializer: FunctionDef): Pair<SkValue, RuntimeModule> {
-        val runtimeModule = RuntimeModule(moduleName, SkMap(), makeVarsArray(numModuleVars))
+    suspend fun registerAndInitModule(moduleName: ModuleName, initializer: FunctionDef): Pair<SkValue, RuntimeModule> {
+        val runtimeModule = RuntimeModule(moduleName, SkMap())
         modules[moduleName] = runtimeModule
         return Pair(executeFunction(initializer, emptyArray(), SkArguments()), runtimeModule)
     }
 
-    fun registerPreInitializedModule(moduleName: ModuleName, moduleExports: SkMap, moduleVars: Array<SkValue> = emptyArray()): RuntimeModule {
-        val runtimeModule = RuntimeModule(moduleName, moduleExports, moduleVars)
+    fun registerPreInitializedModule(moduleName: ModuleName, moduleExports: SkMap): RuntimeModule {
+        val runtimeModule = RuntimeModule(moduleName, moduleExports)
         modules[moduleName] = runtimeModule
         return runtimeModule
     }
@@ -117,7 +107,7 @@ class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, va
     }
 
     internal suspend fun runAnonModule(prepared: PreparedModuleSkript): SkValue {
-        val runtimeModule = RuntimeModule(prepared.moduleName, SkMap(), makeVarsArray(prepared.varsAllocated))
+        val runtimeModule = RuntimeModule(prepared.moduleName, SkMap())
         modules[prepared.moduleName] = runtimeModule
         try {
             return executeFunction(prepared.moduleInit, emptyArray(), SkArguments())
@@ -155,7 +145,7 @@ class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, va
         val module = source.prepare(engine)
 
         val exports = SkMap()
-        val runtimeModule = RuntimeModule(module.moduleName, exports, makeVarsArray(module.varsAllocated))
+        val runtimeModule = RuntimeModule(module.moduleName, exports)
         modules[module.moduleName] = runtimeModule
         try {
             executeFunction(module.moduleInit, emptyArray(), SkArguments())
@@ -179,7 +169,7 @@ class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, va
         val initializer = listOf(funcDecl, returnStmt)
         val moduleScope = VarAllocator(moduleName).visitModule(initializer)
         val moduleInit = OpCodeGen(moduleName).visitModule(moduleScope, initializer)
-        val preparedModule = PreparedModuleSkript(moduleName, moduleScope.varsAllocated, moduleInit)
+        val preparedModule = PreparedModuleSkript(moduleName, moduleInit)
 
         return runAnonModule(preparedModule) as SkScriptFunction
     }
@@ -213,10 +203,6 @@ class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, va
         }
 
         return SkUndefined
-    }
-
-    fun getModuleVars(moduleName: ModuleName): Array<SkValue> {
-        return modules[moduleName]?.moduleVars ?: throw IllegalStateException("No module $moduleName in runtime")
     }
 
     fun getModuleExports(moduleName: ModuleName): SkMap {

@@ -30,14 +30,14 @@ data class ModuleSourceTemplate(override val moduleName: ModuleName, val source:
         val moduleScope = VarAllocator(moduleName).visitModule(rewritten)
         val moduleInit = OpCodeGen(moduleName).visitModule(moduleScope, rewritten)
 
-        PreparedModuleSkript(moduleName, moduleScope.varsAllocated, moduleInit)
+        PreparedModuleSkript(moduleName, moduleInit)
     }
 
     private val rels by lazy(LazyThreadSafetyMode.NONE) {
         finder.let {
             TemplateRelations(
                 extends = it.extends.singleOrNull()?.templateName,
-                includes = it.includes.mapTo(LinkedHashSet()) { it.templateName }
+                includes = it.includes.mapTo(LinkedHashSet()) { i -> i.templateName }
             )
         }
     }

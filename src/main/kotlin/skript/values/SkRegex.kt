@@ -88,7 +88,7 @@ object SkRegexClassDef : SkCustomClass<SkRegex>("Regex") {
                 while (pos < inputLen) {
                     val range = match.range
                     if (range.first > pos)
-                        sb.append(input, pos, range.start)
+                        sb.append(input, pos, range.first)
 
                     val replaced = repl.call(SkArguments.of(SkMatchResult(match)), state)
                     sb.append(replaced.asString().value)

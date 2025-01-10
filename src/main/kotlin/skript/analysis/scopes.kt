@@ -1,12 +1,10 @@
 package skript.analysis
 
-import skript.io.ModuleName
 import skript.opcodes.*
 import java.lang.UnsupportedOperationException
 
 enum class VarLocation {
     GLOBAL,
-    MODULE,
     LOCAL,
     CLOSURE,
     CTX_OR_GLOBAL
@@ -22,12 +20,7 @@ class GlobalVarInfo(name: String) : VarInfo(name, VarLocation.GLOBAL) {
     override val storeOpCode = SetGlobal(name)
 }
 
-class ModuleVarInfo(varName: String, val moduleName: ModuleName, val indexInModule: Int) : VarInfo(varName, VarLocation.MODULE) {
-    override val loadOpCode = GetModuleVar(moduleName, indexInModule)
-    override val storeOpCode = SetModuleVar(moduleName, indexInModule)
-}
-
-class LocalVarInfo(name: String, val scope: FunctionScope, val indexInScope: Int) : VarInfo(name, VarLocation.LOCAL) {
+class LocalVarInfo(name: String, val indexInScope: Int) : VarInfo(name, VarLocation.LOCAL) {
     override val loadOpCode = GetLocal(indexInScope)
     override val storeOpCode = SetLocal(indexInScope)
 }
@@ -58,20 +51,11 @@ abstract class TopLevelScope : Scope() {
 
 abstract class InnerScope(override val parent: Scope) : Scope()
 
-class ModuleScope(val moduleName: ModuleName) : TopLevelScope() {
-    override val parent: Scope?
-        get() = null
-
-    override fun allocate(name: String): ModuleVarInfo {
-        return ModuleVarInfo(name, moduleName, localVarsIndex++)
-    }
-}
-
-class FunctionScope(override val parent: Scope, val implicitCtxLookup: Boolean) : TopLevelScope() {
+class FunctionScope(override val parent: Scope?, val implicitCtxLookup: Boolean) : TopLevelScope() {
     var closureDepthNeeded = 0
 
     override fun allocate(name: String): LocalVarInfo {
-        return LocalVarInfo(name, this, localVarsIndex++)
+        return LocalVarInfo(name, localVarsIndex++)
     }
 }
 

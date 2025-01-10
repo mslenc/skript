@@ -26,12 +26,12 @@ data class ModuleSourceSkript(override val moduleName: ModuleName, val source: S
         val moduleScope = VarAllocator(moduleName).visitModule(parsed)
         val moduleInit = OpCodeGen(moduleName).visitModule(moduleScope, parsed)
 
-        return PreparedModuleSkript(moduleName, moduleScope.varsAllocated, moduleInit)
+        return PreparedModuleSkript(moduleName, moduleInit)
     }
 }
 
-data class PreparedModuleSkript(override val moduleName: ModuleName, val varsAllocated: Int, val moduleInit: FunctionDef): PreparedModule {
+data class PreparedModuleSkript(override val moduleName: ModuleName, val moduleInit: FunctionDef): PreparedModule {
     override suspend fun instantiate(env: SkriptEnv): Pair<SkValue, RuntimeModule> {
-        return env.registerAndInitModule(moduleName, varsAllocated, moduleInit)
+        return env.registerAndInitModule(moduleName, moduleInit)
     }
 }
