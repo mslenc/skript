@@ -60,7 +60,7 @@ class PageTemplatesTest {
             9/5/24
             Thu PM
             12:43:44 PM PDT
-            Thursday,%20September%205,%202024%2012:43:44%20PM%20PDT
+            Thursday,%20September%205,%202024%20at%2012:43:44%20PM%20Pacific%20Daylight%20Time
 
             0: a / "a" / "a"
             1: b&lt;&gt;d / "b<>d" / "b&lt;&gt;d"
