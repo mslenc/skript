@@ -3,6 +3,7 @@ package skript.values
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.interop.HoldsNative
+import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.util.SkArguments
@@ -18,8 +19,8 @@ class SkRegex(override val nativeObj: Regex) : SkObject(), HoldsNative<Regex> {
         return nativeObj
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.textNode(nativeObj.pattern)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.customSerialize(nativeObj) ?: settings.factory.textNode(nativeObj.pattern)
     }
 }
 
@@ -170,8 +171,8 @@ class SkMatchGroup(override val nativeObj: MatchGroup): SkObject(), HoldsNative<
         return nativeObj
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.textNode(nativeObj.value)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.customSerialize(nativeObj) ?: settings.factory.textNode(nativeObj.value)
     }
 }
 
@@ -190,8 +191,8 @@ class SkMatchResult(override val nativeObj: MatchResult) : SkObject(), HoldsNati
         return nativeObj
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.textNode(nativeObj.value)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.customSerialize(nativeObj) ?: settings.factory.textNode(nativeObj.value)
     }
 }
 

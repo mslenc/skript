@@ -2,6 +2,7 @@ package skript.values
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
@@ -28,13 +29,13 @@ abstract class SkAbstractMap : SkObject() {
 
     abstract override suspend fun makeIterator(): SkIterator
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        val obj = factory.objectNode()
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        val obj = settings.factory.objectNode()
         val it = makeIterator()
 
         while (it.moveToNext()) {
             val key = it.getCurrentKey().asString().value
-            val value = it.getCurrentValue().toJson(factory)
+            val value = it.getCurrentValue().toJson(settings)
 
             obj.set<JsonNode>(key, value)
         }

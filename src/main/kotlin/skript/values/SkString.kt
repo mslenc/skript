@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.*
 import skript.interop.HoldsNative
+import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
@@ -99,8 +100,8 @@ class SkString(val value: String) : SkScalar() {
         return value
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.textNode(value)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.factory.textNode(value)
     }
 
     companion object {
@@ -133,8 +134,8 @@ class SkStringObject(override val value: SkString) : SkScalarObject() {
         return value.unwrap()
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return value.toJson(factory)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return value.toJson(settings)
     }
 }
 

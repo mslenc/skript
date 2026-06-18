@@ -2,6 +2,7 @@ package skript.values
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -105,11 +106,11 @@ class SkList : SkAbstractList {
         return listEls.map { it.unwrap() }
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        val list = factory.arrayNode(listEls.size)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        val list = settings.factory.arrayNode(listEls.size)
 
         for (el in listEls)
-            list.add(el.toJson(factory))
+            list.add(el.toJson(settings))
 
         return list
     }

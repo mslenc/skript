@@ -2,6 +2,7 @@ package skript.interop.wrappers
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import skript.interop.JsonSettings
 import skript.interop.SkCodec
 import skript.interop.SkCodecByte
 import skript.io.SkriptEnv
@@ -37,8 +38,8 @@ class SkByteArray(override val nativeObj: ByteArray) : SkAbstractNativeArray<Byt
         return nativeObj
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.binaryNode(nativeObj)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.factory.binaryNode(nativeObj)
     }
 }
 

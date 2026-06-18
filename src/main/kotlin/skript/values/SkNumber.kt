@@ -3,6 +3,7 @@ package skript.values
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.doubleCompare
+import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.isInteger
@@ -170,8 +171,8 @@ class SkDecimal private constructor (override val value: BigDecimal) : SkNumber(
         return value
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.numberNode(value)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.factory.numberNode(value)
     }
 
     companion object {
@@ -294,8 +295,8 @@ class SkDouble private constructor (val dvalue: Double) : SkNumber() {
         return dvalue
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.numberNode(dvalue)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.factory.numberNode(dvalue)
     }
 
     companion object {
@@ -355,8 +356,8 @@ class SkNumberObject(override val value: SkNumber): SkScalarObject() {
         return value.unwrap()
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return value.toJson(factory)
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return value.toJson(settings)
     }
 }
 

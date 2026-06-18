@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import skript.interop.ConversionType
 import skript.interop.HoldsNative
+import skript.interop.JsonSettings
 import skript.interop.SkCodec
 import skript.io.SkriptEnv
 import skript.typeError
@@ -28,11 +29,11 @@ class SkArrayWrapper<T>(override val nativeObj: Array<T>, override val elementCo
         return nativeObj
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        val list = factory.arrayNode()
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        val list = settings.factory.arrayNode()
 
         for (i in 0 until getSize())
-            list.add(getValidSlot(i).toJson(factory))
+            list.add(getValidSlot(i).toJson(settings))
 
         return list
     }

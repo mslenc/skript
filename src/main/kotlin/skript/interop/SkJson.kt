@@ -3,14 +3,13 @@ package skript.interop
 import com.fasterxml.jackson.core.JsonFactory
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.core.JsonToken
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import skript.io.SkriptEnv
 import skript.values.*
 
-object SkJson {
+class SkJson(private val settings: JsonSettings, private val env: SkriptEnv) {
     private val jsonFactory = JsonFactory()
-    private val nodeFactory = JsonNodeFactory.withExactBigDecimals(true)
 
-    fun parse(json: String): SkValue {
+    suspend fun parse(json: String): SkValue {
         val parser: JsonParser = jsonFactory.createParser(json)
 
         val top = BuilderTop()
@@ -40,7 +39,7 @@ object SkJson {
                     if (stack.size < 2) throw IllegalStateException("Object ended at top level.")
                     val objBuilder = stack.removeLast()
                     objBuilder as? BuilderMap ?: throw IllegalStateException("Object ended, but not building an object.")
-                    stack.last().addValue(objBuilder.build())
+                    stack.last().addValue(objBuilder.build(settings, env))
                     continue@nextToken
                 }
 
@@ -54,7 +53,7 @@ object SkJson {
                     if (stack.size < 2) throw IllegalStateException("Array ended at top level.")
                     val listBuilder = stack.removeLast()
                     listBuilder as? BuilderList ?: throw IllegalStateException("Array ended, but not building an array.")
-                    stack.last().addValue(listBuilder.build())
+                    stack.last().addValue(listBuilder.build(settings, env))
                     continue@nextToken
                 }
 
@@ -92,18 +91,18 @@ object SkJson {
         if (stack.size != 1)
             throw IllegalArgumentException("Not JSON - illegal state at end of input.")
 
-        return stack.last().build()
+        return stack.last().build(settings, env)
     }
 
     suspend fun stringify(value: SkValue): String {
-        return value.toJson(nodeFactory).toPrettyString()
+        return value.toJson(settings).toPrettyString()
     }
 }
 
 private sealed class Builder {
     abstract fun setFieldName(name: String)
     abstract fun addValue(value: SkValue)
-    abstract fun build(): SkValue
+    abstract suspend fun build(settings: JsonSettings, env: SkriptEnv): SkValue
 }
 
 private class BuilderTop : Builder() {
@@ -118,7 +117,7 @@ private class BuilderTop : Builder() {
         result = value
     }
 
-    override fun build(): SkValue {
+    override suspend fun build(settings: JsonSettings, env: SkriptEnv): SkValue {
         result?.let { return it }
 
         throw IllegalStateException("Missing value on top level.")
@@ -136,7 +135,7 @@ private class BuilderList : Builder() {
         elements.add(value)
     }
 
-    override fun build(): SkList {
+    override suspend fun build(settings: JsonSettings, env: SkriptEnv): SkList {
         return SkList(elements)
     }
 }
@@ -162,7 +161,7 @@ private class BuilderMap : Builder() {
         throw IllegalStateException("Missing field name inside a map.")
     }
 
-    override fun build(): SkValue {
-        return SkMap(values)
+    override suspend fun build(settings: JsonSettings, env: SkriptEnv): SkValue {
+        return settings.customDeserialize(values, env) ?: SkMap(values)
     }
 }

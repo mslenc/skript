@@ -50,6 +50,12 @@ fun SkValue.isString(str: String): Boolean {
     return getKind() == SkValueKind.STRING && asString().value == str
 }
 
+fun SkValue.asStringOrNull(): String? {
+    if (getKind() != SkValueKind.STRING)
+        return null
+    return asString().value
+}
+
 fun Int.rangeParam(rangeLength: Int): Int {
     assert(rangeLength >= 0)
 

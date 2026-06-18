@@ -2,6 +2,7 @@ package skript.values
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -51,7 +52,7 @@ object SkUndefined : SkScalar() {
         return null
     }
 
-    override suspend fun toJson(factory: JsonNodeFactory): JsonNode {
-        return factory.missingNode()
+    override suspend fun toJson(settings: JsonSettings): JsonNode {
+        return settings.factory.missingNode()
     }
 }
