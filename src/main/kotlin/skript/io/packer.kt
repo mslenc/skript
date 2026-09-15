@@ -120,7 +120,7 @@ internal fun packMap(map: SkMap, out: StringBuilder, currentContainers: Stack<Sk
 
     currentContainers.withTop(map) {
         out.append('{')
-        map.entries.forEach { (key, value) ->
+        map.entryMap.forEach { (key, value) ->
             packString(key, out)
             pack(value, out, currentContainers)
         }

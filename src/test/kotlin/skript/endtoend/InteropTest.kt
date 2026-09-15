@@ -2,7 +2,6 @@ package skript.endtoend
 
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import skript.assertEmittedEquals
 import skript.assertStrictlyEqual
@@ -110,6 +109,7 @@ class InteropTest {
         )), TestObj::class.primaryConstructor!!, TestObjClass)
 
         val result = runScriptWithEmit({ env ->
+            env.setNativeGlobal("JSON", SkJson())
             env.setGlobal("TestObj", env.getClassObject(TestObjClass))
         }, """
             
@@ -124,6 +124,8 @@ class InteropTest {
             var bibi = TestObj(bar=432);
             bibi.foo = "daFoo";
             emit(bibi.fooBar(" Mm"));
+            
+            emit(JSON.stringify({ test: [ 1, "abc" ] }))
         """.trimIndent())
 
         val expect = listOf(
@@ -134,7 +136,8 @@ class InteropTest {
             "jkl1000 um".toSkript(),
             "deffoo666 nm".toSkript(),
             "deffoo1000 pm".toSkript(),
-            "daFoo432 Mm".toSkript()
+            "daFoo432 Mm".toSkript(),
+            "{\n  \"test\" : [ 1.0, \"abc\" ]\n}".toSkript()
         )
 
         assertEmittedEquals(expect, result)

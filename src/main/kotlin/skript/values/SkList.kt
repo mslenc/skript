@@ -1,8 +1,5 @@
 package skript.values
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -93,26 +90,17 @@ class SkList : SkAbstractList {
         return when {
             other == null -> false
             other === this -> true
-            other is SkList -> listEls == other.listEls && entries == other.entries
+            other is SkList -> listEls == other.listEls && entryMap == other.entryMap
             else -> false
         }
     }
 
     override fun hashCode(): Int {
-        return listEls.hashCode() * 31 + entries.hashCode()
+        return listEls.hashCode() * 31 + entryMap.hashCode()
     }
 
     override fun unwrap(): List<Any?> {
         return listEls.map { it.unwrap() }
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        val list = settings.factory.arrayNode(listEls.size)
-
-        for (el in listEls)
-            list.add(el.toJson(settings))
-
-        return list
     }
 }
 

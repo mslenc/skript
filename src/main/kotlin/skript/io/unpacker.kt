@@ -169,7 +169,7 @@ private fun duplicate(value: SkValue): SkValue {
         }
         is SkMap -> {
             SkMap().apply {
-                value.entries.forEach { (k, v) -> entries[k] = duplicate(v) }
+                value.forEach { (k, v) -> entryMap[k] = duplicate(v) }
             }
         }
         else -> {
@@ -184,7 +184,7 @@ internal class MapBuilder : UnpackBuilder() {
 
     override fun receive(value: SkValue) {
         key?.let {
-            result.entries[it] = value
+            result.entryMap[it] = value
             key = null
             return
         }

@@ -133,7 +133,7 @@ internal fun rewriteTemplate(template: List<Statement>, fileName: String, finder
             val e = extends.single()
             out += ImportStatement(listOf(ImportDecl(null, "parentTemplate", e.pos)), e.templateName, e.pos)
 
-            e.rewritten = EmptyStatement // done in amendMainBody; should be just require it to be first? probably..
+            e.rewritten = EmptyStatement // done in amendMainBody; should we just require it to be first? probably...
         }
         else -> {
             syntaxError("Multiple extends statements found", extends[1].pos)

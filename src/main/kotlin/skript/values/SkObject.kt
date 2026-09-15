@@ -1,15 +1,12 @@
 package skript.values
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.typeError
 import skript.util.SkArguments
 
 abstract class SkObject : SkValue() {
-    internal val entries = LinkedHashMap<String, SkValue>()
+    internal val entryMap = LinkedHashMap<String, SkValue>()
     abstract val klass: SkClassDef
 
     override fun getKind(): SkValueKind {
@@ -33,15 +30,15 @@ abstract class SkObject : SkValue() {
     }
 
     override suspend fun entrySet(key: SkValue, value: SkValue, env: SkriptEnv) {
-        entries[key.asString().value] = value
+        entryMap[key.asString().value] = value
     }
 
     override suspend fun entryGet(key: SkValue, env: SkriptEnv): SkValue {
-        return entries[key.asString().value] ?: SkUndefined
+        return entryMap[key.asString().value] ?: SkUndefined
     }
 
     override suspend fun entryDelete(key: SkValue, env: SkriptEnv): Boolean {
-        return entries.remove(key.asString().value) != null
+        return entryMap.remove(key.asString().value) != null
     }
 
     override suspend fun propertyGet(key: String, env: SkriptEnv): SkValue {
@@ -75,7 +72,7 @@ abstract class SkObject : SkValue() {
     override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         val keyStr = key.asString().value
 
-        return entries.containsKey(keyStr)
+        return entryMap.containsKey(keyStr)
     }
 
     override suspend fun call(args: SkArguments, env: SkriptEnv): SkValue {
@@ -104,10 +101,6 @@ abstract class SkObject : SkValue() {
 
     override fun unwrap(): Any {
         return this
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        TODO("Not yet implemented (${ this::class.java })")
     }
 }
 

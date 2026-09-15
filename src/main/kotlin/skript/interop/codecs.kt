@@ -68,7 +68,7 @@ class SkCodecNativeObject<T: Any>(val klass: SkNativeClassDef<T>): SkCodec<T> {
 
 private fun SkMap.asArgs(): SkArguments {
     val result = SkArguments()
-    result.spreadKwArgs(entries)
+    result.spreadKwArgs(entryMap)
     return result
 }
 

@@ -1,6 +1,7 @@
 package skript.endtoend
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import kotlinx.coroutines.runBlocking
@@ -8,17 +9,18 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import skript.asStringOrNull
 import skript.assertEmittedEquals
-import skript.interop.JsonSettings
+import skript.interop.HoldsNative
+import skript.interop.JacksonJsonBuilder
+import skript.interop.JsonCodec
 import skript.interop.SkJson
 import skript.io.SkriptEnv
 import skript.io.pack
 import skript.io.toSkript
 import skript.runScriptWithEmit
-import skript.templates.nullIfNull
 import skript.values.SkMap
+import skript.values.SkObject
 import skript.values.SkString
 import skript.values.SkValue
-import skript.values.SkValueKind
 
 class MapLiteralTest {
     @Test
@@ -83,11 +85,17 @@ class MapLiteralTest {
             
         """.trimIndent())
 
-        val json = outputs[0].toJson()
+        val json = JsonCodec.DEFAULT.toJsonString(outputs[0])
 
         assertEquals("""
-            {"foo":"bar","list":[1.0,2.43,3.011],"bools":{"t":true,"f":false}}
-        """.trimIndent(), json.toString())
+        {
+          "foo" : "bar",
+          "list" : [ 1.0, 2.43, 3.011 ],
+          "bools" : {
+            "t" : true,
+            "f" : false
+          }
+        }""".trimIndent(), json)
     }
 
     @Test
@@ -115,7 +123,7 @@ class MapLiteralTest {
     fun testParsingJson() = runBlocking {
         val outputs = runScriptWithEmit(
             {
-                it.setNativeGlobal("JSON", SkJson(JsonSettings.DEFAULT, it))
+                it.setNativeGlobal("JSON", SkJson())
                 it.setGlobal("jsonSource", """
                     {
                         "foo": "bar",
@@ -136,13 +144,20 @@ class MapLiteralTest {
             
         """.trimIndent())
 
-        val json = outputs[0].toJson()
+        val json = JsonCodec.DEFAULT.toJsonString(outputs[0])
 
         assertEquals("""
-            {"foo":"bar","list":[1,2.43,3.011],"bools":{"t":true,"f":false,"n":null}}
-        """.trimIndent(), json.toString())
+        {
+          "foo" : "bar",
+          "list" : [ 1, 2.43, 3.011 ],
+          "bools" : {
+            "t" : true,
+            "f" : false,
+            "n" : null
+          }
+        }""".trimIndent(), json)
 
-        assertEquals("{s3foos3bars4list[d11d42.43d53.011]s5bools{s1tTs1fFs1nU}}", pack(outputs[0]))
+        assertEquals("{s3foos3bars4list[d11n42.43n53.011]s5bools{s1tTs1fFs1nU}}", pack(outputs[0]))
 
 
         val json2 = outputs[1]
@@ -164,7 +179,7 @@ class MapLiteralTest {
     fun testParsingCustomJson() = runBlocking {
         val outputs = runScriptWithEmit(
             {
-                it.setNativeGlobal("JSON", SkJson(JsonTestCustomExporter(), it))
+                it.setNativeGlobal("JSON", SkJson(JsonTestCustomExporter(it)))
                 it.setNativeGlobal("obj", JsonTestObject("obj123"))
                 it.setNativeGlobal("ent", JsonTestEntity("ent234"))
 
@@ -193,11 +208,11 @@ class MapLiteralTest {
         """.trimIndent())
 
         val res1 = outputs[0] as SkMap
-        assertEquals(4, res1.getSize())
-        assertEquals("def", res1.entries["abc"]?.unwrap())
-        assertEquals(true, res1.entries["flag"]?.unwrap())
-        assertEquals(JsonTestObject("o345"), res1.entries["objRef"]?.unwrap())
-        assertEquals(JsonTestEntity("e456"), res1.entries["entRef"]?.unwrap())
+        assertEquals(4, res1.size)
+        assertEquals("def", res1["abc"]?.unwrap())
+        assertEquals(true, res1["flag"]?.unwrap())
+        assertEquals(JsonTestObject("o345"), res1["objRef"]?.unwrap())
+        assertEquals(JsonTestEntity("e456"), res1["entRef"]?.unwrap())
 
         val res2 = outputs[1] as SkString
         assertEquals("""
@@ -213,9 +228,9 @@ class MapLiteralTest {
         }""".trimIndent(), res2.unwrap())
 
         val res3 = outputs[2] as SkMap
-        assertEquals(2, res3.getSize())
-        assertEquals(JsonTestObject("obj123"), res3.entries["theObj"]?.unwrap())
-        assertEquals(JsonTestEntity("ent234"), res3.entries["theEnt"]?.unwrap())
+        assertEquals(2, res3.size)
+        assertEquals(JsonTestObject("obj123"), res3["theObj"]?.unwrap())
+        assertEquals(JsonTestEntity("ent234"), res3["theEnt"]?.unwrap())
     }
 }
 
@@ -242,20 +257,21 @@ data class JsonTestObject(val id: String) : JsonTestExportable {
     }
 }
 
-class JsonTestCustomExporter : JsonSettings {
-    override val factory: JsonNodeFactory
-        get() = JsonSettings.DEFAULT_FACTORY
+class JsonTestCustomExporter(val env: SkriptEnv) : JacksonJsonBuilder(JsonCodec.DEFAULT_MAPPER) {
+    override suspend fun convertObject(value: SkObject): JsonNode {
+        if (value is HoldsNative<*>) {
+            val obj = value.nativeObj
+            if (obj is JsonTestExportable) {
+                return obj.toJson(mapper.nodeFactory)
+            }
+        }
 
-    override suspend fun customSerialize(obj: Any): JsonNode? {
-        if (obj is JsonTestExportable)
-            return obj.toJson(factory)
-
-        return null
+        return super.convertObject(value)
     }
 
-    override suspend fun customDeserialize(props: Map<String, SkValue>, env: SkriptEnv): SkValue? {
-        val t = props["_t"]?.asStringOrNull() ?: return null
-        val id = props["id"]?.asStringOrNull() ?: return null
+    override suspend fun overrideDeserialize(fields: Map<String, SkValue>): SkValue? {
+        val t = fields["_t"]?.asStringOrNull() ?: return null
+        val id = fields["id"]?.asStringOrNull() ?: return null
 
         return when (t) {
             "Entity" -> env.createNativeWrapper(JsonTestEntity(id))

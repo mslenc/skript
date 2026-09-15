@@ -1,8 +1,5 @@
 package skript.interop.wrappers
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.interop.SkCodec
 import skript.interop.SkCodecLong
 import skript.io.SkriptEnv
@@ -36,15 +33,6 @@ class SkLongArray(override val nativeObj: LongArray) : SkAbstractNativeArray<Lon
 
     override fun unwrap(): LongArray {
         return nativeObj
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        val array = settings.factory.arrayNode(nativeObj.size)
-
-        for (value in nativeObj)
-            array.add(value)
-
-        return array
     }
 }
 

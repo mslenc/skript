@@ -145,3 +145,18 @@ fun funcName(param1, param2 = defaultValue, *posArgs, **kwArgs) {
 # posArgs receives all extra parameters without names
 # kwArgs receives all extra parameters with names
 ```
+
+
+# Imports/exports
+
+```
+export fun fooBar(a, b) { ... }
+export val PI = 3.14
+export { something }
+export default defaultFun
+
+import { fooBar, PI as weakPi, something } from "moduleName"
+import defaultFun from "moduleName"
+import * as math from "mathFunctions"
+
+```

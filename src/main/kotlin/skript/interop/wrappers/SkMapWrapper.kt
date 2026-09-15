@@ -16,9 +16,8 @@ class SkMapWrapper<K, V>(override val nativeObj: Map<K, V>, val keyCodec: SkCode
     override val klass: SkMapWrapperClassDef
         get() = SkMapWrapperClassDef
 
-    override fun getSize(): Int {
-        return nativeObj.size
-    }
+    override val size: Int
+        get() = nativeObj.size
 
     override fun unwrap(): Map<K, V> {
         return nativeObj

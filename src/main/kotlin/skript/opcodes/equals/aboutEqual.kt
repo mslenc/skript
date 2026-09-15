@@ -134,19 +134,19 @@ fun deepEquals(a: SkValue, b: SkValue, seen: HashSet<RefPair>, strictElementEqua
         val aMap = a as SkMap
         val bMap = b as SkMap
 
-        if (aMap.entries.size != bMap.entries.size)
+        if (aMap.size != bMap.size)
             return false
 
         val aKeys = HashSet<String>()
         val bKeys = HashSet<String>()
-        aMap.entries.forEach { (key, _) -> aKeys.add(key) }
-        bMap.entries.forEach { (key, _) -> bKeys.add(key) }
+        aMap.forEach { (key, _) -> aKeys.add(key) }
+        bMap.forEach { (key, _) -> bKeys.add(key) }
 
         if (aKeys != bKeys)
             return false
 
         for (key in aKeys)
-            if (!deepEquals(aMap.entries[key]!!, bMap.entries[key]!!, seen, strictElementEqual))
+            if (!deepEquals(aMap[key]!!, bMap[key]!!, seen, strictElementEqual))
                 return false
 
         return true

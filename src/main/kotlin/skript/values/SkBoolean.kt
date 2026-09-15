@@ -1,8 +1,5 @@
 package skript.values
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -55,10 +52,6 @@ class SkBoolean private constructor(val value: Boolean) : SkScalar() {
     override fun unwrap(): Boolean {
         return value
     }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        return settings.factory.booleanNode(value)
-    }
 }
 
 class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
@@ -79,10 +72,6 @@ class SkBooleanObject(override val value: SkBoolean) : SkScalarObject() {
 
     override fun unwrap(): Boolean {
         return value.unwrap()
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        return value.toJson(settings)
     }
 
     companion object {

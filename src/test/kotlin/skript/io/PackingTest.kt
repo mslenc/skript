@@ -71,11 +71,11 @@ class PackingTest {
         val map1 = SkMap()
 
         val map2 = SkMap()
-        map2.entries["abc"] = SkDecimal.MINUS_ONE
+        map2["abc"] = SkDecimal.MINUS_ONE
 
         val map3 = SkMap()
-        map3.entries["map2"] = map2
-        map3.entries["list"] = SkList(listOf(
+        map3["map2"] = map2
+        map3["list"] = SkList(listOf(
             SkString.FALSE,
             SkString("A somewhat longer string"),
             SkBoolean.TRUE,

@@ -1,8 +1,5 @@
 package skript.util
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.syntaxError
 import skript.typeError
 import skript.values.*
@@ -51,7 +48,7 @@ class SkArguments : SkObject() {
     fun spreadKwArgs(args: SkMap) {
         check(state == 0) { "Can't add parameters after some have already been extracted" }
 
-        kwArgs.putAll(args.entries)
+        kwArgs.putAll(args)
     }
 
     fun spreadKwArgs(args: Map<String, SkValue>) {
@@ -160,10 +157,6 @@ class SkArguments : SkObject() {
 
     override fun toString(): String {
         return "SkArguments(posArgs=$posArgs, kwArgs=$kwArgs)"
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        throw UnsupportedOperationException("Can't convert Arguments to JSON")
     }
 
     companion object {

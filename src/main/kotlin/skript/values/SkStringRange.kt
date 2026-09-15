@@ -1,9 +1,6 @@
 package skript.values
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.github.mslenc.utils.ComparableRangeEx
-import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.util.SkArguments
 import skript.util.expectBoolean
@@ -27,16 +24,6 @@ class SkStringRange(val start: String, val end: String, val endInclusive: Boolea
     override fun unwrap(): Any = when {
         endInclusive -> start..end
         else -> ComparableRangeEx(start, end)
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        val list = settings.factory.arrayNode()
-
-        list.add(start)
-        list.add(end)
-        list.add(endInclusive)
-
-        return list
     }
 }
 

@@ -26,7 +26,7 @@ class GetCtxOrGlobal(private val getCtx: FastOpCode, private val name: String) :
         getCtx.execute(frame)
         val ctx = frame.stack.pop()
         if (ctx is SkMap) {
-            ctx.entries[name]?.let {
+            ctx[name]?.let {
                 if (it != SkUndefined) {
                     frame.stack.push(it)
                     return null
@@ -46,8 +46,8 @@ class SetCtxOrGlobal(private val getCtx: FastOpCode, private val name: String) :
         getCtx.execute(frame)
         val ctx = frame.stack.pop()
         if (ctx is SkMap) {
-            if (ctx.entries.containsKey(name)) {
-                ctx.entries[name] = value
+            if (ctx.containsKey(name)) {
+                ctx[name] = value
                 return null
             }
         }

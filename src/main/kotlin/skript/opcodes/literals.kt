@@ -28,7 +28,7 @@ class MapDupSetKnownKey(private val key: String) : FastOpCode() {
         frame.apply {
             val value = stack.pop()
             val map = stack.top() as SkMap
-            map.entries[key] = value
+            map[key] = value
         }
         return null
     }
@@ -41,7 +41,7 @@ data object MapDupSetKey : FastOpCode() {
             val value = stack.pop()
             val key = stack.pop()
             val map = stack.top() as SkMap
-            map.entries[key.asString().value] = value
+            map[key.asString().value] = value
         }
         return null
     }

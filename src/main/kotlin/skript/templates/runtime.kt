@@ -10,7 +10,7 @@ import java.util.*
 import kotlin.collections.HashMap
 
 class TemplateRuntime(private val receiver: Appendable, val filters: SkMap, val escapes: SkMap, defaultEscapeKey: String) {
-    val defaultEscape = escapes.entries[defaultEscapeKey] ?: throw IllegalArgumentException("Unknown escape key: $defaultEscapeKey")
+    val defaultEscape = escapes[defaultEscapeKey] ?: throw IllegalArgumentException("Unknown escape key: $defaultEscapeKey")
 
     fun emit(text: String) {
         receiver.append(text)

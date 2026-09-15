@@ -215,7 +215,7 @@ class SkriptEnv(val engine: SkriptEngine, val moduleProvider: ModuleProvider, va
 
     suspend fun loadTemplate(moduleName: ModuleName): TemplateInstance {
         val module = getOrInitModule(moduleName) ?: throw IllegalStateException("Template module $moduleName couldn't be loaded.")
-        val render = module.exports.entries["render"] as? SkFunction ?: throw IllegalStateException("No render function in module $moduleName.")
+        val render = module.exports["render"] as? SkFunction ?: throw IllegalStateException("No render function in module $moduleName.")
         return makeWrapperForRender(render)
     }
 

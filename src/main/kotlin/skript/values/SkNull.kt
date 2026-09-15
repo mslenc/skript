@@ -1,8 +1,5 @@
 package skript.values
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.typeError
 import skript.util.SkArguments
@@ -50,9 +47,5 @@ object SkNull : SkScalar() {
 
     override fun unwrap(): Any? {
         return null
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        return settings.factory.nullNode()
     }
 }

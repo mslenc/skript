@@ -1,22 +1,19 @@
 package skript.values
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.io.SkriptEnv
 import skript.io.toSkript
 import skript.opcodes.SkIterator
 import skript.typeError
 
 abstract class SkAbstractMap : SkObject() {
-    abstract fun getSize(): Int
+    abstract val size: Int
 
     override suspend fun contains(key: SkValue, env: SkriptEnv): Boolean {
         return entryGet(key, env) != SkUndefined
     }
 
     override fun asBoolean(): SkBoolean {
-        return SkBoolean.valueOf(getSize() > 0)
+        return SkBoolean.valueOf(size > 0)
     }
 
     override fun asNumber(): SkNumber {
@@ -28,26 +25,12 @@ abstract class SkAbstractMap : SkObject() {
     }
 
     abstract override suspend fun makeIterator(): SkIterator
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        val obj = settings.factory.objectNode()
-        val it = makeIterator()
-
-        while (it.moveToNext()) {
-            val key = it.getCurrentKey().asString().value
-            val value = it.getCurrentValue().toJson(settings)
-
-            obj.set<JsonNode>(key, value)
-        }
-
-        return obj
-    }
 }
 
 object SkAbstractMapClassDef : SkCustomClass<SkAbstractMap>("AbstractMap", SkObjectClassDef) {
     init {
         defineReadOnlyProperty("size",
-            getter = { it.getSize().toSkript() }
+            getter = { it.size.toSkript() }
         )
 
         defineMethod("put").

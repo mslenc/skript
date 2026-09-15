@@ -1,8 +1,5 @@
 package skript.interop.wrappers
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import skript.interop.JsonSettings
 import skript.interop.SkCodec
 import skript.interop.SkCodecBoolean
 import skript.io.SkriptEnv
@@ -36,15 +33,6 @@ class SkBooleanArray(override val nativeObj: BooleanArray) : SkAbstractNativeArr
 
     override fun unwrap(): BooleanArray {
         return nativeObj
-    }
-
-    override suspend fun toJson(settings: JsonSettings): JsonNode {
-        val array = settings.factory.arrayNode(nativeObj.size)
-
-        for (value in nativeObj)
-            array.add(value)
-
-        return array
     }
 }
 

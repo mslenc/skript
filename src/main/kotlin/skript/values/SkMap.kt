@@ -6,17 +6,16 @@ import skript.opcodes.SkIterator
 import skript.typeError
 import skript.util.SkArguments
 
-class SkMap() : SkAbstractMap() {
+class SkMap() : SkAbstractMap(), MutableMap<String, SkValue> {
     override val klass: SkClassDef
         get() = SkMapClassDef
 
     constructor(initialValues: Map<String, SkValue>) : this() {
-        entries.putAll(initialValues)
+        entryMap.putAll(initialValues)
     }
 
-    override fun getSize(): Int {
-        return entries.size
-    }
+    override val size: Int
+        get() = entryMap.size
 
     override suspend fun propertySet(key: String, value: SkValue, env: SkriptEnv) {
         klass.findInstanceProperty(key)?.let { prop ->
@@ -58,7 +57,7 @@ class SkMap() : SkAbstractMap() {
         if (values == this)
             return // ???
 
-        entries.putAll(values.entries)
+        entryMap.putAll(values.entryMap)
     }
 
     override suspend fun makeIterator(): SkIterator {
@@ -69,17 +68,58 @@ class SkMap() : SkAbstractMap() {
         return when {
             other == null -> false
             other === this -> true
-            other is SkMap -> entries == other.entries
+            other is SkMap -> entryMap == other.entryMap
             else -> false
         }
     }
 
     override fun hashCode(): Int {
-        return entries.hashCode()
+        return entryMap.hashCode()
     }
 
     override fun unwrap(): Map<String, Any?> {
-        return entries.mapValues { it.value.unwrap() }
+        return entryMap.mapValues { it.value.unwrap() }
+    }
+
+    override fun put(key: String, value: SkValue): SkValue? {
+        return entryMap.put(key, value)
+    }
+
+    override fun get(key: String): SkValue? {
+        return entryMap[key]
+    }
+
+    override fun remove(key: String): SkValue? {
+        return entryMap.remove(key)
+    }
+
+    override fun containsKey(key: String): Boolean {
+        return entryMap.containsKey(key)
+    }
+
+    override fun putAll(from: Map<out String, SkValue>) {
+        return entryMap.putAll(from)
+    }
+
+    override val entries: MutableSet<MutableMap.MutableEntry<String, SkValue>>
+        get() = entryMap.entries
+
+    override fun clear() {
+        entryMap.clear()
+    }
+
+    override val keys: MutableSet<String>
+        get() = entryMap.keys
+
+    override val values: MutableCollection<SkValue>
+        get() = entryMap.values
+
+    override fun isEmpty(): Boolean {
+        return entryMap.isEmpty()
+    }
+
+    override fun containsValue(value: SkValue): Boolean {
+        return entryMap.containsValue(value)
     }
 }
 
@@ -89,13 +129,13 @@ object SkMapClassDef : SkClassDef("Map", SkAbstractMapClassDef) {
 
         for (el in args.extractAllPosArgs()) {
             if (el is SkMap) {
-                result.entries.putAll(el.entries)
+                result.entryMap.putAll(el.entryMap)
             } else {
                 typeError("Map constructor only accepts other Maps as positional arguments")
             }
         }
 
-        result.entries.putAll(args.extractAllKwArgs())
+        result.entryMap.putAll(args.extractAllKwArgs())
 
         return result
     }
