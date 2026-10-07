@@ -1,7 +1,7 @@
 buildscript {
     ext.jackson_version = '2.20.1'
-    ext.kotlin_version = '2.3.20'
-    ext.coroutines_version = '1.10.2'
+    ext.kotlin_version = '2.4.20'
+    ext.coroutines_version = '1.11.0'
 }
 
 plugins {
@@ -11,8 +11,8 @@ plugins {
     id 'signing'
 }
 
-group 'io.github.mslenc'
-version '0.21.0'
+group = 'io.github.mslenc'
+version = '0.22.0'
 
 repositories {
     mavenLocal()
@@ -31,7 +31,7 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jdk8:$jackson_version"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:$jackson_version"
 
-    implementation "io.github.mslenc:utilsktx:1.7.0"
+    implementation "io.github.mslenc:utilsktx:1.8.0"
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
